@@ -297,9 +297,9 @@ const ISSUE_TYPES = ["مشكلة", "قرار"];
 const ISSUE_OWNERS = ["العميل", "فريق المشروع", "مشترك"];
 const OPEN = "مفتوح", CLOSED = "مغلق";
 const BLOCKING = "يتوقف عليها الإجراء";
-const CR_STATUSES = ["قيد الإعداد", "مُرسل إلى العميل", "قيد الدراسة", "معتمد", "مرفوض", "ملغى"];
-const CR_OPEN = new Set(["قيد الإعداد", "مُرسل إلى العميل", "قيد الدراسة"]);
-const CR_CLASS = { "قيد الإعداد": "new", "مُرسل إلى العميل": "wait", "قيد الدراسة": "prog", "معتمد": "acc", "مرفوض": "late", "ملغى": "sus" };
+const CR_STATUSES = ["قيد الإعداد", "مُرسل إلى العميل", "في انتظار الاعتماد", "معتمد", "مرفوض", "ملغى"];
+const CR_OPEN = new Set(["قيد الإعداد", "مُرسل إلى العميل", "في انتظار الاعتماد"]);
+const CR_CLASS = { "قيد الإعداد": "new", "مُرسل إلى العميل": "wait", "في انتظار الاعتماد": "prog", "معتمد": "acc", "مرفوض": "late", "ملغى": "sus" };
 const WEEKENDS = [
   { key: "5,6", label: "الجمعة والسبت" },
   { key: "6,0", label: "السبت والأحد" },
@@ -382,6 +382,9 @@ function computeModel(data, asOfIso) {
 
   const itemsById = new Map(data.items.map((i) => [i.id, i]));
   const delById = new Map(data.deliverables.map((d) => [d.id, d]));
+  // a suspended deliverable (manual "معلق", never accepted) is left out of every delivery/acceptance figure
+  const acceptedIds = new Set(data.events.filter((e) => e.action === ACT.ACC && isIso(e.date)).map((e) => e.deliverable));
+  const suspendedIds = new Set(data.deliverables.filter((d) => d.work_status === ST.SUS && !acceptedIds.has(d.id)).map((d) => d.id));
   const evBy = new Map();
   for (const e of data.events) {
     const t = dn(e.date);
@@ -392,7 +395,7 @@ function computeModel(data, asOfIso) {
 
   const ev = new Map();
   for (const e of data.events) {
-    const c = { cycle: null, end: null, open: false, review: null, delay: null, vendorDays: null, vendorOpen: false, warn: "" };
+    const c = { cycle: null, end: null, open: false, review: null, delay: null, vendorDays: null, vendorOpen: false, warn: "", excluded: suspendedIds.has(e.deliverable) };
     const t = dn(e.date), list = evBy.get(e.deliverable) || [];
     if (!e.deliverable) c.warn = "رقم المخرج ناقص";
     else if (!delById.has(e.deliverable)) c.warn = "رقم المخرج غير موجود";
@@ -447,9 +450,10 @@ function computeModel(data, asOfIso) {
     else if (lastSubmit > 0) status = ST.WAIT;
     else status = WORK_STATUSES.includes(d.work_status) ? d.work_status : ST.NEW;
 
+    const suspended = suspendedIds.has(d.id);
     let review = 0, delay = 0, vendorDays = 0, openCycle = null;
     for (const e of data.events) {
-      if (e.deliverable !== d.id) continue;
+      if (e.deliverable !== d.id || suspended) continue;
       const c = ev.get(e.id);
       if (c.review !== null) { review += c.review; delay += c.delay; if (c.open) openCycle = { start: dn(e.date), review: c.review, delay: c.delay }; }
       if (c.vendorDays !== null) vendorDays += c.vendorDays;
@@ -458,22 +462,27 @@ function computeModel(data, asOfIso) {
     const openIssues = issues.filter((i) => i.status !== CLOSED);
     const item = itemsById.get(d.item_id);
     const value = item ? numOr(item.unit_price, 0) : 0;
+    const crs = [...(crsByDel.get(d.id) || [])];
+    const suspendCr = d.suspend_cr ? data.crs.find((x) => x.id === d.suspend_cr) : null;
+    if (suspendCr && !crs.includes(suspendCr)) crs.push(suspendCr);
     del.set(d.id, {
       firstSubmit, lastSubmit, lastReply, accepted, cycles: subs.length, status, review, delay, vendorDays, openCycle,
       value, valueVat: value * (1 + vat), openIssues: openIssues.length, blocking: openIssues.filter((i) => i.blocking).length,
-      crs: crsByDel.get(d.id) || [], waitingSinceReply: status === ST.RET ? span(lastReply, asOf) : null,
+      crs, suspended, suspendCr, suspendMissing: suspended && !String(d.suspend_reason || "").trim(),
+      waitingSinceReply: status === ST.RET ? span(lastReply, asOf) : null,
     });
   }
 
   const items = new Map();
-  const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, waiting: 0, late: 0, acceptedValue: 0, deliveredValue: 0, waitingValue: 0, remaining: 0, actualWeighted: 0 };
+  const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, waiting: 0, late: 0, suspended: 0, acceptedValue: 0, deliveredValue: 0, waitingValue: 0, suspendedValue: 0, remaining: 0, actualWeighted: 0 };
   for (const it of data.items) {
     const ds = data.deliverables.filter((d) => d.item_id === it.id);
     const qty = numOr(it.qty, 0), price = numOr(it.unit_price, 0), total = qty * price;
     const k = (d) => del.get(d.id);
     const r = {
       qty, price, total, vat: total * vat, totalVat: total * (1 + vat), registered: ds.length,
-      delivered: ds.filter((d) => k(d).firstSubmit > 0).length,
+      delivered: ds.filter((d) => k(d).firstSubmit > 0 && !k(d).suspended).length,
+      suspended: ds.filter((d) => k(d).suspended).length,
       accepted: ds.filter((d) => k(d).status === ST.ACC).length,
       waiting: ds.filter((d) => k(d).status === ST.WAIT).length,
       late: ds.filter((d) => k(d).status === ST.LATE).length,
@@ -485,6 +494,7 @@ function computeModel(data, asOfIso) {
     r.acceptedValue = r.accepted * price;
     r.deliveredValue = r.delivered * price;
     r.waitingValue = r.waiting * price;
+    r.suspendedValue = r.suspended * price;
     r.remaining = total - r.acceptedValue;
     r.actualWeighted = (r.actual || 0) * total;
     items.set(it.id, r);
@@ -498,6 +508,7 @@ function computeModel(data, asOfIso) {
 
   const statusCounts = Object.fromEntries(STATUS_ORDER.map((st) => [st, 0]));
   for (const d of data.deliverables) statusCounts[del.get(d.id).status]++;
+  tot.suspendMissing = data.deliverables.filter((d) => del.get(d.id).suspendMissing).length;
 
   return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, itemsById, delById, span };
 }
@@ -610,11 +621,12 @@ function viewDashboard() {
     <div class="kpi"><span class="label">قيمة العقد قبل الضريبة</span><span class="value">${sar(t.total)}</span><span class="foot">شاملة الضريبة ${sar(t.totalVat)}</span></div>
     <div class="kpi wait"><span class="label">إجمالي في انتظار القبول</span><span class="value">${pct(t.waitingShare)}<span class="amt">${sar(t.waitingValue)}</span></span>${meter(t.waitingShare, "--st-wait")}<span class="foot"><span class="num">${t.waiting}</span> مخرجًا مسلَّمًا ينتظر قبول العميل</span></div>
     <div class="kpi acc"><span class="label">إجمالي المقبول</span><span class="value">${pct(t.acceptedShare)}<span class="amt">${sar(t.acceptedValue)}</span></span>${meter(t.acceptedShare, "--st-acc")}<span class="foot"><span class="num">${t.accepted}</span> مخرجًا مقبولًا من <span class="num">${t.qty}</span></span></div>
+    <div class="kpi"><span class="label">المعلَّق</span><span class="value">${pct(t.total ? t.suspendedValue / t.total : null)}<span class="amt">${sar(t.suspendedValue)}</span></span>${meter(t.total ? t.suspendedValue / t.total : 0, "--st-sus")}<span class="foot"><span class="num">${t.suspended}</span> مخرجًا مستبعدًا من حسابات التسليم والقبول${t.suspendMissing ? ` · <span class="red"><span class="num">${t.suspendMissing}</span> بلا سبب تعليق</span>` : ""}</span></div>
     <div class="kpi"><span class="label">المتبقي (غير المقبول)</span><span class="value">${sar(t.remaining)}</span><span class="foot">قيمة العقد مطروحًا منها المقبول</span></div>
   </div>
   <div class="kpis">
     <div class="kpi"><span class="label">نسبة الإنجاز (المقبول ÷ الإجمالي)</span><span class="value">${pct(t.progress)}</span>${meter(t.progress, "--st-acc")}<span class="foot"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
-    <div class="kpi"><span class="label">نسبة الإنجاز المسلَّم (المسلَّم ÷ الإجمالي)</span><span class="value">${pct(t.deliveredPct)}</span>${meter(t.deliveredPct, "--st-wait")}<span class="foot"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا سُلِّم مرة واحدة على الأقل</span></div>
+    <div class="kpi"><span class="label">نسبة الإنجاز المسلَّم (المسلَّم ÷ الإجمالي)</span><span class="value">${pct(t.deliveredPct)}</span>${meter(t.deliveredPct, "--st-wait")}<span class="foot"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا سُلِّم مرة واحدة على الأقل (دون المعلَّقة)</span></div>
     <div class="kpi"><span class="label">نسبة الإنجاز الفعلي</span><span class="value">${pct(t.actual)}</span>${meter(t.actual, "--actual")}<span class="foot">مُدخلة يدويًا لكل بند، ومرجَّحة بقيمة البنود</span></div>
   </div>
   <div class="grid-2">
@@ -652,7 +664,7 @@ function viewDashboard() {
         : emptyBlock("لا توجد مخرجات مُعادة", "لا توجد ملاحظات تنتظر إعادة التسليم.")}
     </section>
     <section class="section">
-      <div class="section-head"><h2>طلبات التغيير المفتوحة</h2><span class="sub">قيد الإعداد أو مُرسلة أو قيد الدراسة</span></div>
+      <div class="section-head"><h2>طلبات التغيير المفتوحة</h2><span class="sub">قيد الإعداد أو مُرسلة أو في انتظار الاعتماد</span></div>
       ${openCrs.length ? `<div class="cards">${openCrs.map(crCard).join("")}</div>` : emptyBlock("لا توجد طلبات تغيير مفتوحة", "", `<button class="btn small" type="button" data-go="crs">طلبات التغيير</button>`)}
     </section>
   </div>`;
@@ -694,6 +706,7 @@ function filteredDeliverables() {
     if (f.issue === "open" && !k.openIssues) return false;
     if (f.issue === "blocking" && !k.blocking) return false;
     if (f.issue === "cr" && !k.crs.length) return false;
+    if (f.issue === "nosusp" && !k.suspendMissing) return false;
     if (q && !(`${d.id} ${d.description || ""} ${d.notes || ""} ${Object.values(billingOf(d)).join(" ")}`.includes(q))) return false;
     return true;
   }).sort(byId);
@@ -703,9 +716,9 @@ function viewDeliverables() {
   const list = filteredDeliverables();
   const itemOpts = [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${f.item === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(short(it.name, 40))}</option>`).join("");
   const statusOpts = STATUS_ORDER.map((s) => `<option${f.status === s ? " selected" : ""}>${esc(s)}</option>`).join("");
-  const issueOpts = [["", "جميع المخرجات"], ["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"]]
+  const issueOpts = [["", "جميع المخرجات"], ["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"], ["nosusp", "معلَّقة بلا سبب"]]
     .map(([v, l]) => `<option value="${v}"${f.issue === v ? " selected" : ""}>${l}</option>`).join("");
-  const flags = (k) => [k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
+  const flags = (k) => [k.suspendMissing ? `<span class="flag" title="أدخل سبب التعليق من تعديل المخرج">بلا سبب تعليق</span>` : "", k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
     k.crs.length ? `<span class="flag soft" title="طلب تغيير">${k.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""].join(" ");
   const head = billingView
     ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}`
@@ -748,7 +761,7 @@ function viewLog() {
       <td class="n">${sub ? int(k.cycle) : ""}</td><td>${sub ? dateHtml(isoOf(k.end)) : ""}</td><td>${sub ? (k.open ? '<span class="pill s-prog">جارية</span>' : '<span class="muted">مغلقة</span>') : ""}</td>
       <td class="n">${sub ? int(k.review) : ""}</td><td class="n ${sub && k.delay ? "red" : ""}">${sub ? int(k.delay) : ""}</td>
       <td class="n">${k.vendorDays !== null ? int(k.vendorDays) : ""}</td>
-      <td class="warn-cell">${esc(k.warn)}</td><td><div class="desc">${esc(e.notes)}</div></td></tr>`;
+      <td class="warn-cell">${esc(k.warn)}${k.excluded ? `<span class="muted">مخرج معلَّق — غير محتسب</span>` : ""}</td><td><div class="desc">${esc(e.notes)}</div></td></tr>`;
   }).join("");
   return `<section class="section">
     <div class="section-head"><h2>سجل المراجعات</h2><button class="btn primary" data-new-ev type="button">+ حركة جديدة</button></div>
@@ -814,7 +827,7 @@ function buildReport() {
   const a = dn(from), b = dn(to);
   const inRange = (iso) => { const t = dn(iso); return t >= a && t <= b; };
   const end = computeModel({ ...state, events: state.events.filter((e) => dn(e.date) <= b) }, to);
-  const evIn = state.events.filter((e) => inRange(e.date) && end.delById.has(e.deliverable));
+  const evIn = state.events.filter((e) => inRange(e.date) && end.delById.has(e.deliverable) && !end.del.get(e.deliverable).suspended);
   const pickEv = (act) => evIn.filter((e) => e.action === act).sort((p, q) => String(p.date).localeCompare(String(q.date)))
     .map((e) => ({ e, d: end.delById.get(e.deliverable), k: end.del.get(e.deliverable), x: end.ev.get(e.id) }));
   const accepted = pickEv(ACT.ACC), submitted = pickEv(ACT.SUB), returned = pickEv(ACT.REP);
@@ -995,6 +1008,9 @@ function drawerDel() {
     </div>
     <div><h4>وصف المخرج</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.description)}</p></div>
     ${del.notes ? `<div><h4>ملاحظات</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.notes)}</p></div>` : ""}
+    ${k.suspended ? `<div class="block card ${k.suspendMissing ? "blocking" : ""}"><h4>التعليق</h4>
+      ${k.suspendMissing ? `<span class="red">لم يُدخل سبب التعليق بعد. أدخله من «تعديل بيانات المخرج».</span>` : `<div class="body">${esc(del.suspend_reason)}</div>`}
+      <div class="meta">${del.suspend_date ? `<span>منذ <span class="date">${esc(del.suspend_date)}</span></span>` : ""}<span>${k.suspendCr ? `مرتبط بطلب التغيير <span class="code">${esc(k.suspendCr.code)}</span>` : "غير مرتبط بطلب تغيير"}</span><span>مستبعد من حسابات التسليم والقبول</span></div></div>` : ""}
     ${k.crs.length ? `<div class="block"><h4>طلبات تغيير مرتبطة</h4><div class="cards">${k.crs.map(crCard).join("")}</div></div>` : ""}
     <div class="actions"><button class="btn" type="button" data-edit-del="${esc(del.id)}">تعديل بيانات المخرج</button></div>`;
 
@@ -1081,6 +1097,11 @@ function drawerDelForm() {
       <div class="field"><label for="dItem">البند</label><select id="dItem" name="item_id" required><option value="">اختر البند</option>${itemOptions(v.item_id)}</select></div>
       <div class="field wide"><label for="dDesc">وصف المخرج</label><textarea id="dDesc" name="description" required>${esc(v.description ?? "")}</textarea></div>
       <div class="field"><label for="dWork">حالة العمل (يدوية)</label><select id="dWork" name="work_status"><option value="">—</option>${WORK_STATUSES.map((w) => `<option${v.work_status === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">تُستخدم قبل التسليم، وتتقدم حالة «معلق» على أي حالة عدا «تم القبول».</span></div>
+      <div class="field wide" id="suspFields" ${v.work_status === ST.SUS ? "" : "hidden"}><div class="form-grid">
+        <div class="field wide"><label for="dSuspReason">سبب التعليق (إلزامي)</label><textarea id="dSuspReason" name="suspend_reason">${esc(v.suspend_reason ?? "")}</textarea></div>
+        <div class="field"><label for="dSuspDate">تاريخ التعليق</label><input id="dSuspDate" name="suspend_date" type="date" value="${esc(v.suspend_date ?? "")}"></div>
+        <div class="field"><label for="dSuspCr">مرتبط بطلب تغيير؟</label><select id="dSuspCr" name="suspend_cr"><option value="">غير مرتبط</option>${[...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })).map((x) => `<option value="${esc(x.id)}"${v.suspend_cr === x.id ? " selected" : ""}>${esc(x.code)} — ${esc(short(x.title, 40))}</option>`).join("")}</select></div>
+      </div></div>
       <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
       <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>
       <div class="form-group">بيانات الفوترة</div>
@@ -1166,7 +1187,10 @@ async function saveDeliverable(form, btn) {
     const v = (f["b_" + x.k] ?? "").trim();
     if (v) billing[x.k] = typeof prevB[x.k] === "number" && String(prevB[x.k]) === v ? prevB[x.k] : v;
   }
-  const body = clean({ item_id: f.item_id, description: f.description.trim(), work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim() });
+  const suspended = f.work_status === ST.SUS;
+  if (suspended && !String(f.suspend_reason || "").trim()) { toast("سبب التعليق إلزامي للمخرج المعلَّق.", true); document.getElementById("dSuspReason")?.focus(); return; }
+  const body = clean({ item_id: f.item_id, description: f.description.trim(), work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim(),
+    ...(suspended ? { suspend_reason: f.suspend_reason.trim(), suspend_date: f.suspend_date, suspend_cr: f.suspend_cr } : {}) });
   if (Object.keys(billing).length) body.billing = billing;
   const sub = state.drawer.sub;
   if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ المخرج")) openDrawer({ kind: "del", id, sub: sub || "review" });
@@ -1278,6 +1302,7 @@ function exportAll(btn) {
       ["قيمة العقد قبل الضريبة (ريال)", { v: t.total, f: FMT.M }], ["قيمة العقد شاملةً الضريبة (ريال)", { v: t.totalVat, f: FMT.M }],
       ["إجمالي في انتظار القبول (ريال)", { v: t.waitingValue, f: FMT.M }], ["إجمالي في انتظار القبول (%)", { v: t.waitingShare, f: FMT.P }],
       ["إجمالي المقبول (ريال)", { v: t.acceptedValue, f: FMT.M }], ["إجمالي المقبول (%)", { v: t.acceptedShare, f: FMT.P }],
+      ["المعلَّق (ريال)", { v: t.suspendedValue, f: FMT.M }], ["عدد المخرجات المعلَّقة", t.suspended],
       ["المتبقي غير المقبول (ريال)", { v: t.remaining, f: FMT.M }],
       ["نسبة الإنجاز (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم (المسلَّم ÷ الإجمالي)", { v: t.deliveredPct, f: FMT.P }],
       ["نسبة الإنجاز الفعلي (مرجَّحة بقيمة البنود)", { v: t.actual, f: FMT.P }],
@@ -1301,11 +1326,13 @@ function exportAll(btn) {
       { h: "أول تسليم", k: "first", w: 12, f: FMT.D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: FMT.D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: FMT.D },
       { h: "تاريخ القبول", k: "acc", w: 12, f: FMT.D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "أيام المراجعة", k: "review", w: 10 },
       { h: "أيام التأخير على العميل", k: "delay", w: 11 }, { h: "أيام لدى فريق المشروع", k: "vendor", w: 11 }, { h: "مشكلات مفتوحة", k: "issues", w: 9 }, { h: "طلبات التغيير", k: "crs", w: 14 },
+      { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "طلب التغيير المرتبط بالتعليق", k: "suspCr", w: 14 },
       ...BILLING.map((x) => ({ h: x.label, k: "b_" + x.k, w: x.yn ? 10 : 16 })), { h: "ملاحظات", k: "notes", w: 50, wrap: true },
     ], [...state.deliverables].sort(byId).map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d); return {
       id: d.id, item: it?.no, itemName: it?.name, desc: d.description, status: k.status, work: d.work_status, points: d.points === "" ? null : d.points,
       value: k.value, valueVat: k.valueVat, first: numD(k.firstSubmit), lastSub: numD(k.lastSubmit), lastRep: numD(k.lastReply), acc: numD(k.accepted),
       cycles: k.cycles, review: k.review, delay: k.delay, vendor: k.vendorDays, issues: k.openIssues, crs: k.crs.map((x) => x.code).join("، "),
+      suspReason: k.suspended ? (d.suspend_reason || null) : null, suspDate: k.suspended ? toDate(d.suspend_date) : null, suspCr: k.suspendCr?.code || null,
       ...Object.fromEntries(BILLING.map((x) => ["b_" + x.k, b[x.k] ?? null])), notes: d.notes }; }));
     addSheet(wb, "سجل المراجعات", [
       { h: "رقم المخرج", k: "del", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "وصف المخرج", k: "desc", w: 40, wrap: true }, { h: "نوع الحركة", k: "act", w: 13 },
@@ -1471,6 +1498,7 @@ document.addEventListener("change", (ev) => {
     rFrom: () => { const [, b] = reportRange(); state.report = { preset: "custom", from: el.value, to: b }; },
     rTo: () => { const [a] = reportRange(); state.report = { preset: "custom", from: a, to: el.value }; } };
   if (set[id]) { set[id](); return render(); }
+  if (id === "dWork") { const box = document.getElementById("suspFields"); if (box) box.hidden = el.value !== ST.SUS; return; }
   if (el.name === "critem") {
     const form = el.form, items = [...form.querySelectorAll('input[name="critem"]:checked')].map((x) => x.value);
     const sel = [...form.querySelectorAll('input[name="crdel"]:checked')].map((x) => x.value);
