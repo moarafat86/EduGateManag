@@ -36,6 +36,9 @@
   --st-prog: #FFCC00; --st-prog-bg: rgba(255, 204, 0, .20);  --st-prog-fg: #7A5E00;
   --st-sus: #8E8E93;  --st-sus-bg: rgba(142, 142, 147, .16); --st-sus-fg: #48484A;
   --st-new: #C7C7CC;  --st-new-bg: rgba(142, 142, 147, .10); --st-new-fg: #6E6E73;
+  --st-inv: #5856D6;  --st-inv-bg: rgba(88, 86, 214, .12);   --st-inv-fg: #3E3CB0;
+  --st-certw: #AF52DE; --st-certw-bg: rgba(175, 82, 222, .12); --st-certw-fg: #8237AE;
+  --st-cert: #00C7BE; --st-cert-bg: rgba(0, 199, 190, .14);  --st-cert-fg: #00807A;
 
   --font: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
   --font-display: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
@@ -57,6 +60,9 @@
     --st-prog: #FFD60A; --st-prog-bg: rgba(255, 214, 10, .16); --st-prog-fg: #FFD60A;
     --st-sus: #98989D;  --st-sus-bg: rgba(152, 152, 157, .20); --st-sus-fg: #C7C7CC;
     --st-new: #48484A;  --st-new-bg: rgba(142, 142, 147, .14); --st-new-fg: #98989D;
+    --st-inv: #5E5CE6;  --st-inv-bg: rgba(94, 92, 230, .24);   --st-inv-fg: #A3A2FF;
+    --st-certw: #BF5AF2; --st-certw-bg: rgba(191, 90, 242, .22); --st-certw-fg: #DA8FFF;
+    --st-cert: #63E6E2; --st-cert-bg: rgba(99, 230, 226, .18); --st-cert-fg: #63E6E2;
     color-scheme: dark;
   }
 }
@@ -73,6 +79,9 @@
   --st-prog: #FFD60A; --st-prog-bg: rgba(255, 214, 10, .16); --st-prog-fg: #FFD60A;
   --st-sus: #98989D;  --st-sus-bg: rgba(152, 152, 157, .20); --st-sus-fg: #C7C7CC;
   --st-new: #48484A;  --st-new-bg: rgba(142, 142, 147, .14); --st-new-fg: #98989D;
+  --st-inv: #5E5CE6;  --st-inv-bg: rgba(94, 92, 230, .24);   --st-inv-fg: #A3A2FF;
+  --st-certw: #BF5AF2; --st-certw-bg: rgba(191, 90, 242, .22); --st-certw-fg: #DA8FFF;
+  --st-cert: #63E6E2; --st-cert-bg: rgba(99, 230, 226, .18); --st-cert-fg: #63E6E2;
   color-scheme: dark;
 }
 
@@ -220,6 +229,9 @@ main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; 
 .s-prog { background: var(--st-prog-bg); color: var(--st-prog-fg); }
 .s-sus { background: var(--st-sus-bg); color: var(--st-sus-fg); }
 .s-new { background: var(--st-new-bg); color: var(--st-new-fg); }
+.s-inv { background: var(--st-inv-bg); color: var(--st-inv-fg); }
+.s-certw { background: var(--st-certw-bg); color: var(--st-certw-fg); }
+.s-cert { background: var(--st-cert-bg); color: var(--st-cert-fg); }
 .flag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 9px; border-radius: 980px; font-size: .74rem; font-weight: 600; white-space: nowrap; background: var(--st-late-bg); color: var(--st-late-fg); }
 .flag.soft { background: var(--st-prog-bg); color: var(--st-prog-fg); }
 .yes { color: var(--st-acc-fg); font-weight: 600; }
@@ -409,12 +421,17 @@ function applyTheme(theme, remember) {
 (() => { let saved = null; try { saved = localStorage.getItem("theme"); } catch (_) {} if (saved === "dark" || saved === "light") applyTheme(saved, false); else syncThemeSwitch(); })();
 
 /* ------------------------------------------------------------ constants */
-const ST = { ACC: "تم القبول", SUS: "معلق", RET: "مُعاد بملاحظات", WAIT: "في انتظار القبول", LATE: "متأخر", PROG: "جاري العمل", NEW: "لم يبدأ", CAN: "ملغى" };
+const ST = { ACC: "تم القبول", SUS: "معلق", RET: "مُعاد بملاحظات", WAIT: "في انتظار القبول", LATE: "متأخر", PROG: "جاري العمل", NEW: "لم يبدأ", CAN: "ملغى",
+  DONE: "تم", INV: "تم الفوترة", CERTW: "في انتظار شهادة الإنجاز", CERT: "تم إصدار شهادة الإنجاز" };
 const STATUS_ORDER = [ST.ACC, ST.WAIT, ST.RET, ST.LATE, ST.PROG, ST.SUS, ST.NEW];
-const STATUS_CLASS = { [ST.ACC]: "acc", [ST.WAIT]: "wait", [ST.RET]: "ret", [ST.LATE]: "late", [ST.PROG]: "prog", [ST.SUS]: "sus", [ST.NEW]: "new", [ST.CAN]: "sus" };
+const STATUS_CLASS = { [ST.ACC]: "acc", [ST.WAIT]: "wait", [ST.RET]: "ret", [ST.LATE]: "late", [ST.PROG]: "prog", [ST.SUS]: "sus", [ST.NEW]: "new", [ST.CAN]: "sus",
+  [ST.DONE]: "acc", [ST.INV]: "inv", [ST.CERTW]: "certw", [ST.CERT]: "cert" };
+// two statuses per deliverable: execution (manual, «تم» follows the review log) and billing (follows the review log and billing data)
+const EXEC_ORDER = [ST.DONE, ST.PROG, ST.LATE, ST.NEW, ST.SUS];
+const BILL_ORDER = [ST.WAIT, ST.RET, ST.ACC, ST.INV, ST.CERTW, ST.CERT];
 const ACT = { SUB: "تسليم", REP: "رد بملاحظات", ACC: "قبول" };
 const ACTIONS = [ACT.SUB, ACT.REP, ACT.ACC];
-const WORK_STATUSES = [ST.NEW, ST.PROG, ST.LATE, ST.SUS];
+const WORK_STATUSES = [ST.NEW, ST.PROG, ST.LATE, ST.SUS, ST.DONE];
 const YESNO = ["نعم", "لا"];
 const BILLING = [
   { k: "certificate", label: "صدرت له شهادة إنجاز", yn: true },
@@ -423,7 +440,6 @@ const BILLING = [
   { k: "invoice_no", label: "رقم الفاتورة" },
   { k: "ref_no", label: "رقم المطالبة السابقة" },
   { k: "claim_no", label: "رقم المطالبة الجديدة" },
-  { k: "paid", label: "تم صرفه", yn: true },
 ];
 const ISSUE_TYPES = ["مشكلة", "قرار"];
 const ISSUE_OWNERS = ["العميل", "فريق المشروع", "مشترك"];
@@ -468,7 +484,7 @@ const state = {
   ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
-  filters: { q: "", item: "", status: "", issue: "" }, delView: "review",
+  filters: { q: "", item: "", exec: "", bill: "", issue: "" }, delView: "review",
   logFilters: { q: "", action: "" }, issueFilters: { state: OPEN, type: "", q: "" },
   report: { preset: "last_week", from: "", to: "" },
   calc: null, drawer: null, offline: false,
@@ -495,6 +511,7 @@ const itemLabel = (it) => it ? String(it.no ?? "") : "";
 const byItemOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.no).localeCompare(String(b.no), "ar");
 const byId = (a, b) => String(a.id).localeCompare(String(b.id), "en", { numeric: true });
 const billingOf = (d) => d.billing || d.legacy_billing || {};
+const filled = (v) => v !== undefined && v !== null && String(v).trim() !== "";
 const short = (s, n = 70) => { s = String(s || ""); return s.length > n ? s.slice(0, n) + "…" : s; };
 
 function toast(msg, isErr) {
@@ -593,9 +610,22 @@ function computeModel(data, asOfIso) {
     else if (d.work_status === ST.SUS) status = ST.SUS;
     else if (lastReply > 0 && lastReply >= lastSubmit) status = ST.RET;
     else if (lastSubmit > 0) status = ST.WAIT;
-    else status = WORK_STATUSES.includes(d.work_status) ? d.work_status : ST.NEW;
+    else status = [ST.NEW, ST.PROG, ST.LATE].includes(d.work_status) ? d.work_status : ST.NEW;
     const cancelled = cancelledIds.has(d.id);
     if (cancelled) status = ST.CAN;
+    let exec;
+    if (cancelled) exec = ST.CAN;
+    else if (accepted > 0) exec = ST.DONE;
+    else if (d.work_status === ST.SUS) exec = ST.SUS;
+    else if (lastSubmit > 0 || d.work_status === ST.DONE) exec = ST.DONE;
+    else exec = [ST.NEW, ST.PROG, ST.LATE].includes(d.work_status) ? d.work_status : ST.NEW;
+    let bill = "";
+    if (exec === ST.DONE) {
+      const b = billingOf(d);
+      if (accepted > 0) bill = b.certificate === "نعم" ? ST.CERT : filled(b.claim_no) || filled(b.ref_no) ? ST.CERTW : filled(b.invoice_no) || b.invoiced === "نعم" ? ST.INV : ST.ACC;
+      else if (lastReply > 0 && lastReply >= lastSubmit) bill = ST.RET;
+      else bill = ST.WAIT;
+    }
 
     const suspended = suspendedIds.has(d.id);
     let review = 0, delay = 0, vendorDays = 0, openCycle = null;
@@ -613,7 +643,7 @@ function computeModel(data, asOfIso) {
     const suspendCr = d.suspend_cr ? data.crs.find((x) => x.id === d.suspend_cr) : null;
     if (suspendCr && !crs.includes(suspendCr)) crs.push(suspendCr);
     del.set(d.id, {
-      firstSubmit, lastSubmit, lastReply, accepted, cycles: subs.length, status, review, delay, vendorDays, openCycle,
+      firstSubmit, lastSubmit, lastReply, accepted, cycles: subs.length, status, exec, bill, review, delay, vendorDays, openCycle,
       value, valueVat: value * (1 + vat), openIssues: openIssues.length, blocking: openIssues.filter((i) => i.blocking).length,
       crs, suspended, cancelled, suspendCr, suspendMissing: suspended && !String(d.suspend_reason || "").trim(),
       waitingSinceReply: status === ST.RET ? span(lastReply, asOf) : null,
@@ -655,9 +685,11 @@ function computeModel(data, asOfIso) {
 
   const statusCounts = Object.fromEntries(STATUS_ORDER.map((st) => [st, 0]));
   for (const d of data.deliverables) if (!d.cancelled) statusCounts[del.get(d.id).status]++;
+  const execCounts = Object.fromEntries(EXEC_ORDER.map((st) => [st, 0])), billCounts = Object.fromEntries(BILL_ORDER.map((st) => [st, 0]));
+  for (const d of data.deliverables) { if (d.cancelled) continue; const k = del.get(d.id); execCounts[k.exec]++; if (k.bill) billCounts[k.bill]++; }
   tot.suspendMissing = data.deliverables.filter((d) => del.get(d.id).suspendMissing).length;
 
-  return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, itemsById, delById, span };
+  return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, execCounts, billCounts, itemsById, delById, span };
 }
 const currentAsOf = () => isIso(state.settings.as_of_override) ? state.settings.as_of_override : todayIso();
 function compute() { state.calc = computeModel(state, currentAsOf()); }
@@ -723,9 +755,9 @@ function crCard(cr) {
 }
 
 /* ---- status donut */
-function donut(counts, total) {
+function donut(counts, order, attr, label) {
   const R = 100, r0 = 62, cx = 110, cy = 110;
-  const live = STATUS_ORDER.filter((s) => counts[s]);
+  const live = order.filter((s) => counts[s]), total = order.reduce((a, s) => a + (counts[s] || 0), 0);
   if (!total) return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="لا توجد مخرجات"><circle cx="${cx}" cy="${cy}" r="${(R + r0) / 2}" fill="none" stroke="var(--line)" stroke-width="${R - r0}"/></svg>`;
   let a = -Math.PI / 2;
   const pt = (rad, ang) => `${(cx + rad * Math.cos(ang)).toFixed(2)},${(cy + rad * Math.sin(ang)).toFixed(2)}`;
@@ -737,9 +769,9 @@ function donut(counts, total) {
     else d = `M${pt(R, a)}A${R},${R} 0 ${large} 1 ${pt(R, a2)}L${pt(r0, a2)}A${r0},${r0} 0 ${large} 0 ${pt(r0, a)}Z`;
     a = a2;
     const p = ((n / total) * 100).toFixed(1) + "%";
-    return `<path d="${d}" fill="var(--st-${STATUS_CLASS[s]})" stroke="var(--surface)" stroke-width="2" data-filter-status="${esc(s)}" data-tip-title="${esc(s)}" data-tip-pct="${p}" data-tip-sub="${n} مخرج" data-center-v="${p}" data-center-l="${esc(s)}"></path>`;
+    return `<path d="${d}" fill="var(--st-${STATUS_CLASS[s]})" stroke="var(--surface)" stroke-width="2" data-filter-${attr}="${esc(s)}" data-tip-title="${esc(s)}" data-tip-pct="${p}" data-tip-sub="${n} مخرج" data-center-v="${p}" data-center-l="${esc(s)}"></path>`;
   }).join("");
-  return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="توزيع المخرجات حسب الحالة">${paths}
+  return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="${esc(label)}">${paths}
     <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="total c-v" data-default="${total}">${total}</text><text x="${cx}" y="${cy + 26}" text-anchor="middle" class="total-lbl c-l" data-default="مخرجًا">مخرجًا</text></svg>`;
 }
 
@@ -761,9 +793,8 @@ function rings(list) {
 function viewDashboard() {
   const c = state.calc, t = c.tot;
   if (!state.items.length) return `<section class="section">${emptyBlock("لا توجد بنود للعقد بعد", "ابدأ بإضافة بنود العقد من شاشة البنود، ثم أضف المخرجات وسجّل حركات المراجعة.", `<button class="btn primary" data-go="items" type="button">إضافة أول بند</button>`)}</section>`;
-  const total = state.deliverables.length;
-  const legend = STATUS_ORDER.map((s) =>
-    `<button type="button" data-filter-status="${esc(s)}"><span class="sw" style="background:var(--st-${STATUS_CLASS[s]})"></span><span class="lbl">${esc(s)}</span><strong class="num">${c.statusCounts[s] || 0}</strong><span class="share num">${total ? ((c.statusCounts[s] / total) * 100).toFixed(1) + "%" : "-"}</span></button>`).join("");
+  const legend = (counts, order, attr) => { const total = order.reduce((a, s) => a + (counts[s] || 0), 0); return order.map((s) =>
+    `<button type="button" data-filter-${attr}="${esc(s)}"><span class="sw" style="background:var(--st-${STATUS_CLASS[s]})"></span><span class="lbl">${esc(s)}</span><strong class="num">${counts[s] || 0}</strong><span class="share num">${total ? ((counts[s] / total) * 100).toFixed(1) + "%" : "-"}</span></button>`).join(""); };
   const withK = state.deliverables.map((d) => ({ d, k: c.del.get(d.id) }));
   const open = withK.filter((x) => x.k.openCycle && x.k.status !== ST.ACC).sort((a, b) => b.k.openCycle.review - a.k.openCycle.review);
   const returned = withK.filter((x) => x.k.status === ST.RET).sort((a, b) => b.k.waitingSinceReply - a.k.waitingSinceReply);
@@ -808,21 +839,25 @@ function viewDashboard() {
   </div>
   <div class="grid-2">
     <section class="section">
-      <div class="section-head"><h2>حالة المخرجات</h2><span class="sub">اضغط على أي حالة لعرض مخرجاتها</span></div>
-      <div class="donut-wrap">${donut(c.statusCounts, total)}<div class="legend">${legend}</div></div>
+      <div class="section-head"><h2>الحالة التنفيذية</h2><span class="sub">اضغط على أي حالة لعرض مخرجاتها</span></div>
+      <div class="donut-wrap">${donut(c.execCounts, EXEC_ORDER, "exec", "توزيع المخرجات حسب الحالة التنفيذية")}<div class="legend">${legend(c.execCounts, EXEC_ORDER, "exec")}</div></div>
     </section>
     <section class="section">
-      <div class="section-head"><h2>المشكلات والقرارات المفتوحة</h2><span class="sub">تظهر أولًا المشكلات التي ${BLOCKING}</span></div>
+      <div class="section-head"><h2>حالة الفوترة</h2><span class="sub">للمخرجات المسلَّمة · اضغط على أي حالة لعرض مخرجاتها</span></div>
+      <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المسلَّمة حسب حالة الفوترة")}<div class="legend">${legend(c.billCounts, BILL_ORDER, "bill")}</div></div>
+    </section>
+  </div>
+  <section class="section">
+    <div class="section-head"><h2>المشكلات والقرارات المفتوحة</h2><span class="sub">تظهر أولًا المشكلات التي ${BLOCKING}</span></div>
       ${openIssues.length ? `<div class="cards">${openIssues.slice(0, 5).map((i) => issueCard(i, { clickable: true, showDel: true })).join("")}</div>
         ${openIssues.length > 5 ? `<button class="btn small" type="button" data-go="issues">عرض الكل (<span class="num">${openIssues.length}</span>)</button>` : ""}`
         : emptyBlock("لا توجد مشكلات مفتوحة", "سجّل أي مشكلة أو قرار من صفحة المخرج.")}
-    </section>
-  </div>
+  </section>
   <section class="section">
     <div class="section-head"><h2>في انتظار رد العميل</h2><span class="sub">دورات مراجعة مفتوحة · المهلة <span class="num">${c.reviewLimit}</span> أيام عمل · <span class="num">${open.length}</span> مخرجًا</span></div>
     ${open.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>البند</th><th>تاريخ التسليم</th><th class="n">رقم الدورة</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th></tr></thead><tbody>
       ${open.slice(0, 15).map((x) => delRow(x.d, `<td><span class="code">${esc(itemLabel(c.itemsById.get(x.d.item_id)))}</span></td><td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.cycles)}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n ${x.k.openCycle.delay > 0 ? "red" : ""}">${int(x.k.openCycle.delay)}</td><td class="n">${money(x.k.value)}</td>`)).join("")}
-      </tbody></table></div>${open.length > 15 ? `<button class="btn small" type="button" data-filter-status="${ST.WAIT}">عرض الكل (<span class="num">${open.length}</span>)</button>` : ""}`
+      </tbody></table></div>${open.length > 15 ? `<button class="btn small" type="button" data-filter-bill="${ST.WAIT}">عرض الكل (<span class="num">${open.length}</span>)</button>` : ""}`
       : emptyBlock("لا توجد مخرجات تنتظر الرد", "تم الرد على جميع التسليمات.")}
   </section>
   <section class="section">
@@ -901,8 +936,9 @@ function filteredDeliverables() {
   return [...state.deliverables].filter((d) => {
     const k = c.del.get(d.id);
     if (f.item && d.item_id !== f.item) return false;
-    if (f.status && k.status !== f.status) return false;
-    if (k.cancelled && f.status !== ST.CAN) return false;
+    if (f.exec && k.exec !== f.exec) return false;
+    if (f.bill && k.bill !== f.bill) return false;
+    if (k.cancelled && f.exec !== ST.CAN) return false;
     if (f.issue === "open" && !k.openIssues) return false;
     if (f.issue === "blocking" && !k.blocking) return false;
     if (f.issue === "cr" && !k.crs.length) return false;
@@ -915,17 +951,18 @@ function viewDeliverables() {
   const c = state.calc, f = state.filters, billingView = state.delView === "billing";
   const list = filteredDeliverables();
   const itemOpts = [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${f.item === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(short(it.name, 40))}</option>`).join("");
-  const statusOpts = [...STATUS_ORDER, ST.CAN].map((s) => `<option${f.status === s ? " selected" : ""}>${esc(s)}</option>`).join("");
+  const execOpts = [...EXEC_ORDER, ST.CAN].map((s) => `<option${f.exec === s ? " selected" : ""}>${esc(s)}</option>`).join("");
+  const billOpts = BILL_ORDER.map((s) => `<option${f.bill === s ? " selected" : ""}>${esc(s)}</option>`).join("");
   const issueOpts = [["", "جميع المخرجات"], ["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"], ["nosusp", "معلَّقة بلا سبب"]]
     .map(([v, l]) => `<option value="${v}"${f.issue === v ? " selected" : ""}>${l}</option>`).join("");
   const flags = (k) => [k.suspendMissing ? `<span class="flag" title="أدخل سبب التعليق من تبويب بيانات المخرج">بلا سبب تعليق</span>` : "", k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
     k.crs.length ? `<span class="flag soft" title="طلب تغيير">${k.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""].join(" ");
   const head = billingView
-    ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}`
-    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th>`;
+    ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة التنفيذية</th><th>حالة الفوترة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}`
+    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة التنفيذية</th><th>حالة الفوترة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th>`;
   const rows = list.map((d) => {
     const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d);
-    const common = `<td><span class="code">${esc(d.id)}</span></td><td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(d.description)}</div></td><td>${pill(k.status)}</td>`;
+    const common = `<td><span class="code">${esc(d.id)}</span></td><td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(d.description)}</div></td><td>${pill(k.exec)}</td><td>${k.bill ? pill(k.bill) : '<span class="muted">—</span>'}</td>`;
     const rest = billingView
       ? BILLING.map((x) => `<td>${x.yn ? ynHtml(b[x.k]) : b[x.k] ? `<span class="code">${esc(b[x.k])}</span>` : '<span class="muted">—</span>'}</td>`).join("")
       : `<td>${flags(k)}</td><td>${dateHtml(k.firstSubmit ? isoOf(k.firstSubmit) : "")}</td><td>${dateHtml(k.accepted ? isoOf(k.accepted) : "")}</td>
@@ -939,9 +976,10 @@ function viewDeliverables() {
     <div class="filters">
       <input id="fQ" type="search" placeholder="ابحث برقم المخرج أو الوصف أو رقم الفاتورة أو المطالبة" value="${esc(f.q)}" aria-label="بحث">
       <select id="fItem" aria-label="البند"><option value="">جميع البنود</option>${itemOpts}</select>
-      <select id="fStatus" aria-label="الحالة"><option value="">جميع الحالات</option>${statusOpts}</select>
+      <select id="fExec" aria-label="الحالة التنفيذية"><option value="">جميع الحالات التنفيذية</option>${execOpts}</select>
+      <select id="fBill" aria-label="حالة الفوترة"><option value="">جميع حالات الفوترة</option>${billOpts}</select>
       <select id="fIssue" aria-label="التنبيهات">${issueOpts}</select>
-      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.filter((d) => !d.cancelled).length}</span>${state.deliverables.some((d) => d.cancelled) ? ` · الملغاة مخفية (اختر «${ST.CAN}» لعرضها)` : ""}</span>
+      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.filter((d) => !d.cancelled).length}</span>${state.deliverables.some((d) => d.cancelled) ? ` · الملغاة مخفية (اختر «${ST.CAN}» من الحالة التنفيذية لعرضها)` : ""}</span>
     </div>
     ${list.length ? `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
       : state.deliverables.length ? emptyBlock("لا توجد مخرجات مطابقة", "غيّر البحث أو عوامل التصفية.") : emptyBlock("لا توجد مخرجات بعد", state.items.length ? "أضف المخرجات تحت كل بند، ولكل مخرج رقم ثابت مثل D-001." : "أضف بنود العقد أولًا من شاشة البنود.")}
@@ -1254,7 +1292,7 @@ function drawerDel() {
         ${d.confirmEv ? confirmBlock("ستُحذف هذه الحركة من السجل.", "ev:" + d.confirmEv) : ""}
         ${evs.length ? `<div class="timeline">${tl}</div>` : `<span class="muted">لا توجد حركات على هذا المخرج بعد.</span>`}</div>`;
   }
-  return { title: del.id, titleHtml: `<span class="code">${esc(del.id)}</span> ${pill(k.status)} ${k.blocking ? `<span class="flag">${BLOCKING}</span>` : ""}`, tabs, html };
+  return { title: del.id, titleHtml: `<span class="code">${esc(del.id)}</span> ${pill(k.exec)} ${k.bill ? pill(k.bill) : ""} ${k.blocking ? `<span class="flag">${BLOCKING}</span>` : ""}`, tabs, html };
 }
 
 function issueForm(i, deliverable) {
@@ -1284,10 +1322,13 @@ function nextDeliverableId() {
   return "D-" + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3, "0");
 }
 function delDataFields(v, isNew) {
+  const k = isNew ? null : state.calc.del.get(v.id), submitted = !!(k && (k.firstSubmit > 0 || k.accepted > 0));
+  const ws = submitted ? (v.work_status === ST.SUS && !k.accepted ? ST.SUS : ST.DONE) : WORK_STATUSES.includes(v.work_status) ? v.work_status : ST.NEW;
   return `${isNew ? `<div class="field"><label for="dId">رقم المخرج</label><input id="dId" name="did" required pattern="[A-Za-z0-9_.~:@+\\-]+" value="${esc(v.id)}"><span class="hint">حروف إنجليزية وأرقام وشرطة فقط.</span></div>` : ""}
       <div class="field"><label for="dItem">البند</label><select id="dItem" name="item_id" required><option value="">اختر البند</option>${itemOptions(v.item_id)}</select></div>
       <div class="field wide"><label for="dDesc">وصف المخرج</label><textarea id="dDesc" name="description" required>${esc(v.description ?? "")}</textarea></div>
-      <div class="field"><label for="dWork">حالة العمل (يدوية)</label><select id="dWork" name="work_status"><option value="">—</option>${WORK_STATUSES.map((w) => `<option${v.work_status === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">تُستخدم قبل التسليم، وتتقدم حالة «معلق» على أي حالة عدا «تم القبول».</span></div>
+      <div class="field"><label for="dWork">الحالة التنفيذية</label><select id="dWork" name="work_status">${(submitted ? [ST.DONE, ST.SUS] : WORK_STATUSES).map((w) => `<option${ws === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">${submitted ? "«تم» تلقائيًا لوجود تسليم في سجل المراجعات." : "عند اختيار «تم» يُسجَّل تسليم بالتاريخ المحدد في سجل المراجعات."}</span></div>
+      ${submitted ? "" : `<div class="field" id="doneFields" ${ws === ST.DONE ? "" : "hidden"}><label for="dDoneDate">تاريخ التسليم</label><input id="dDoneDate" name="done_date" type="date" value="${esc(todayIso())}"></div>`}
       <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
       <div class="field wide" id="suspFields" ${v.work_status === ST.SUS ? "" : "hidden"}><div class="form-grid">
         <div class="field wide"><label for="dSuspReason">سبب التعليق (إلزامي)</label><textarea id="dSuspReason" name="suspend_reason">${esc(v.suspend_reason ?? "")}</textarea></div>
@@ -1468,22 +1509,33 @@ function readDelData(f) {
   return clean({ item_id: f.item_id, description: f.description.trim(), work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim(),
     ...(suspended ? { suspend_reason: f.suspend_reason.trim(), suspend_date: f.suspend_date, suspend_cr_linked: !!f.suspend_cr_linked, suspend_cr: f.suspend_cr_linked ? f.suspend_cr : "" } : {}) });
 }
+// «تم» picked on a deliverable with no submission yet → the submission event to record with the save (null = none, false = invalid)
+function doneEvent(f, id) {
+  if (f.work_status !== ST.DONE || f.done_date === undefined) return null;
+  if (state.events.some((e) => e.deliverable === id && e.action === ACT.SUB)) return null;
+  if (!isIso(f.done_date)) { toast("أدخل تاريخ التسليم.", true); document.getElementById("dDoneDate")?.focus(); return false; }
+  return { deliverable: id, action: ACT.SUB, date: f.done_date };
+}
 const DATA_KEYS = ["item_id", "description", "work_status", "points", "notes", "suspend_reason", "suspend_date", "suspend_cr_linked", "suspend_cr"];
 async function saveDeliverable(form, btn) {
   const f = formData(form), id = f.did.trim();
   if (!/^[A-Za-z0-9_.~:@+-]+$/.test(id)) { toast("يجب أن يتكون رقم المخرج من حروف إنجليزية وأرقام وشرطة فقط.", true); return; }
   if (state.deliverables.some((x) => x.id === id)) { toast(`الرقم ${id} مستخدم من قبل.`, true); return; }
   const body = readDelData(f); if (!body) return;
+  const done = doneEvent(f, id); if (done === false) return;
   const billing = readBilling(f, {});
   if (Object.keys(billing).length) body.billing = billing;
-  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ المخرج")) openDrawer({ kind: "del", id, sub: "info" });
+  const save = async () => { await state.db.collection("deliverables").doc(id).set(body); if (done) await state.db.collection("events").add(done); };
+  if (await run(btn, save, done ? "تم حفظ المخرج وتسجيل التسليم" : "تم حفظ المخرج")) openDrawer({ kind: "del", id, sub: "info" });
 }
 async function saveDelInfo(form, btn) {
   const id = state.drawer.id, prev = state.deliverables.find((x) => x.id === id); if (!prev) return;
-  const data = readDelData(formData(form)); if (!data) return;
+  const f = formData(form), data = readDelData(f); if (!data) return;
+  const done = doneEvent(f, id); if (done === false) return;
   const { id: _omit, ...rest } = prev;
   for (const k of DATA_KEYS) delete rest[k];
-  if (await run(btn, () => state.db.collection("deliverables").doc(id).set({ ...rest, ...data }), "تم حفظ بيانات المخرج")) render();
+  const save = async () => { await state.db.collection("deliverables").doc(id).set({ ...rest, ...data }); if (done) await state.db.collection("events").add(done); };
+  if (await run(btn, save, done ? "تم حفظ بيانات المخرج وتسجيل التسليم" : "تم حفظ بيانات المخرج")) render();
 }
 async function saveBilling(form, btn) {
   const id = state.drawer.id, prev = state.deliverables.find((x) => x.id === id); if (!prev) return;
@@ -1605,7 +1657,8 @@ function exportAll(btn) {
       ["المتبقي غير المقبول (ريال)", { v: t.remaining, f: FMT.M }],
       ["نسبة الإنجاز (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم (المسلَّم ÷ الإجمالي)", { v: t.deliveredPct, f: FMT.P }],
       ["نسبة الإنجاز الفعلي (مرجَّحة بقيمة البنود)", { v: t.actual, f: FMT.P }],
-      ...STATUS_ORDER.map((st) => [`عدد المخرجات — ${st}`, c.statusCounts[st] || 0]),
+      ...EXEC_ORDER.map((st) => [`عدد المخرجات — الحالة التنفيذية: ${st}`, c.execCounts[st] || 0]),
+      ...BILL_ORDER.map((st) => [`عدد المخرجات — حالة الفوترة: ${st}`, c.billCounts[st] || 0]),
       ["مشكلات وقرارات مفتوحة", state.issues.filter((i) => i.status !== CLOSED).length], [BLOCKING, state.issues.filter((i) => i.status !== CLOSED && i.blocking).length],
       ["طلبات تغيير مفتوحة", state.crs.filter((x) => CR_OPEN.has(x.status)).length],
     ]);
@@ -1620,7 +1673,7 @@ function exportAll(btn) {
     { total: { name: "الإجمالي", qty: t.qty, total: t.total, registered: t.registered, delivered: t.delivered, accepted: t.accepted, deliveredPct: t.deliveredPct, progress: t.progress, actual: t.actual, acceptedValue: t.acceptedValue, remaining: t.remaining } });
     addSheet(wb, "المخرجات", [
       { h: "رقم المخرج", k: "id", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "اسم البند", k: "itemName", w: 30, wrap: true }, { h: "وصف المخرج", k: "desc", w: 46, wrap: true },
-      { h: "الحالة", k: "status", w: 15 }, { h: "حالة العمل (يدوية)", k: "work", w: 12 }, { h: "النقاط المنجزة", k: "points", w: 9 },
+      { h: "الحالة التنفيذية", k: "exec", w: 12 }, { h: "حالة الفوترة", k: "bill", w: 20 }, { h: "النقاط المنجزة", k: "points", w: 9 },
       { h: "القيمة (ريال)", k: "value", w: 15, f: FMT.M },
       { h: "أول تسليم", k: "first", w: 12, f: FMT.D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: FMT.D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: FMT.D },
       { h: "تاريخ القبول", k: "acc", w: 12, f: FMT.D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "أيام المراجعة", k: "review", w: 10 },
@@ -1628,7 +1681,7 @@ function exportAll(btn) {
       { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "التعليق مرتبط بطلب تغيير", k: "suspCr", w: 14 },
       ...BILLING.map((x) => ({ h: x.label, k: "b_" + x.k, w: x.yn ? 10 : 16 })), { h: "ملاحظات", k: "notes", w: 50, wrap: true },
     ], [...state.deliverables].sort(byId).map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d); return {
-      id: d.id, item: it?.no, itemName: it?.name, desc: d.description, status: k.status, work: d.work_status, points: d.points === "" ? null : d.points,
+      id: d.id, item: it?.no, itemName: it?.name, desc: d.description, exec: k.exec, bill: k.bill || null, points: d.points === "" ? null : d.points,
       value: k.value, first: numD(k.firstSubmit), lastSub: numD(k.lastSubmit), lastRep: numD(k.lastReply), acc: numD(k.accepted),
       cycles: k.cycles, review: k.review, delay: k.delay, vendor: k.vendorDays, issues: k.openIssues, crs: k.crs.map((x) => x.code).join("، "),
       suspReason: k.suspended ? (d.suspend_reason || null) : null, suspDate: k.suspended ? toDate(d.suspend_date) : null, suspCr: k.suspended ? (k.suspendCr?.code || (d.suspend_cr_linked ? "نعم" : "لا")) : null,
@@ -1698,13 +1751,13 @@ function setTab(tab) {
 
 document.addEventListener("click", async (ev) => {
   if (ev.target.closest("input, select, textarea, label") && !ev.target.closest("button")) return;
-  const t = ev.target.closest("button, tr, .card, path[data-filter-status], [data-close]");
+  const t = ev.target.closest("button, tr, .card, path[data-filter-exec], path[data-filter-bill], [data-close]");
   if (!t) return;
   const ds = t.dataset;
   if (ds.tab) return setTab(ds.tab);
   if ("close" in ds) return closeDrawer();
   if (ds.go) return setTab(ds.go);
-  if (ds.filterStatus) { state.filters = { q: "", item: "", status: ds.filterStatus, issue: "" }; return setTab("deliverables"); }
+  if (ds.filterExec || ds.filterBill) { state.filters = { q: "", item: "", exec: ds.filterExec || "", bill: ds.filterBill || "", issue: "" }; return setTab("deliverables"); }
   if (ds.delview) { state.delView = ds.delview; return render(); }
   if ("newItem" in ds) return openDrawer({ kind: "item" });
   if (ds.editItem) return openDrawer({ kind: "item", id: ds.editItem });
@@ -1830,14 +1883,14 @@ document.addEventListener("input", (ev) => {
 });
 document.addEventListener("change", (ev) => {
   const el = ev.target, id = el.id;
-  const set = { fItem: () => (state.filters.item = el.value), fStatus: () => (state.filters.status = el.value), fIssue: () => (state.filters.issue = el.value),
+  const set = { fItem: () => (state.filters.item = el.value), fExec: () => (state.filters.exec = el.value), fBill: () => (state.filters.bill = el.value), fIssue: () => (state.filters.issue = el.value),
     lAction: () => (state.logFilters.action = el.value), iState: () => (state.issueFilters.state = el.value), iType: () => (state.issueFilters.type = el.value),
     rPreset: () => { const [a, b] = reportRange(); state.report.preset = el.value; if (el.value === "custom") { state.report.from = a; state.report.to = b; } },
     rFrom: () => { const [, b] = reportRange(); state.report = { preset: "custom", from: el.value, to: b }; },
     rTo: () => { const [a] = reportRange(); state.report = { preset: "custom", from: a, to: el.value }; } };
   if (set[id]) { set[id](); return render(); }
   if (id === "dSuspLinked") { const box = document.getElementById("suspCrPick"); if (box) box.hidden = !el.checked; return; }
-  if (id === "dWork") { const box = document.getElementById("suspFields"); if (box) box.hidden = el.value !== ST.SUS; return; }
+  if (id === "dWork") { const box = document.getElementById("suspFields"); if (box) box.hidden = el.value !== ST.SUS; const done = document.getElementById("doneFields"); if (done) done.hidden = el.value !== ST.DONE; return; }
   if (el.name === "critem") {
     const form = el.form, items = [...form.querySelectorAll('input[name="critem"]:checked')].map((x) => x.value);
     const sel = [...form.querySelectorAll('input[name="crdel"]:checked')].map((x) => x.value);
