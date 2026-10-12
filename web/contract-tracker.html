@@ -39,6 +39,7 @@
   --st-inv: #5856D6;  --st-inv-bg: rgba(88, 86, 214, .12);   --st-inv-fg: #3E3CB0;
   --st-certw: #AF52DE; --st-certw-bg: rgba(175, 82, 222, .12); --st-certw-fg: #8237AE;
   --st-cert: #00C7BE; --st-cert-bg: rgba(0, 199, 190, .14);  --st-cert-fg: #00807A;
+  --row-alt: #FAFAFC;
 
   --font: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
   --font-display: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
@@ -63,6 +64,7 @@
     --st-inv: #5E5CE6;  --st-inv-bg: rgba(94, 92, 230, .24);   --st-inv-fg: #A3A2FF;
     --st-certw: #BF5AF2; --st-certw-bg: rgba(191, 90, 242, .22); --st-certw-fg: #DA8FFF;
     --st-cert: #63E6E2; --st-cert-bg: rgba(99, 230, 226, .18); --st-cert-fg: #63E6E2;
+    --row-alt: #232325;
     color-scheme: dark;
   }
 }
@@ -82,6 +84,7 @@
   --st-inv: #5E5CE6;  --st-inv-bg: rgba(94, 92, 230, .24);   --st-inv-fg: #A3A2FF;
   --st-certw: #BF5AF2; --st-certw-bg: rgba(191, 90, 242, .22); --st-certw-fg: #DA8FFF;
   --st-cert: #63E6E2; --st-cert-bg: rgba(99, 230, 226, .18); --st-cert-fg: #63E6E2;
+  --row-alt: #232325;
   color-scheme: dark;
 }
 
@@ -120,7 +123,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .main-col { min-width: 0; display: flex; flex-direction: column; }
 .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line); }
-.topbar-inner { max-width: 1320px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; gap: 16px; justify-content: space-between; flex-wrap: wrap; }
+.topbar-inner { max-width: none; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; gap: 16px; justify-content: space-between; flex-wrap: wrap; }
 .page-head { min-width: 0; display: flex; flex-direction: column; }
 .page-head h1 { margin: 0; font-family: var(--font-display); font-size: 1.55rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
 .page-head .meta { color: var(--muted); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 2px 12px; }
@@ -136,7 +139,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .switch[aria-checked="true"] .knob { inset-inline-start: 21px; }
 .theme-m { display: none; }
 .theme-m svg { width: 17px; height: 17px; }
-main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; display: flex; flex-direction: column; gap: 22px; }
+main { max-width: none; width: 100%; margin: 0 auto; padding: 26px 32px 64px; display: flex; flex-direction: column; gap: 22px; }
 
 /* ---------- buttons & inputs */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: var(--surface-3); color: var(--ink); padding: 7px 16px; border-radius: 980px; cursor: pointer; font-weight: 500; font-size: .9rem; transition: transform .1s, filter .15s, background .15s; white-space: nowrap; }
@@ -175,6 +178,7 @@ main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; 
 .section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
 .section-head h2 { margin: 0; font-family: var(--font-display); font-size: 1.12rem; font-weight: 700; letter-spacing: -.01em; }
 .section-head .sub { color: var(--muted); font-size: .84rem; }
+.stack { display: flex; flex-direction: column; gap: 22px; }
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 470px), 1fr)); gap: 22px; }
 
 /* ---------- hero rings */
@@ -258,16 +262,35 @@ main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; 
 /* ---------- tables */
 .table-wrap { overflow-x: auto; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); }
 table { border-collapse: collapse; width: 100%; font-size: .87rem; }
-th, td { padding: 11px 14px; text-align: start; border-bottom: 1px solid var(--line); vertical-align: top; }
+th, td { padding: 10px 12px; text-align: start; border-bottom: 1px solid var(--line); vertical-align: middle; }
 tbody tr:last-child td { border-bottom: 0; }
-th { background: var(--surface); color: var(--muted); font-weight: 600; font-size: .76rem; white-space: nowrap; position: sticky; top: 0; z-index: 1; border-bottom: 1px solid var(--line-strong); }
-td.n, th.n { text-align: end; white-space: nowrap; }
+th { background: var(--surface-2); color: var(--muted); font-weight: 600; font-size: .76rem; line-height: 1.35; min-width: 64px; vertical-align: bottom; position: sticky; top: 0; z-index: 1; border-bottom: 1px solid var(--line-strong); }
+td.n, th.n { text-align: end; }
+td.n { white-space: nowrap; }
 td.c, th.c { text-align: center; }
 tbody tr { transition: background .12s; }
 tbody tr.clickable { cursor: pointer; }
-tbody tr.clickable:hover { background: var(--surface-2); }
+tbody tr:nth-child(even) td { background: var(--row-alt); }
+tbody tr.clickable:hover td { background: var(--surface-2); }
+tbody tr.row-alert td:first-child { box-shadow: inset -3px 0 0 var(--st-late); }
+.table-wrap.tall { max-height: 72vh; overflow: auto; }
+th.act, td.act { width: 1%; white-space: nowrap; text-align: end; position: sticky; inset-inline-end: 0; box-shadow: inset -1px 0 0 var(--line); }
+td.act { background: var(--surface); }
+th.act { z-index: 2; }
+.row-actions { display: inline-flex; gap: 4px; align-items: center; }
+.row-btn { width: 30px; height: 30px; border-radius: 8px; border: 0; background: transparent; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; flex: none; }
+.row-btn:hover { background: var(--surface-3); color: var(--ink); }
+.row-btn.danger:hover { background: var(--st-late-bg); color: var(--st-late-fg); }
+.sub-line { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+td .desc.strong { font-weight: 600; }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 22px 44px; }
+.split-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.split-col + .split-col { border-inline-start: 1px solid var(--line); padding-inline-start: 44px; }
+.split-title { margin: 0; font-size: .95rem; font-weight: 600; }
+.split-title .sub { color: var(--muted); font-weight: 400; font-size: .8rem; margin-inline-start: 6px; }
+@media (max-width: 960px) { .split-col + .split-col { border-inline-start: 0; padding-inline-start: 0; border-top: 1px solid var(--line); padding-top: 18px; } }
 tfoot td { font-weight: 700; background: var(--surface-2); border-bottom: 0; border-top: 1px solid var(--line-strong); }
-td .desc { max-width: 440px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+td .desc { min-width: 200px; max-width: 680px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .red { color: var(--danger); font-weight: 700; }
 .muted { color: var(--muted); }
 .warn-cell { color: var(--danger); font-weight: 600; font-size: .8rem; }
@@ -754,6 +777,45 @@ function crCard(cr) {
   </div>`;
 }
 
+/* ---- row actions (edit / delete) */
+const ICON_EDIT = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+const ICON_DEL = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+const rowActions = (editAttr, delAttr, extra = "") => `<td class="act"><div class="row-actions">${extra}<button class="row-btn" type="button" ${editAttr} title="تعديل" aria-label="تعديل">${ICON_EDIT}</button><button class="row-btn danger" type="button" ${delAttr} title="حذف" aria-label="حذف">${ICON_DEL}</button></div></td>`;
+const ACT_TH = `<th class="act">إجراءات</th>`;
+
+function issueTable(list, opts = {}) {
+  const c = state.calc;
+  const rows = list.map((i) => {
+    const d = c.delById.get(i.deliverable), closed = i.status === CLOSED;
+    const open = opts.openDel ? `data-open-del="${esc(i.deliverable)}" data-sub="issues"` : `data-edit-issue="${esc(i.id)}"`;
+    return `<tr class="clickable ${i.blocking && !closed ? "row-alert" : ""}" tabindex="0" ${open}>
+      <td>${pill(i.type || "مشكلة", i.type === "قرار" ? "wait" : "ret")}</td>
+      <td><span class="code">${esc(i.deliverable)}</span><div class="sub-line">${esc(short(d?.description, 50))}</div></td>
+      <td><div class="desc strong">${esc(i.title)}</div>${i.details ? `<div class="desc sub-line">${esc(i.details)}</div>` : ""}</td>
+      <td>${i.owner ? esc(i.owner) : '<span class="muted">—</span>'}</td><td>${dateHtml(i.date || "")}</td>
+      <td>${closed ? pill("مغلقة", "acc") : pill("مفتوحة", "prog")}${i.blocking && !closed ? ` <span class="flag">${BLOCKING}</span>` : ""}${closed && i.closed_date ? `<div class="sub-line">في ${dateHtml(i.closed_date)}</div>` : ""}</td>
+      <td><div class="desc">${i.resolution ? esc(i.resolution) : '<span class="muted">—</span>'}</div></td>
+      ${opts.actions ? rowActions(`data-edit-issue="${esc(i.id)}"`, `data-rm-issue="${esc(i.id)}"`, closed ? `<button class="btn small" type="button" data-reopen-issue="${esc(i.id)}">إعادة فتح</button>` : `<button class="btn small" type="button" data-close-issue="${esc(i.id)}">إغلاق</button>`) : ""}</tr>`;
+  }).join("");
+  return `<div class="table-wrap${opts.tall ? " tall" : ""}"><table><thead><tr><th>النوع</th><th>المخرج</th><th>العنوان والتفاصيل</th><th>المسؤول</th><th>التاريخ</th><th>الحالة</th><th>الحل / القرار</th>${opts.actions ? ACT_TH : ""}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function crTable(list, opts = {}) {
+  const c = state.calc;
+  const rows = list.map((cr) => {
+    const its = (cr.items || []).map((id) => c.itemsById.get(id)).filter(Boolean).map(itemLabel);
+    return `<tr class="clickable" tabindex="0" data-edit-cr="${esc(cr.id)}">
+      <td><span class="code">${esc(cr.code)}</span></td>
+      <td><div class="desc strong">${esc(cr.title)}</div>${cr.impact ? `<div class="desc sub-line">${esc(cr.impact)}</div>` : ""}</td>
+      <td>${pill(cr.status || "قيد الإعداد", CR_CLASS[cr.status])}${cr.applied_at ? `<div class="sub-line">طُبِّق في ${dateHtml(cr.applied_at)}</div>` : ""}</td>
+      <td>${dateHtml(cr.date || "")}</td><td>${dateHtml(cr.decision_date || "")}</td>
+      <td>${its.length ? its.map((x) => `<span class="code">${esc(x)}</span>`).join("، ") : '<span class="muted">—</span>'}</td>
+      <td class="n">${int((cr.deliverables || []).length)}</td>
+      <td class="n">${Number.isFinite(cr.value_change) && cr.value_change ? money(cr.value_change) : '<span class="muted">—</span>'}</td>
+      ${opts.actions ? rowActions(`data-edit-cr="${esc(cr.id)}"`, `data-rm-cr="${esc(cr.id)}"`) : ""}</tr>`;
+  }).join("");
+  return `<div class="table-wrap"><table><thead><tr><th>رقم الطلب</th><th>العنوان والأثر</th><th>الحالة</th><th>تاريخ الطلب</th><th>تاريخ القرار</th><th>البنود</th><th class="n">المخرجات</th><th class="n">الأثر المالي ${SAR}</th>${opts.actions ? ACT_TH : ""}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
 /* ---- status donut */
 function donut(counts, order, attr, label) {
   const R = 100, r0 = 62, cx = 110, cy = 110;
@@ -837,19 +899,18 @@ function viewDashboard() {
     <div class="kpi"><span class="label">المعلَّق</span><span class="value">${pct(t.total ? t.suspendedValue / t.total : null)}<span class="amt">${sar(t.suspendedValue)}</span></span>${meter(t.total ? t.suspendedValue / t.total : 0, "--st-sus")}<span class="foot"><span class="num">${t.suspended}</span> مخرجًا مستبعدًا من حسابات التسليم والقبول${t.suspendMissing ? ` · <span class="red"><span class="num">${t.suspendMissing}</span> بلا سبب تعليق</span>` : ""}</span></div>
     <div class="kpi"><span class="label">المتبقي (غير المقبول)</span><span class="value">${sar(t.remaining)}</span><span class="foot">قيمة العقد مطروحًا منها المقبول</span></div>
   </div>
-  <div class="grid-2">
-    <section class="section">
-      <div class="section-head"><h2>الحالة التنفيذية</h2><span class="sub">اضغط على أي حالة لعرض مخرجاتها</span></div>
-      <div class="donut-wrap">${donut(c.execCounts, EXEC_ORDER, "exec", "توزيع المخرجات حسب الحالة التنفيذية")}<div class="legend">${legend(c.execCounts, EXEC_ORDER, "exec")}</div></div>
-    </section>
-    <section class="section">
-      <div class="section-head"><h2>حالة الفوترة</h2><span class="sub">للمخرجات المسلَّمة · اضغط على أي حالة لعرض مخرجاتها</span></div>
-      <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المسلَّمة حسب حالة الفوترة")}<div class="legend">${legend(c.billCounts, BILL_ORDER, "bill")}</div></div>
-    </section>
-  </div>
+  <section class="section">
+    <div class="section-head"><h2>حالة المخرجات</h2><span class="sub">اضغط على أي حالة لعرض مخرجاتها</span></div>
+    <div class="split">
+      <div class="split-col"><h3 class="split-title">الحالة التنفيذية</h3>
+        <div class="donut-wrap">${donut(c.execCounts, EXEC_ORDER, "exec", "توزيع المخرجات حسب الحالة التنفيذية")}<div class="legend">${legend(c.execCounts, EXEC_ORDER, "exec")}</div></div></div>
+      <div class="split-col"><h3 class="split-title">حالة الفوترة<span class="sub">للمخرجات المسلَّمة</span></h3>
+        <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المسلَّمة حسب حالة الفوترة")}<div class="legend">${legend(c.billCounts, BILL_ORDER, "bill")}</div></div></div>
+    </div>
+  </section>
   <section class="section">
     <div class="section-head"><h2>المشكلات والقرارات المفتوحة</h2><span class="sub">تظهر أولًا المشكلات التي ${BLOCKING}</span></div>
-      ${openIssues.length ? `<div class="cards">${openIssues.slice(0, 5).map((i) => issueCard(i, { clickable: true, showDel: true })).join("")}</div>
+    ${openIssues.length ? `${issueTable(openIssues.slice(0, 5), { openDel: true })}
         ${openIssues.length > 5 ? `<button class="btn small" type="button" data-go="issues">عرض الكل (<span class="num">${openIssues.length}</span>)</button>` : ""}`
         : emptyBlock("لا توجد مشكلات مفتوحة", "سجّل أي مشكلة أو قرار من صفحة المخرج.")}
   </section>
@@ -868,18 +929,16 @@ function viewDashboard() {
       <tfoot><tr><td colspan="2">الإجمالي</td><td class="n">${int(t.qty)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td></tr></tfoot>
     </table></div>
   </section>
-  <div class="grid-2">
-    <section class="section">
+  <section class="section">
       <div class="section-head"><h2>مُعادة بملاحظات</h2><span class="sub">تنتظر إعادة التسليم من فريق المشروع</span></div>
       ${returned.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th><th class="n">أيام العمل منذ الرد</th></tr></thead><tbody>
         ${returned.map((x) => delRow(x.d, `<td>${dateHtml(isoOf(x.k.lastReply))}</td><td class="n">${int(x.k.waitingSinceReply)}</td>`)).join("")}</tbody></table></div>`
         : emptyBlock("لا توجد مخرجات مُعادة", "لا توجد ملاحظات تنتظر إعادة التسليم.")}
-    </section>
-    <section class="section">
+  </section>
+  <section class="section">
       <div class="section-head"><h2>طلبات التغيير المفتوحة</h2><span class="sub">قيد الإعداد أو مُرسلة أو في انتظار الاعتماد</span></div>
-      ${openCrs.length ? `<div class="cards">${openCrs.map(crCard).join("")}</div>` : emptyBlock("لا توجد طلبات تغيير مفتوحة", "", `<button class="btn small" type="button" data-go="crs">طلبات التغيير</button>`)}
-    </section>
-  </div>`;
+      ${openCrs.length ? crTable(openCrs) : emptyBlock("لا توجد طلبات تغيير مفتوحة", "", `<button class="btn small" type="button" data-go="crs">طلبات التغيير</button>`)}
+  </section>`;
 }
 
 /* ---- change request projection: what items would look like if pending requests were approved */
@@ -892,40 +951,27 @@ function crProjection() {
 
 /* ---- items */
 function viewItems() {
-  const c = state.calc, t = c.tot, P = crProjection(), hasP = P.pend.length > 0;
-  let projTotal = 0;
-  const diffCell = (v) => `<td class="n ${v < 0 ? "red" : ""}">${v ? `<span class="num">${v > 0 ? "+" : ""}${nf2.format(v)}</span>` : '<span class="muted">—</span>'}</td>`;
+  const c = state.calc, t = c.tot;
   const rows = [...state.items].sort(byItemOrder).map((it) => {
     const r = c.items.get(it.id);
-    const pr = P.byItem.get(it.id);
-    const qA = pr ? numOr(pr.qty_after, r.qty) : r.qty, pA = pr ? numOr(pr.price_after, r.price) : r.price, totA = qA * pA;
-    projTotal += totA;
-    const projCells = hasP ? `<td class="n ${pr && qA !== r.qty ? "" : "muted"}">${int(qA)}</td><td class="n">${money(totA)}</td>${diffCell(totA - r.total)}` : "";
-    const renamed = pr && pr.name_after && pr.name_after !== it.name ? `<div class="muted" style="font-size:.8rem">الاسم بعد الطلب: ${esc(pr.name_after)}</div>` : "";
     const mismatch = r.registered !== r.qty;
     const crOpen = r.crs.filter((x) => CR_OPEN.has(x.status)).length;
     return `<tr class="clickable" tabindex="0" data-edit-item="${esc(it.id)}">
-      <td><span class="code">${esc(itemLabel(it))}</span></td><td><span class="code muted">${esc(it.wbs)}</span></td><td><div class="desc">${esc(it.name)}</div>${renamed}</td>
+      <td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(it.name)}</div>${it.wbs ? `<div class="sub-line code">${esc(it.wbs)}</div>` : ""}</td>
       <td class="n">${int(r.qty)}</td><td class="n">${money(r.price)}</td><td class="n">${money(r.total)}</td>
       <td class="n ${mismatch ? "red" : ""}" title="${mismatch ? "عدد المخرجات المسجلة يختلف عن الكمية التعاقدية" : ""}">${int(r.registered)}</td>
       <td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td>
       <td class="n">${pct(r.deliveredPct)}</td><td class="n">${pct(r.progress)}</td><td class="n">${r.actual === null ? '<span class="muted">—</span>' : pct(r.actual)}</td>
-      <td class="n">${money(r.acceptedValue)}</td><td class="n">${money(r.remaining)}</td>${projCells}
-      <td class="c">${r.crs.length ? `<span class="${crOpen ? "flag soft" : "muted"}">${r.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""}</td></tr>`;
-  }).join("") + (hasP ? P.added.map((a) => {
-    const totA = numOr(a.qty_after, 0) * numOr(a.price_after, 0); projTotal += totA;
-    return `<tr><td><span class="code">${esc(a.new_item.no)}</span></td><td></td><td><div class="desc">${esc(a.new_item.name)}</div><span class="flag soft">بند مقترح في ${esc(a.cr.code)}</span></td>
-      <td colspan="12" class="muted">لا يُحتسب قبل اعتماد الطلب وتطبيقه</td><td class="n">${int(numOr(a.qty_after, 0))}</td><td class="n">${money(totA)}</td>${diffCell(totA)}<td class="c"><span class="flag soft">${esc(a.cr.code)}</span></td></tr>`;
-  }).join("") : "");
-  const projHead = hasP ? `<th class="n">الكمية بعد الطلب</th><th class="n">القيمة بعد الطلب</th><th class="n">فرق القيمة</th>` : "";
-  const projFoot = hasP ? `<td></td><td class="n">${money(projTotal)}</td>${diffCell(projTotal - t.total)}` : "";
+      <td class="n">${money(r.acceptedValue)}</td><td class="n">${money(r.remaining)}</td>
+      <td class="c">${r.crs.length ? `<span class="${crOpen ? "flag soft" : "muted"}">${r.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""}</td>
+      ${rowActions(`data-edit-item="${esc(it.id)}"`, `data-rm-item="${esc(it.id)}"`)}</tr>`;
+  }).join("");
   return `<section class="section">
-    ${hasP ? `<div class="notice" style="background:var(--st-prog-bg);color:var(--st-prog-fg)">يوجد ${P.pend.length === 1 ? "طلب تغيير" : `${P.pend.length} طلبات تغيير`} في انتظار الاعتماد (${P.pend.map((x) => esc(x.code)).join("، ")}). الأعمدة «بعد الطلب» للعرض فقط، ولا تتغير أرقام البنود إلا بعد تطبيق الطلب من شاشة طلبات التغيير.</div>` : ""}
-    <div class="section-head"><h2>بنود العقد</h2><div class="actions"><span class="count">المبالغ بالريال ${SAR} · اضغط على أي بند لتعديله</span><button class="btn primary" data-new-item type="button">+ بند جديد</button></div></div>
+    <div class="section-head"><h2>بنود العقد</h2><div class="actions"><span class="count">المبالغ بالريال ${SAR} · تتحدث البنود تلقائيًا عند تطبيق طلب تغيير معتمد</span><button class="btn primary" data-new-item type="button">+ بند جديد</button></div></div>
     ${state.items.length ? `<div class="table-wrap"><table>
-      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي</th><th class="n">المسجلة</th><th class="n">المسلَّمة</th><th class="n">المقبولة</th><th class="n">نسبة المسلَّم</th><th class="n">نسبة الإنجاز</th><th class="n">الإنجاز الفعلي</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th>${projHead}<th class="c">طلبات التغيير</th></tr></thead>
+      <thead><tr><th>رقم البند</th><th>اسم البند و WBS</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي</th><th class="n">المسجلة</th><th class="n">المسلَّمة</th><th class="n">المقبولة</th><th class="n">نسبة المسلَّم</th><th class="n">نسبة الإنجاز</th><th class="n">الإنجاز الفعلي</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th><th class="c">طلبات التغيير</th>${ACT_TH}</tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td>${projFoot}<td></td></tr></tfoot>
+      <tfoot><tr><td colspan="2">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td><td></td><td class="act"></td></tr></tfoot>
     </table></div>` : emptyBlock("لا توجد بنود بعد", "أضف بنود العقد كما وردت في جدول الكميات: رقم البند، والاسم، والكمية، وسعر الوحدة.")}
   </section>`;
 }
@@ -958,8 +1004,8 @@ function viewDeliverables() {
   const flags = (k) => [k.suspendMissing ? `<span class="flag" title="أدخل سبب التعليق من تبويب بيانات المخرج">بلا سبب تعليق</span>` : "", k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
     k.crs.length ? `<span class="flag soft" title="طلب تغيير">${k.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""].join(" ");
   const head = billingView
-    ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة التنفيذية</th><th>حالة الفوترة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}`
-    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة التنفيذية</th><th>حالة الفوترة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th>`;
+    ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة التنفيذية</th><th>حالة الفوترة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}${ACT_TH}`
+    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة التنفيذية</th><th>حالة الفوترة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th>${ACT_TH}`;
   const rows = list.map((d) => {
     const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d);
     const common = `<td><span class="code">${esc(d.id)}</span></td><td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(d.description)}</div></td><td>${pill(k.exec)}</td><td>${k.bill ? pill(k.bill) : '<span class="muted">—</span>'}</td>`;
@@ -967,7 +1013,8 @@ function viewDeliverables() {
       ? BILLING.map((x) => `<td>${x.yn ? ynHtml(b[x.k]) : b[x.k] ? `<span class="code">${esc(b[x.k])}</span>` : '<span class="muted">—</span>'}</td>`).join("")
       : `<td>${flags(k)}</td><td>${dateHtml(k.firstSubmit ? isoOf(k.firstSubmit) : "")}</td><td>${dateHtml(k.accepted ? isoOf(k.accepted) : "")}</td>
         <td class="n">${int(k.cycles)}</td><td class="n">${int(k.review)}</td><td class="n ${k.delay ? "red" : ""}">${int(k.delay)}</td><td class="n">${money(k.value)}</td>`;
-    return `<tr class="clickable" tabindex="0" data-open-del="${esc(d.id)}" ${billingView ? 'data-sub="billing"' : ""}>${common}${rest}</tr>`;
+    const acts = rowActions(billingView ? `data-open-del="${esc(d.id)}" data-sub="billing"` : `data-edit-del="${esc(d.id)}"`, `data-rm-del="${esc(d.id)}"`);
+    return `<tr class="clickable" tabindex="0" data-open-del="${esc(d.id)}" ${billingView ? 'data-sub="billing"' : ""}>${common}${rest}${acts}</tr>`;
   }).join("");
   return `<section class="section">
     <div class="section-head"><h2>المخرجات</h2><div class="actions">
@@ -981,7 +1028,7 @@ function viewDeliverables() {
       <select id="fIssue" aria-label="التنبيهات">${issueOpts}</select>
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.filter((d) => !d.cancelled).length}</span>${state.deliverables.some((d) => d.cancelled) ? ` · الملغاة مخفية (اختر «${ST.CAN}» من الحالة التنفيذية لعرضها)` : ""}</span>
     </div>
-    ${list.length ? `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
+    ${list.length ? `<div class="table-wrap tall"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
       : state.deliverables.length ? emptyBlock("لا توجد مخرجات مطابقة", "غيّر البحث أو عوامل التصفية.") : emptyBlock("لا توجد مخرجات بعد", state.items.length ? "أضف المخرجات تحت كل بند، ولكل مخرج رقم ثابت مثل D-001." : "أضف بنود العقد أولًا من شاشة البنود.")}
   </section>`;
 }
@@ -999,7 +1046,8 @@ function viewLog() {
       <td class="n">${sub ? int(k.cycle) : ""}</td><td>${sub ? dateHtml(isoOf(k.end)) : ""}</td><td>${sub ? (k.open ? '<span class="pill s-prog">جارية</span>' : '<span class="muted">مغلقة</span>') : ""}</td>
       <td class="n">${sub ? int(k.review) : ""}</td><td class="n ${sub && k.delay ? "red" : ""}">${sub ? int(k.delay) : ""}</td>
       <td class="n">${k.vendorDays !== null ? int(k.vendorDays) : ""}</td>
-      <td class="warn-cell">${esc(k.warn)}${k.excluded ? `<span class="muted">مخرج معلَّق — غير محتسب</span>` : ""}</td><td><div class="desc">${esc(e.notes)}</div></td></tr>`;
+      <td class="warn-cell">${esc(k.warn)}${k.excluded ? `<span class="muted">مخرج معلَّق — غير محتسب</span>` : ""}</td><td><div class="desc">${esc(e.notes)}</div></td>
+      ${rowActions(`data-edit-ev="${esc(e.id)}"`, `data-rm-ev="${esc(e.id)}"`)}</tr>`;
   }).join("");
   return `<section class="section">
     <div class="section-head"><h2>سجل المراجعات</h2><button class="btn primary" data-new-ev type="button">+ حركة جديدة</button></div>
@@ -1009,8 +1057,8 @@ function viewLog() {
       <select id="lAction" aria-label="نوع الحركة"><option value="">جميع الحركات</option>${actOpts}</select>
       <span class="count"><span class="num">${list.length}</span> حركة</span>
     </div>
-    ${list.length ? `<div class="table-wrap"><table>
-      <thead><tr><th>المخرج</th><th>الوصف</th><th>الحركة</th><th>التاريخ</th><th class="n">الدورة</th><th>نهاية الدورة</th><th>حالة الدورة</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">أيام لدى فريق المشروع</th><th>تنبيه</th><th>ملاحظات</th></tr></thead>
+    ${list.length ? `<div class="table-wrap tall"><table>
+      <thead><tr><th>المخرج</th><th>الوصف</th><th>الحركة</th><th>التاريخ</th><th class="n">الدورة</th><th>نهاية الدورة</th><th>حالة الدورة</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">أيام لدى فريق المشروع</th><th>تنبيه</th><th>ملاحظات</th>${ACT_TH}</tr></thead>
       <tbody>${rows}</tbody></table></div>` : emptyBlock(state.events.length ? "لا توجد حركات مطابقة" : "لا توجد حركات بعد", "سجّل كل تسليم أو رد بملاحظات أو قبول حركةً مستقلة بتاريخها.")}
   </section>`;
 }
@@ -1031,7 +1079,7 @@ function viewIssues() {
       <select id="iType" aria-label="النوع"><option value="">المشكلات والقرارات</option>${typeOpts}</select>
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.issues.length}</span></span>
     </div>
-    ${list.length ? `<div class="cards">${list.map((i) => issueCard(i, { showDel: true, actions: true })).join("")}</div>`
+    ${list.length ? issueTable(list, { actions: true, tall: true })
       : emptyBlock(state.issues.length ? "لا توجد نتائج مطابقة" : "لا توجد مشكلات أو قرارات بعد", "تُسجَّل كل مشكلة أو قرار على مخرج محدد، ويمكن تمييزها بأنه يتوقف عليها الإجراء.")}
   </section>`;
 }
@@ -1041,8 +1089,8 @@ function viewCrs() {
   const list = [...state.crs].sort((a, b) => (CR_OPEN.has(b.status) ? 1 : 0) - (CR_OPEN.has(a.status) ? 1 : 0) || String(b.date).localeCompare(String(a.date)));
   return `<section class="section">
     <div class="section-head"><h2>طلبات التغيير</h2><button class="btn primary" data-new-cr type="button">+ طلب تغيير</button></div>
-    <p class="muted" style="margin:0">يُربط طلب التغيير بالبنود والمخرجات التي يؤثر فيها، فيظهر في جداولها وفي صفحة المخرج. اعتماد الطلب لا يغيّر كميات البنود أو أسعارها تلقائيًا؛ عدّل البند يدويًا بعد الاعتماد.</p>
-    ${list.length ? `<div class="cards">${list.map(crCard).join("")}</div>` : emptyBlock("لا توجد طلبات تغيير بعد", "سجّل أي طلب تغيير على العقد مع البنود والمخرجات التي يؤثر فيها.")}
+    <p class="muted" style="margin:0">يُربط طلب التغيير بالبنود والمخرجات التي يؤثر فيها، فيظهر في جداولها وفي صفحة المخرج. الطلب في انتظار الاعتماد لا يغيّر البنود ولا المبالغ؛ وبعد اعتماده افتحه واضغط «تطبيق طلب التغيير» ليعدّل النظام البنود والمخرجات تلقائيًا.</p>
+    ${list.length ? crTable(list, { actions: true }) : emptyBlock("لا توجد طلبات تغيير بعد", "سجّل أي طلب تغيير على العقد مع البنود والمخرجات التي يؤثر فيها.")}
   </section>`;
 }
 
@@ -1133,21 +1181,19 @@ function viewReport() {
   </section>
   <section class="section">
     <div class="section-head"><h2>حركة الفترة</h2><span class="sub"><span class="num">${R.submitted.length}</span> تسليم · <span class="num">${R.returned.length}</span> رد بملاحظات · <span class="num">${R.accepted.length}</span> قبول بقيمة ${sar(R.acceptedValue)}</span></div>
-    <div class="grid-2">
+    <div class="stack">
       <div class="block"><h4>المقبولة</h4>${tbl(R.accepted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.k.review)}</td><td class="n ${x.k.delay ? "red" : ""}">${int(x.k.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ القبول</th><th class='n'>أيام المراجعة</th><th class='n'>أيام التأخير</th>", "لا يوجد قبول في هذه الفترة.")}</div>
       <div class="block"><h4>المسلَّمة</h4>${tbl(R.submitted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.x?.cycle)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>الدورة</th>", "لا توجد تسليمات في هذه الفترة.")}</div>
       <div class="block"><h4>المُعادة بملاحظات</h4>${tbl(R.returned.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th>", "لا توجد ردود بملاحظات في هذه الفترة.")}</div>
       <div class="block"><h4>تجاوزت مهلة الرد</h4>${tbl(R.overLimit.map((x) => delRow(x.d, `<td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n red">${int(x.k.openCycle.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>أيام المراجعة</th><th class='n'>أيام التأخير</th>", "لا توجد دورات تجاوزت المهلة.")}</div>
     </div>
   </section>
-  <div class="grid-2">
-    <section class="section"><div class="section-head"><h2>المشكلات والقرارات</h2><span class="sub">فُتح <span class="num">${R.issuesOpened.length}</span> · أُغلق <span class="num">${R.issuesClosed.length}</span> · ${BLOCKING} <span class="num">${R.blockingOpen.length}</span></span></div>
-      ${issuesAll.length ? `<div class="cards">${issuesAll.map((i) => issueCard(i, { clickable: true, showDel: true })).join("")}</div>` : emptyBlock("لا جديد", "")}
-    </section>
-    <section class="section"><div class="section-head"><h2>طلبات التغيير</h2><span class="sub">المفتوحة <span class="num">${R.crsOpen.length}</span></span></div>
-      ${crsAll.length ? `<div class="cards">${crsAll.map(crCard).join("")}</div>` : emptyBlock("لا توجد طلبات تغيير", "")}
-    </section>
-  </div>`;
+  <section class="section"><div class="section-head"><h2>المشكلات والقرارات</h2><span class="sub">فُتح <span class="num">${R.issuesOpened.length}</span> · أُغلق <span class="num">${R.issuesClosed.length}</span> · ${BLOCKING} <span class="num">${R.blockingOpen.length}</span></span></div>
+      ${issuesAll.length ? issueTable(issuesAll, { openDel: true }) : emptyBlock("لا جديد", "")}
+  </section>
+  <section class="section"><div class="section-head"><h2>طلبات التغيير</h2><span class="sub">المفتوحة <span class="num">${R.crsOpen.length}</span></span></div>
+      ${crsAll.length ? crTable(crsAll) : emptyBlock("لا توجد طلبات تغيير", "")}
+  </section>`;
 }
 
 /* ---- settings */
@@ -1155,6 +1201,7 @@ function viewSettings() {
   const s = state.settings;
   const wk = (Array.isArray(s.weekend) ? s.weekend : [5, 6]).join(",");
   const hol = [...(s.holidays || [])].map((h, i) => ({ ...h, i })).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const he = Number.isInteger(state.holEdit) ? (s.holidays || [])[state.holEdit] : null;
   return `<section class="section">
     <div class="section-head"><h2>بيانات العقد والإعدادات</h2></div>
     <form id="settingsForm" class="form-grid" autocomplete="off">
@@ -1174,13 +1221,13 @@ function viewSettings() {
   <section class="section">
     <div class="section-head"><h2>الإجازات الرسمية</h2><span class="sub">تُستبعد من حساب أيام المراجعة والتأخير · <span class="num">${hol.length}</span> يومًا</span></div>
     <form id="holForm" class="hol-add" autocomplete="off">
-      <div class="field"><label for="hDate">التاريخ</label><input id="hDate" type="date" required></div>
-      <div class="field"><label for="hName">المناسبة</label><input id="hName" required placeholder="مثال: عيد الفطر 1448"></div>
-      <div class="field"><label for="hNote">ملاحظة</label><input id="hNote" placeholder="مثال: تقديري"></div>
-      <button class="btn primary" type="submit">إضافة</button>
+      <div class="field"><label for="hDate">التاريخ</label><input id="hDate" type="date" required value="${esc(he?.date || "")}"></div>
+      <div class="field"><label for="hName">المناسبة</label><input id="hName" required placeholder="مثال: عيد الفطر 1448" value="${esc(he?.name || "")}"></div>
+      <div class="field"><label for="hNote">ملاحظة</label><input id="hNote" placeholder="مثال: تقديري" value="${esc(he?.note || "")}"></div>
+      ${he ? `<div class="actions"><button class="btn primary" type="submit">حفظ التعديل</button><button class="btn" type="button" data-cancel-hol>إلغاء</button></div>` : `<button class="btn primary" type="submit">إضافة</button>`}
     </form>
-    ${hol.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>المناسبة</th><th>ملاحظة</th><th></th></tr></thead><tbody>
-      ${hol.map((h) => `<tr><td>${dateHtml(h.date)}</td><td>${esc(h.name)}</td><td class="muted">${esc(h.note)}</td><td class="n"><button class="btn small danger" type="button" data-del-hol="${h.i}">حذف</button></td></tr>`).join("")}
+    ${hol.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>المناسبة</th><th>ملاحظة</th>${ACT_TH}</tr></thead><tbody>
+      ${hol.map((h) => `<tr><td>${dateHtml(h.date)}</td><td>${esc(h.name)}</td><td class="muted">${esc(h.note)}</td>${rowActions(`data-edit-hol="${h.i}"`, `data-del-hol="${h.i}"`)}</tr>`).join("")}
     </tbody></table></div>` : emptyBlock("لا توجد إجازات مسجلة", "أضف الإجازات الرسمية لاستبعادها من حساب الأيام.")}
   </section>`;
 }
@@ -1200,6 +1247,7 @@ function renderDrawer() {
     <div class="drawer-head ${body.tabs ? "" : "plain"}"><div class="row1"><h3>${body.titleHtml || esc(body.title)}</h3><button class="icon-btn" type="button" data-close aria-label="إغلاق">×</button></div>${body.tabs || ""}</div>
     <div class="drawer-body">${body.html}</div></aside>`;
   root.querySelector(".drawer-body").scrollTop = scroll;
+  if (!scroll && (d.confirm || d.confirmIssue)) root.querySelector(".drawer-body .confirm, .drawer-body .confirm-note")?.scrollIntoView({ block: "center" });
 }
 const confirmBlock = (text, action) => `<div class="confirm"><span>${esc(text)}</span><div class="actions"><button class="btn danger solid" type="button" data-confirm="${action}">تأكيد الحذف</button><button class="btn" type="button" data-cancel-confirm>إلغاء</button></div></div>`;
 const itemOptions = (sel) => [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${sel === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(short(it.name, 50))}</option>`).join("");
@@ -1229,7 +1277,7 @@ function drawerItem() {
       <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${it ? `<button class="btn danger" type="button" data-ask-delete>حذف البند</button>` : ""}</div>
     </form>
     ${r && r.crs.length ? `<div class="block"><h4>طلبات التغيير على البند</h4><div class="cards">${r.crs.map(crCard).join("")}</div></div>` : ""}
-    ${d.confirm ? (linked ? `<div class="notice">يرتبط بهذا البند <span class="num">${linked}</span> مخرجًا. انقل المخرجات إلى بند آخر أو احذفها أولًا.</div>` : confirmBlock("سيُحذف البند نهائيًا.", "item")) : ""}` };
+    ${d.confirm ? (linked ? `<div class="notice confirm-note">يرتبط بهذا البند <span class="num">${linked}</span> مخرجًا. انقل المخرجات إلى بند آخر أو احذفها أولًا.</div>` : confirmBlock("سيُحذف البند نهائيًا.", "item")) : ""}` };
 }
 
 function drawerDel() {
@@ -1356,14 +1404,24 @@ function drawerDelForm() {
 }
 
 function drawerEv() {
-  return { title: "حركة جديدة في سجل المراجعات", html: state.deliverables.length ? `
+  const d = state.drawer, e = d.id ? state.events.find((x) => x.id === d.id) : null;
+  if (d.id && !e) return null;
+  const v = e || { deliverable: "", action: ACT.SUB, date: todayIso(), notes: "" };
+  return { title: e ? `تعديل حركة على ${e.deliverable}` : "حركة جديدة في سجل المراجعات", html: state.deliverables.length ? `
     <form id="evForm" class="form-grid" autocomplete="off">
-      <div class="field wide"><label for="eDel">المخرج</label><select id="eDel" name="deliverable" required><option value="">اختر المخرج</option>${delOptions("")}</select></div>
-      <div class="field"><label for="eAct">نوع الحركة</label><select id="eAct" name="action">${ACTIONS.map((a) => `<option>${esc(a)}</option>`).join("")}</select></div>
-      <div class="field"><label for="eDate">التاريخ</label><input id="eDate" name="date" type="date" required value="${esc(todayIso())}"></div>
-      <div class="field wide"><label for="eNotes">ملاحظات</label><input id="eNotes" name="notes"></div>
-      <div class="actions wide"><button class="btn primary" type="submit">إضافة إلى السجل</button></div>
-    </form>` : emptyBlock("لا توجد مخرجات", "أضف المخرجات أولًا لتسجيل حركاتها.") };
+      <div class="field wide"><label for="eDel">المخرج</label><select id="eDel" name="deliverable" required><option value="">اختر المخرج</option>${delOptions(v.deliverable)}</select></div>
+      <div class="field"><label for="eAct">نوع الحركة</label><select id="eAct" name="action">${ACTIONS.map((a) => `<option${v.action === a ? " selected" : ""}>${esc(a)}</option>`).join("")}</select></div>
+      <div class="field"><label for="eDate">التاريخ</label><input id="eDate" name="date" type="date" required value="${esc(v.date || "")}"></div>
+      <div class="field wide"><label for="eNotes">ملاحظات</label><input id="eNotes" name="notes" value="${esc(v.notes || "")}"></div>
+      <div class="actions wide"><button class="btn primary" type="submit">${e ? "حفظ التعديل" : "إضافة إلى السجل"}</button>${e ? `<button class="btn danger" type="button" data-ask-delete>حذف الحركة</button>` : ""}</div>
+    </form>
+    ${e && d.confirm ? confirmBlock("ستُحذف هذه الحركة من السجل.", "ev:" + e.id) : ""}` : emptyBlock("لا توجد مخرجات", "أضف المخرجات أولًا لتسجيل حركاتها.") };
+}
+async function saveEventEdit(form, btn) {
+  const id = state.drawer.id, f = formData(form);
+  const body = clean({ deliverable: f.deliverable, action: f.action, date: f.date, notes: (f.notes || "").trim() });
+  if (!body.deliverable || !isIso(body.date)) { toast("اختر المخرج وأدخل التاريخ.", true); return; }
+  if (await run(btn, () => state.db.collection("events").doc(id).set(body), "تم حفظ الحركة")) closeDrawer();
 }
 
 function nextCrCode() {
@@ -1759,6 +1817,12 @@ document.addEventListener("click", async (ev) => {
   if (ds.go) return setTab(ds.go);
   if (ds.filterExec || ds.filterBill) { state.filters = { q: "", item: "", exec: ds.filterExec || "", bill: ds.filterBill || "", issue: "" }; return setTab("deliverables"); }
   if (ds.delview) { state.delView = ds.delview; return render(); }
+  if (ds.rmItem) return openDrawer({ kind: "item", id: ds.rmItem, confirm: true });
+  if (ds.rmDel) return openDrawer({ kind: "del", id: ds.rmDel, sub: "info", confirm: true });
+  if (ds.editEv) return openDrawer({ kind: "ev", id: ds.editEv });
+  if (ds.rmEv) return openDrawer({ kind: "ev", id: ds.rmEv, confirm: true });
+  if (ds.rmIssue) return openDrawer({ kind: "issue", id: ds.rmIssue, confirmIssue: ds.rmIssue });
+  if (ds.rmCr) return openDrawer({ kind: "cr", id: ds.rmCr, confirm: true });
   if ("newItem" in ds) return openDrawer({ kind: "item" });
   if (ds.editItem) return openDrawer({ kind: "item", id: ds.editItem });
   if ("newDel" in ds) return openDrawer({ kind: "delForm" });
@@ -1794,13 +1858,16 @@ document.addEventListener("click", async (ev) => {
         await state.db.collection("deliverables").doc(d.id).delete();
       }, "تم حذف المخرج")) closeDrawer();
     } else if (ds.confirm.startsWith("ev:")) {
-      if (await run(t, () => state.db.collection("events").doc(ds.confirm.slice(3)).delete(), "تم حذف الحركة")) { d.confirmEv = null; renderDrawer(); }
+      if (await run(t, () => state.db.collection("events").doc(ds.confirm.slice(3)).delete(), "تم حذف الحركة")) { if (d.kind === "ev") closeDrawer(); else { d.confirmEv = null; renderDrawer(); } }
     } else if (ds.confirm.startsWith("issue:")) {
       if (await run(t, () => state.db.collection("issues").doc(ds.confirm.slice(6)).delete(), "تم الحذف")) { if (d.kind === "issue") closeDrawer(); else { d.confirmIssue = null; d.editIssue = null; renderDrawer(); } }
     }
     return;
   }
+  if (ds.editHol !== undefined) { state.holEdit = Number(ds.editHol); render(); document.getElementById("hDate")?.focus(); return; }
+  if ("cancelHol" in ds) { state.holEdit = null; return render(); }
   if (ds.delHol !== undefined) {
+    state.holEdit = null;
     const i = Number(ds.delHol); const list = (state.settings.holidays || []).filter((_, j) => j !== i);
     return saveHolidays(list, t, "تم حذف الإجازة");
   }
@@ -1827,7 +1894,7 @@ document.addEventListener("submit", (ev) => {
   if (fid === "delForm") return saveDeliverable(form, btn);
   if (fid === "delInfoForm") return saveDelInfo(form, btn);
   if (fid === "billingForm") return saveBilling(form, btn);
-  if (fid === "evForm") return addEvent(form, btn);
+  if (fid === "evForm") return state.drawer?.id ? saveEventEdit(form, btn) : addEvent(form, btn);
   if (fid === "quickEv") return addEvent(form, btn, state.drawer.id);
   if (fid === "issueForm") return saveIssue(form, btn);
   if (fid === "crForm") return saveCr(form, btn);
@@ -1835,8 +1902,10 @@ document.addEventListener("submit", (ev) => {
   if (fid === "holForm") {
     const date = form.querySelector("#hDate").value, name = form.querySelector("#hName").value.trim(), note = form.querySelector("#hNote").value.trim();
     if (!isIso(date) || !name) return toast("أدخل التاريخ والمناسبة.", true);
-    if ((state.settings.holidays || []).some((h) => h.date === date)) return toast("هذا التاريخ مسجل من قبل.", true);
-    return saveHolidays([...(state.settings.holidays || []), clean({ date, name, note })], btn, "تمت إضافة الإجازة");
+    const all = state.settings.holidays || [], at = Number.isInteger(state.holEdit) ? state.holEdit : -1;
+    if (all.some((h, j) => j !== at && h.date === date)) return toast("هذا التاريخ مسجل من قبل.", true);
+    if (at >= 0) { state.holEdit = null; return saveHolidays(all.map((h, j) => (j === at ? clean({ date, name, note }) : h)), btn, "تم تعديل الإجازة"); }
+    return saveHolidays([...all, clean({ date, name, note })], btn, "تمت إضافة الإجازة");
   }
 });
 
