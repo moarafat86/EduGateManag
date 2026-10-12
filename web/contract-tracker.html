@@ -183,6 +183,19 @@ main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; 
 .ring-item .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .ring-item .v { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
 .ring-item .f { font-size: .76rem; color: var(--muted); }
+.ring-item .v .amt { font-size: .5em; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-inline-start: 8px; }
+.rings .hit { cursor: default; }
+.rings .arc, .rings .track { transition: stroke-width .15s, opacity .15s; }
+.rings:hover .arc, .rings:hover .track { opacity: .35; }
+.rings .ring.on .arc, .rings .ring.on .track { opacity: 1; }
+.rings .ring.on .arc { stroke-width: 22px; }
+.rings .c-v { font-family: var(--font-display); font-size: 28px; font-weight: 700; fill: var(--ink); letter-spacing: -.02em; }
+.rings .c-l { font-size: 11px; fill: var(--muted); }
+.donut:hover path { opacity: .45; }
+.donut path.on { opacity: 1; }
+.chart-tip { position: fixed; z-index: 90; pointer-events: none; background: var(--ink); color: var(--bg); padding: 8px 12px; border-radius: 10px; font-size: .8rem; line-height: 1.45; box-shadow: var(--shadow-lg); transform: translate(-50%, calc(-100% - 14px)); display: flex; flex-direction: column; gap: 1px; min-width: 120px; text-align: center; }
+.chart-tip strong { font-weight: 600; }
+.chart-tip .big { font-size: 1.05rem; font-weight: 700; }
 
 /* ---------- KPI tiles */
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 16px; }
@@ -215,7 +228,6 @@ main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; 
 .donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 22px 30px; }
 .donut { width: 210px; height: 210px; flex: none; max-width: 100%; }
 .donut path { cursor: pointer; transition: opacity .15s; }
-.donut path:hover { opacity: .8; }
 .donut .total { font-family: var(--font-display); font-size: 34px; font-weight: 700; fill: var(--ink); letter-spacing: -.02em; }
 .donut .total-lbl { font-size: 12px; fill: var(--muted); }
 .legend { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 200px; }
@@ -672,6 +684,7 @@ function render() {
   if (loading) html += `<div class="skel" style="height:280px" aria-label="جارٍ تحميل بيانات العقد"></div><div class="kpis"><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div></div>`;
   else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, settings: viewSettings })[state.tab]();
   view.innerHTML = html;
+  chartTip.hidden = true;
   if (state.drawer) renderDrawer();
 }
 const emptyBlock = (title, text, btn) => `<div class="empty"><strong>${esc(title)}</strong>${text ? `<span>${esc(text)}</span>` : ""}${btn || ""}</div>`;
@@ -722,21 +735,25 @@ function donut(counts, total) {
     if (live.length === 1) d = `M${pt(R, -Math.PI / 2)}A${R},${R} 0 1 1 ${pt(R, Math.PI * 1.5 - 0.0001)}L${pt(r0, Math.PI * 1.5 - 0.0001)}A${r0},${r0} 0 1 0 ${pt(r0, -Math.PI / 2)}Z`;
     else d = `M${pt(R, a)}A${R},${R} 0 ${large} 1 ${pt(R, a2)}L${pt(r0, a2)}A${r0},${r0} 0 ${large} 0 ${pt(r0, a)}Z`;
     a = a2;
-    return `<path d="${d}" fill="var(--st-${STATUS_CLASS[s]})" stroke="var(--surface)" stroke-width="2" data-filter-status="${esc(s)}"><title>${esc(s)}: ${n} مخرج (${((n / total) * 100).toFixed(1)}%)</title></path>`;
+    const p = ((n / total) * 100).toFixed(1) + "%";
+    return `<path d="${d}" fill="var(--st-${STATUS_CLASS[s]})" stroke="var(--surface)" stroke-width="2" data-filter-status="${esc(s)}" data-tip-title="${esc(s)}" data-tip-pct="${p}" data-tip-sub="${n} مخرج" data-center-v="${p}" data-center-l="${esc(s)}"></path>`;
   }).join("");
   return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="توزيع المخرجات حسب الحالة">${paths}
-    <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="total">${total}</text><text x="${cx}" y="${cy + 26}" text-anchor="middle" class="total-lbl">مخرجًا</text></svg>`;
+    <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="total c-v" data-default="${total}">${total}</text><text x="${cx}" y="${cy + 26}" text-anchor="middle" class="total-lbl c-l" data-default="مخرجًا">مخرجًا</text></svg>`;
 }
 
 /* ---- concentric progress rings (outer → inner) */
 function rings(list) {
   const size = 236, c = size / 2, w = 18, gap = 6;
-  const arcs = list.map(([v, color], i) => {
+  const arcs = list.map(({ v, color, label, amt }, i) => {
     const r = c - w / 2 - i * (w + gap), len = 2 * Math.PI * r, val = Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
-    return `<circle cx="${c}" cy="${c}" r="${r}" stroke="var(${color})" stroke-opacity=".16" stroke-width="${w}"/>
-      <circle class="arc" cx="${c}" cy="${c}" r="${r}" stroke="var(${color})" stroke-width="${w}" stroke-dasharray="${len.toFixed(2)}" stroke-dashoffset="${(len * (1 - val)).toFixed(2)}" transform="rotate(-90 ${c} ${c})"><title>${(val * 100).toFixed(1)}%</title></circle>`;
+    const p = (val * 100).toFixed(1) + "%";
+    return `<g class="ring hit" data-tip-title="${esc(label)}" data-tip-pct="${p}" data-tip-amt="${Number.isFinite(amt) ? amt : ""}" data-center-v="${p}" data-center-l="${esc(label)}">
+      <circle class="track" cx="${c}" cy="${c}" r="${r}" stroke="var(${color})" stroke-opacity=".16" stroke-width="${w}"/>
+      <circle class="arc" cx="${c}" cy="${c}" r="${r}" stroke="var(${color})" stroke-width="${w}" stroke-dasharray="${len.toFixed(2)}" stroke-dashoffset="${(len * (1 - val)).toFixed(2)}" transform="rotate(-90 ${c} ${c})"/></g>`;
   }).join("");
-  return `<svg class="rings" viewBox="0 0 ${size} ${size}" role="img" aria-label="حلقات الإنجاز: المقبول، والمسلَّم، والفعلي">${arcs}</svg>`;
+  return `<svg class="rings" viewBox="0 0 ${size} ${size}" role="img" aria-label="حلقات الإنجاز: المقبول، والمسلَّم، والفعلي">${arcs}
+    <text class="c-v" x="${c}" y="${c + 6}" text-anchor="middle" data-default=""></text><text class="c-l" x="${c}" y="${c + 24}" text-anchor="middle" data-default=""></text></svg>`;
 }
 
 /* ---- dashboard */
@@ -766,15 +783,19 @@ function viewDashboard() {
 
   return `
   <section class="hero" aria-label="ملخص إنجاز العقد">
-    ${rings([[t.progress, "--st-acc"], [t.deliveredPct, "--st-wait"], [t.actual, "--actual"]])}
+    ${rings([
+      { v: t.progress, color: "--st-acc", label: "نسبة الإنجاز (المقبول)", amt: t.acceptedValue },
+      { v: t.deliveredPct, color: "--st-wait", label: "نسبة الإنجاز المسلَّم", amt: t.deliveredValue },
+      { v: t.actual, color: "--actual", label: "نسبة الإنجاز الفعلي", amt: t.actualWeighted },
+    ])}
     <div class="hero-body">
       <span class="eyebrow">إنجاز العقد</span>
       <h2 class="hero-title">${pct(t.acceptedShare)} من قيمة العقد مقبول</h2>
       <div class="hero-sub"><span>قيمة العقد ${sar(t.total)}</span><span>جميع المبالغ بدون ضريبة</span></div>
       <div class="ring-legend">
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>نسبة الإنجاز (المقبول ÷ الإجمالي)</span><span class="v">${pct(t.progress)}</span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>نسبة الإنجاز المسلَّم</span><span class="v">${pct(t.deliveredPct)}</span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--actual)"></span>نسبة الإنجاز الفعلي</span><span class="v">${pct(t.actual)}</span><span class="f">مُدخلة لكل بند ومرجَّحة بالقيمة</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>نسبة الإنجاز (المقبول ÷ الإجمالي)</span><span class="v">${pct(t.progress)}<span class="amt">${sar(t.acceptedValue)}</span></span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>نسبة الإنجاز المسلَّم</span><span class="v">${pct(t.deliveredPct)}<span class="amt">${sar(t.deliveredValue)}</span></span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--actual)"></span>نسبة الإنجاز الفعلي</span><span class="v">${pct(t.actual)}<span class="amt">${sar(t.actualWeighted)}</span></span><span class="f">مُدخلة لكل بند ومرجَّحة بالقيمة</span></div>
       </div>
     </div>
   </section>
@@ -1743,6 +1764,34 @@ document.addEventListener("submit", (ev) => {
     if ((state.settings.holidays || []).some((h) => h.date === date)) return toast("هذا التاريخ مسجل من قبل.", true);
     return saveHolidays([...(state.settings.holidays || []), clean({ date, name, note })], btn, "تمت إضافة الإجازة");
   }
+});
+
+/* chart hover: a tooltip near the pointer and the value in the chart's centre */
+const chartTip = document.createElement("div");
+chartTip.className = "chart-tip"; chartTip.hidden = true; chartTip.setAttribute("role", "tooltip");
+document.body.appendChild(chartTip);
+function setCenter(svg, v, l) {
+  const cv = svg?.querySelector(".c-v"), cl = svg?.querySelector(".c-l");
+  if (cv) cv.textContent = v ?? cv.dataset.default; if (cl) cl.textContent = l ?? cl.dataset.default;
+}
+document.addEventListener("mouseover", (ev) => {
+  const el = ev.target.closest && ev.target.closest("[data-tip-title]");
+  if (!el) return;
+  const svg = el.closest("svg");
+  svg.querySelectorAll(".on").forEach((x) => x.classList.remove("on"));
+  el.classList.add("on");
+  setCenter(svg, el.dataset.centerV, el.dataset.centerL);
+  const amt = el.dataset.tipAmt !== undefined && el.dataset.tipAmt !== "" ? Number(el.dataset.tipAmt) : null;
+  chartTip.innerHTML = `<strong>${esc(el.dataset.tipTitle)}</strong><span class="big num">${esc(el.dataset.tipPct)}</span>${amt !== null ? `<span>${sar(amt)}</span>` : ""}${el.dataset.tipSub ? `<span>${esc(el.dataset.tipSub)}</span>` : ""}`;
+  chartTip.hidden = false;
+});
+document.addEventListener("mousemove", (ev) => { if (!chartTip.hidden) { chartTip.style.left = ev.clientX + "px"; chartTip.style.top = ev.clientY + "px"; } });
+document.addEventListener("mouseout", (ev) => {
+  const el = ev.target.closest && ev.target.closest("[data-tip-title]");
+  if (!el || (ev.relatedTarget && el.contains(ev.relatedTarget))) return;
+  el.classList.remove("on");
+  setCenter(el.closest("svg"));
+  chartTip.hidden = true;
 });
 
 let inputTimer;
