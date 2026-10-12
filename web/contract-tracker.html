@@ -770,7 +770,7 @@ function viewDashboard() {
     <div class="hero-body">
       <span class="eyebrow">إنجاز العقد</span>
       <h2 class="hero-title">${pct(t.acceptedShare)} من قيمة العقد مقبول</h2>
-      <div class="hero-sub"><span>قيمة العقد ${sar(t.total)} قبل الضريبة</span><span>${sar(t.totalVat)} شاملةً الضريبة</span></div>
+      <div class="hero-sub"><span>قيمة العقد ${sar(t.total)}</span><span>جميع المبالغ بدون ضريبة</span></div>
       <div class="ring-legend">
         <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>نسبة الإنجاز (المقبول ÷ الإجمالي)</span><span class="v">${pct(t.progress)}</span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
         <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>نسبة الإنجاز المسلَّم</span><span class="v">${pct(t.deliveredPct)}</span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
@@ -849,7 +849,7 @@ function viewItems() {
     const crOpen = r.crs.filter((x) => CR_OPEN.has(x.status)).length;
     return `<tr class="clickable" tabindex="0" data-edit-item="${esc(it.id)}">
       <td><span class="code">${esc(itemLabel(it))}</span></td><td><span class="code muted">${esc(it.wbs)}</span></td><td><div class="desc">${esc(it.name)}</div>${renamed}</td>
-      <td class="n">${int(r.qty)}</td><td class="n">${money(r.price)}</td><td class="n">${money(r.total)}</td><td class="n">${money(r.totalVat)}</td>
+      <td class="n">${int(r.qty)}</td><td class="n">${money(r.price)}</td><td class="n">${money(r.total)}</td>
       <td class="n ${mismatch ? "red" : ""}" title="${mismatch ? "عدد المخرجات المسجلة يختلف عن الكمية التعاقدية" : ""}">${int(r.registered)}</td>
       <td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td>
       <td class="n">${pct(r.deliveredPct)}</td><td class="n">${pct(r.progress)}</td><td class="n">${r.actual === null ? '<span class="muted">—</span>' : pct(r.actual)}</td>
@@ -863,12 +863,12 @@ function viewItems() {
   const projHead = hasP ? `<th class="n">الكمية بعد الطلب</th><th class="n">القيمة بعد الطلب</th><th class="n">فرق القيمة</th>` : "";
   const projFoot = hasP ? `<td></td><td class="n">${money(projTotal)}</td>${diffCell(projTotal - t.total)}` : "";
   return `<section class="section">
-    ${hasP ? `<div class="notice" style="background:var(--st-prog-bg);color:var(--st-prog-fg)">يوجد ${P.pend.length === 1 ? "طلب تغيير" : `${P.pend.length} طلبات تغيير`} في انتظار الاعتماد (${P.pend.map((x) => esc(x.code)).join("، ")}). الأعمدة «بعد الطلب» للعرض فقط، ولا تتغير أرقام البنود إلا بعد تطبيق الطلب من شاشة طلبات التغيير. المبالغ قبل الضريبة.</div>` : ""}
+    ${hasP ? `<div class="notice" style="background:var(--st-prog-bg);color:var(--st-prog-fg)">يوجد ${P.pend.length === 1 ? "طلب تغيير" : `${P.pend.length} طلبات تغيير`} في انتظار الاعتماد (${P.pend.map((x) => esc(x.code)).join("، ")}). الأعمدة «بعد الطلب» للعرض فقط، ولا تتغير أرقام البنود إلا بعد تطبيق الطلب من شاشة طلبات التغيير.</div>` : ""}
     <div class="section-head"><h2>بنود العقد</h2><div class="actions"><span class="count">المبالغ بالريال ${SAR} · اضغط على أي بند لتعديله</span><button class="btn primary" data-new-item type="button">+ بند جديد</button></div></div>
     ${state.items.length ? `<div class="table-wrap"><table>
-      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي قبل الضريبة</th><th class="n">الإجمالي شاملًا الضريبة</th><th class="n">المسجلة</th><th class="n">المسلَّمة</th><th class="n">المقبولة</th><th class="n">نسبة المسلَّم</th><th class="n">نسبة الإنجاز</th><th class="n">الإنجاز الفعلي</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th>${projHead}<th class="c">طلبات التغيير</th></tr></thead>
+      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي</th><th class="n">المسجلة</th><th class="n">المسلَّمة</th><th class="n">المقبولة</th><th class="n">نسبة المسلَّم</th><th class="n">نسبة الإنجاز</th><th class="n">الإنجاز الفعلي</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th>${projHead}<th class="c">طلبات التغيير</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${money(t.totalVat)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td>${projFoot}<td></td></tr></tfoot>
+      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td>${projFoot}<td></td></tr></tfoot>
     </table></div>` : emptyBlock("لا توجد بنود بعد", "أضف بنود العقد كما وردت في جدول الكميات: رقم البند، والاسم، والكمية، وسعر الوحدة.")}
   </section>`;
 }
@@ -900,7 +900,7 @@ function viewDeliverables() {
     k.crs.length ? `<span class="flag soft" title="طلب تغيير">${k.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""].join(" ");
   const head = billingView
     ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}`
-    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة قبل الضريبة ${SAR}</th>`;
+    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th>`;
   const rows = list.map((d) => {
     const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d);
     const common = `<td><span class="code">${esc(d.id)}</span></td><td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(d.description)}</div></td><td>${pill(k.status)}</td>`;
@@ -1105,7 +1105,6 @@ function viewSettings() {
       <div class="field"><label for="sVendor">المورّد / المنفّذ</label><input id="sVendor" name="vendor" value="${esc(s.vendor)}"></div>
       <div class="field"><label for="sStart">تاريخ بداية العقد</label><input id="sStart" name="start_date" type="date" value="${esc(s.start_date)}"></div>
       <div class="field"><label for="sDur">مدة العقد (بالأشهر)</label><input id="sDur" name="duration_months" type="number" min="0" step="1" value="${esc(s.duration_months ?? "")}"></div>
-      <div class="field"><label for="sVat">نسبة الضريبة (%)</label><input id="sVat" name="vat" type="number" min="0" step="0.01" value="${esc(numOr(s.vat, 0.15) * 100)}"></div>
       <div class="field"><label for="sReview">مهلة المراجعة (أيام عمل)</label><input id="sReview" name="review_days" type="number" min="0" step="1" value="${esc(s.review_days ?? 10)}"><span class="hint">يُحتسب على العميل تأخيرًا كلُّ يوم يزيد على المهلة في أي دورة.</span></div>
       <div class="field"><label for="sWeek">الإجازة الأسبوعية</label><select id="sWeek" name="weekend">${WEEKENDS.map((w) => `<option value="${w.key}"${w.key === wk ? " selected" : ""}>${w.label}</option>`).join("")}</select></div>
       <div class="field"><label for="sAsOf">تاريخ احتساب ثابت (اختياري)</label><input id="sAsOf" name="as_of_override" type="date" value="${esc(s.as_of_override)}"><span class="hint">اتركه فارغًا ليكون الاحتساب حتى تاريخ اليوم.</span></div>
@@ -1164,7 +1163,7 @@ function drawerItem() {
       <div class="field"><label for="iWbs">WBS</label><input id="iWbs" name="wbs" value="${esc(v.wbs ?? "")}"></div>
       <div class="field wide"><label for="iName">اسم البند</label><input id="iName" name="name" required value="${esc(v.name ?? "")}"></div>
       <div class="field"><label for="iQty">الكمية التعاقدية</label><input id="iQty" name="qty" type="number" min="0" step="1" required value="${esc(v.qty ?? "")}"></div>
-      <div class="field"><label for="iPrice">سعر الوحدة قبل الضريبة (ريال)</label><input id="iPrice" name="unit_price" type="number" min="0" step="0.01" required value="${esc(v.unit_price ?? "")}"></div>
+      <div class="field"><label for="iPrice">سعر الوحدة (ريال)</label><input id="iPrice" name="unit_price" type="number" min="0" step="0.01" required value="${esc(v.unit_price ?? "")}"></div>
       <div class="field"><label for="iActual">نسبة الإنجاز الفعلي (%)</label><input id="iActual" name="actual_progress" type="number" min="0" max="100" step="0.1" value="${esc(actualPct)}"><span class="hint">تقدير يدوي لحجم العمل المنجز فعليًا في البند.</span></div>
       <div class="field"><label for="iOrder">ترتيب العرض</label><input id="iOrder" name="order" type="number" step="1" value="${esc(v.order ?? state.items.length + 1)}"></div>
       <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${it ? `<button class="btn danger" type="button" data-ask-delete>حذف البند</button>` : ""}</div>
@@ -1182,7 +1181,7 @@ function drawerDel() {
     .map(([v, l]) => `<button type="button" role="tab" data-sub-tab="${v}" aria-selected="${sub === v}">${l}</button>`).join("")}</nav>`;
   const head = `<div class="kv">
       <div><span class="k">البند</span><span class="v"><span class="code">${esc(itemLabel(it))}</span> ${esc(short(it?.name, 60) || "بند غير موجود")}</span></div>
-      <div><span class="k">القيمة قبل الضريبة</span><span class="v">${sar(k.value)}</span></div>
+      <div><span class="k">القيمة</span><span class="v">${sar(k.value)}</span></div>
       <div><span class="k">حالة العمل (يدوية)</span><span class="v">${esc(del.work_status || "—")}</span></div>
     </div>
     <div><h4>وصف المخرج</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.description)}</p></div>
@@ -1340,7 +1339,7 @@ function crDetails(cr) {
   let net = 0;
   const rows = cr.changes.map((ch) => {
     const it = ch.item_id ? c.itemsById.get(ch.item_id) : null;
-    const before = numOr(ch.qty_before, 0) * numOr(ch.price_before, 0), after = numOr(ch.qty_after, 0) * numOr(ch.price_after, 0), diff = (after - before) * (1 + vat);
+    const before = numOr(ch.qty_before, 0) * numOr(ch.price_before, 0), after = numOr(ch.qty_after, 0) * numOr(ch.price_after, 0), diff = after - before;
     net += diff;
     const no = it ? itemLabel(it) : ch.new_item?.no;
     const nameB = ch.name_before || it?.name || "—", nameA = ch.name_after || nameB;
@@ -1356,7 +1355,7 @@ function crDetails(cr) {
   const applied = cr.applied_at;
   return `<div class="block">
     <h4>تفاصيل التغيير على البنود</h4>
-    <div class="table-wrap"><table><thead><tr><th>البند</th><th>الاسم والنطاق</th><th class="n">الكمية</th><th class="n">سعر الوحدة ${SAR}</th><th class="n">الأثر شاملًا الضريبة</th></tr></thead>
+    <div class="table-wrap"><table><thead><tr><th>البند</th><th>الاسم والنطاق</th><th class="n">الكمية</th><th class="n">سعر الوحدة ${SAR}</th><th class="n">الأثر المالي ${SAR}</th></tr></thead>
     <tbody>${rows}</tbody><tfoot><tr><td colspan="4">صافي الأثر المالي</td><td class="n">${Math.abs(net) < 0.5 ? "0" : `<span class="num">${nf2.format(net)}</span>`}</td></tr></tfoot></table></div>
     <h4>ما يحدث عند التطبيق</h4>
     <ul style="margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px">
@@ -1495,7 +1494,7 @@ async function saveSettings(form, btn) {
   const body = { ...state.settings, ...{
     project_name: f.project_name.trim(), contract_no: f.contract_no.trim(), project_code: f.project_code.trim(), client: f.client.trim(), vendor: f.vendor.trim(),
     start_date: f.start_date, duration_months: f.duration_months === "" ? null : Number(f.duration_months),
-    vat: numOr(f.vat, 15) / 100, review_days: numOr(f.review_days, 10), weekend: f.weekend.split(",").map(Number), as_of_override: f.as_of_override,
+    review_days: numOr(f.review_days, 10), weekend: f.weekend.split(",").map(Number), as_of_override: f.as_of_override,
   } };
   await run(btn, () => state.db.doc("contract/settings").set(body), "تم حفظ الإعدادات");
 }
@@ -1558,8 +1557,8 @@ function exportAll(btn) {
     kvSheet(wb, "ملخص", [
       ["اسم المشروع", s.project_name], ["رقم العقد", s.contract_no], ["رمز المشروع", s.project_code], ["الجهة المالكة", s.client], ["المورّد", s.vendor],
       ["تاريخ بداية العقد", toDate(s.start_date)], ["مدة العقد (بالأشهر)", s.duration_months], ["تاريخ الاحتساب", toDate(c.asOfIso)],
-      ["مهلة المراجعة (أيام عمل)", c.reviewLimit], ["نسبة الضريبة", { v: c.vat, f: FMT.P }],
-      ["قيمة العقد قبل الضريبة (ريال)", { v: t.total, f: FMT.M }], ["قيمة العقد شاملةً الضريبة (ريال)", { v: t.totalVat, f: FMT.M }],
+      ["مهلة المراجعة (أيام عمل)", c.reviewLimit], ["ملاحظة", "جميع المبالغ بدون ضريبة"],
+      ["قيمة العقد (ريال)", { v: t.total, f: FMT.M }],
       ["إجمالي في انتظار القبول (ريال)", { v: t.waitingValue, f: FMT.M }], ["إجمالي في انتظار القبول (%)", { v: t.waitingShare, f: FMT.P }],
       ["إجمالي المقبول (ريال)", { v: t.acceptedValue, f: FMT.M }], ["إجمالي المقبول (%)", { v: t.acceptedShare, f: FMT.P }],
       ["المعلَّق (ريال)", { v: t.suspendedValue, f: FMT.M }], ["عدد المخرجات المعلَّقة", t.suspended],
@@ -1572,17 +1571,17 @@ function exportAll(btn) {
     ]);
     addSheet(wb, "البنود", [
       { h: "رقم البند", k: "no", w: 10 }, { h: "WBS", k: "wbs", w: 19 }, { h: "اسم البند", k: "name", w: 44, wrap: true }, { h: "الكمية", k: "qty", w: 9 },
-      { h: "سعر الوحدة (ريال)", k: "price", w: 15, f: FMT.M }, { h: "الإجمالي قبل الضريبة", k: "total", w: 17, f: FMT.M }, { h: "الضريبة", k: "vat", w: 14, f: FMT.M },
-      { h: "الإجمالي شاملًا الضريبة", k: "totalVat", w: 17, f: FMT.M }, { h: "المخرجات المسجلة", k: "registered", w: 10 }, { h: "المسلَّمة", k: "delivered", w: 9 },
+      { h: "سعر الوحدة (ريال)", k: "price", w: 15, f: FMT.M }, { h: "الإجمالي (ريال)", k: "total", w: 17, f: FMT.M },
+      { h: "المخرجات المسجلة", k: "registered", w: 10 }, { h: "المسلَّمة", k: "delivered", w: 9 },
       { h: "المقبولة", k: "accepted", w: 9 }, { h: "نسبة الإنجاز المسلَّم", k: "deliveredPct", w: 11, f: FMT.P }, { h: "نسبة الإنجاز (المقبول)", k: "progress", w: 11, f: FMT.P },
       { h: "نسبة الإنجاز الفعلي", k: "actual", w: 11, f: FMT.P },
       { h: "قيمة المقبول", k: "acceptedValue", w: 17, f: FMT.M }, { h: "المتبقي", k: "remaining", w: 17, f: FMT.M }, { h: "طلبات التغيير", k: "crs", w: 16 },
     ], [...state.items].sort(byItemOrder).map((it) => { const r = c.items.get(it.id); return { no: it.no, wbs: it.wbs, name: it.name, ...r, crs: r.crs.map((x) => x.code).join("، ") }; }),
-    { total: { name: "الإجمالي", qty: t.qty, total: t.total, vat: t.vat, totalVat: t.totalVat, registered: t.registered, delivered: t.delivered, accepted: t.accepted, deliveredPct: t.deliveredPct, progress: t.progress, actual: t.actual, acceptedValue: t.acceptedValue, remaining: t.remaining } });
+    { total: { name: "الإجمالي", qty: t.qty, total: t.total, registered: t.registered, delivered: t.delivered, accepted: t.accepted, deliveredPct: t.deliveredPct, progress: t.progress, actual: t.actual, acceptedValue: t.acceptedValue, remaining: t.remaining } });
     addSheet(wb, "المخرجات", [
       { h: "رقم المخرج", k: "id", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "اسم البند", k: "itemName", w: 30, wrap: true }, { h: "وصف المخرج", k: "desc", w: 46, wrap: true },
       { h: "الحالة", k: "status", w: 15 }, { h: "حالة العمل (يدوية)", k: "work", w: 12 }, { h: "النقاط المنجزة", k: "points", w: 9 },
-      { h: "القيمة قبل الضريبة (ريال)", k: "value", w: 15, f: FMT.M }, { h: "القيمة شاملةً الضريبة", k: "valueVat", w: 15, f: FMT.M },
+      { h: "القيمة (ريال)", k: "value", w: 15, f: FMT.M },
       { h: "أول تسليم", k: "first", w: 12, f: FMT.D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: FMT.D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: FMT.D },
       { h: "تاريخ القبول", k: "acc", w: 12, f: FMT.D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "أيام المراجعة", k: "review", w: 10 },
       { h: "أيام التأخير على العميل", k: "delay", w: 11 }, { h: "أيام لدى فريق المشروع", k: "vendor", w: 11 }, { h: "مشكلات مفتوحة", k: "issues", w: 9 }, { h: "طلبات التغيير", k: "crs", w: 14 },
@@ -1590,7 +1589,7 @@ function exportAll(btn) {
       ...BILLING.map((x) => ({ h: x.label, k: "b_" + x.k, w: x.yn ? 10 : 16 })), { h: "ملاحظات", k: "notes", w: 50, wrap: true },
     ], [...state.deliverables].sort(byId).map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d); return {
       id: d.id, item: it?.no, itemName: it?.name, desc: d.description, status: k.status, work: d.work_status, points: d.points === "" ? null : d.points,
-      value: k.value, valueVat: k.valueVat, first: numD(k.firstSubmit), lastSub: numD(k.lastSubmit), lastRep: numD(k.lastReply), acc: numD(k.accepted),
+      value: k.value, first: numD(k.firstSubmit), lastSub: numD(k.lastSubmit), lastRep: numD(k.lastReply), acc: numD(k.accepted),
       cycles: k.cycles, review: k.review, delay: k.delay, vendor: k.vendorDays, issues: k.openIssues, crs: k.crs.map((x) => x.code).join("، "),
       suspReason: k.suspended ? (d.suspend_reason || null) : null, suspDate: k.suspended ? toDate(d.suspend_date) : null, suspCr: k.suspended ? (k.suspendCr?.code || (d.suspend_cr_linked ? "نعم" : "لا")) : null,
       ...Object.fromEntries(BILLING.map((x) => ["b_" + x.k, b[x.k] ?? null])), notes: d.notes }; }));
@@ -1608,9 +1607,9 @@ function exportAll(btn) {
     addSheet(wb, "تفاصيل طلبات التغيير", [
       { h: "رقم الطلب", k: "code", w: 10 }, { h: "حالة الطلب", k: "status", w: 14 }, { h: "رقم البند", k: "no", w: 8 }, { h: "الاسم قبل", k: "nameB", w: 34, wrap: true }, { h: "الاسم بعد", k: "nameA", w: 34, wrap: true },
       { h: "الكمية قبل", k: "qB", w: 9 }, { h: "الكمية بعد", k: "qA", w: 9 }, { h: "سعر الوحدة قبل", k: "pB", w: 14, f: FMT.M }, { h: "سعر الوحدة بعد", k: "pA", w: 14, f: FMT.M },
-      { h: "الإجمالي قبل", k: "tB", w: 15, f: FMT.M }, { h: "الإجمالي بعد", k: "tA", w: 15, f: FMT.M }, { h: "الفرق شاملًا الضريبة", k: "diff", w: 16, f: FMT.M }, { h: "النطاق", k: "scope", w: 44, wrap: true },
+      { h: "الإجمالي قبل", k: "tB", w: 15, f: FMT.M }, { h: "الإجمالي بعد", k: "tA", w: 15, f: FMT.M }, { h: "الفرق (ريال)", k: "diff", w: 16, f: FMT.M }, { h: "النطاق", k: "scope", w: 44, wrap: true },
     ], state.crs.flatMap((x) => (x.changes || []).map((ch) => { const it = ch.item_id ? c.itemsById.get(ch.item_id) : null; const qB = numOr(ch.qty_before, 0), qA = numOr(ch.qty_after, 0), pB = numOr(ch.price_before, 0), pA = numOr(ch.price_after, 0);
-      return { code: x.code, status: x.status, no: it ? it.no : ch.new_item?.no, nameB: ch.name_before || it?.name || null, nameA: ch.name_after || ch.name_before || it?.name || ch.new_item?.name, qB, qA, pB, pA, tB: qB * pB, tA: qA * pA, diff: (qA * pA - qB * pB) * (1 + c.vat), scope: ch.scope }; })));
+      return { code: x.code, status: x.status, no: it ? it.no : ch.new_item?.no, nameB: ch.name_before || it?.name || null, nameA: ch.name_after || ch.name_before || it?.name || ch.new_item?.name, qB, qA, pB, pA, tB: qB * pB, tA: qA * pA, diff: qA * pA - qB * pB, scope: ch.scope }; })));
     addSheet(wb, "الإجازات", [{ h: "التاريخ", k: "date", w: 14, f: FMT.D }, { h: "المناسبة", k: "name", w: 30 }, { h: "ملاحظة", k: "note", w: 20 }],
       [...(s.holidays || [])].sort((a, b) => String(a.date).localeCompare(String(b.date))).map((h) => ({ date: toDate(h.date), name: h.name, note: h.note })));
     return [wb, `متابعة_عقد_البوابة_${c.asOfIso}.xlsx`];
