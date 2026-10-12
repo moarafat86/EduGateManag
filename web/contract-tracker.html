@@ -1010,7 +1010,7 @@ function drawerDel() {
     ${del.notes ? `<div><h4>ملاحظات</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.notes)}</p></div>` : ""}
     ${k.suspended ? `<div class="block card ${k.suspendMissing ? "blocking" : ""}"><h4>التعليق</h4>
       ${k.suspendMissing ? `<span class="red">لم يُدخل سبب التعليق بعد. أدخله من «تعديل بيانات المخرج».</span>` : `<div class="body">${esc(del.suspend_reason)}</div>`}
-      <div class="meta">${del.suspend_date ? `<span>منذ <span class="date">${esc(del.suspend_date)}</span></span>` : ""}<span>${k.suspendCr ? `مرتبط بطلب التغيير <span class="code">${esc(k.suspendCr.code)}</span>` : "غير مرتبط بطلب تغيير"}</span><span>مستبعد من حسابات التسليم والقبول</span></div></div>` : ""}
+      <div class="meta">${del.suspend_date ? `<span>منذ <span class="date">${esc(del.suspend_date)}</span></span>` : ""}<span>${k.suspendCr ? `مرتبط بطلب التغيير <span class="code">${esc(k.suspendCr.code)}</span>` : del.suspend_cr_linked ? "مرتبط بطلب تغيير (لم يُحدَّد الطلب)" : "غير مرتبط بطلب تغيير"}</span><span>مستبعد من حسابات التسليم والقبول</span></div></div>` : ""}
     ${k.crs.length ? `<div class="block"><h4>طلبات تغيير مرتبطة</h4><div class="cards">${k.crs.map(crCard).join("")}</div></div>` : ""}
     <div class="actions"><button class="btn" type="button" data-edit-del="${esc(del.id)}">تعديل بيانات المخرج</button></div>`;
 
@@ -1100,7 +1100,8 @@ function drawerDelForm() {
       <div class="field wide" id="suspFields" ${v.work_status === ST.SUS ? "" : "hidden"}><div class="form-grid">
         <div class="field wide"><label for="dSuspReason">سبب التعليق (إلزامي)</label><textarea id="dSuspReason" name="suspend_reason">${esc(v.suspend_reason ?? "")}</textarea></div>
         <div class="field"><label for="dSuspDate">تاريخ التعليق</label><input id="dSuspDate" name="suspend_date" type="date" value="${esc(v.suspend_date ?? "")}"></div>
-        <div class="field"><label for="dSuspCr">مرتبط بطلب تغيير؟</label><select id="dSuspCr" name="suspend_cr"><option value="">غير مرتبط</option>${[...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })).map((x) => `<option value="${esc(x.id)}"${v.suspend_cr === x.id ? " selected" : ""}>${esc(x.code)} — ${esc(short(x.title, 40))}</option>`).join("")}</select></div>
+        <label class="check"><input type="checkbox" id="dSuspLinked" name="suspend_cr_linked" ${v.suspend_cr_linked || v.suspend_cr ? "checked" : ""}> مرتبط بطلب تغيير</label>
+        <div class="field" id="suspCrPick" ${v.suspend_cr_linked || v.suspend_cr ? "" : "hidden"}><label for="dSuspCr">طلب التغيير</label><select id="dSuspCr" name="suspend_cr"><option value="">لم يُحدَّد بعد</option>${[...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })).map((x) => `<option value="${esc(x.id)}"${v.suspend_cr === x.id ? " selected" : ""}>${esc(x.code)} — ${esc(short(x.title, 40))}</option>`).join("")}</select></div>
       </div></div>
       <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
       <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>
@@ -1190,7 +1191,7 @@ async function saveDeliverable(form, btn) {
   const suspended = f.work_status === ST.SUS;
   if (suspended && !String(f.suspend_reason || "").trim()) { toast("سبب التعليق إلزامي للمخرج المعلَّق.", true); document.getElementById("dSuspReason")?.focus(); return; }
   const body = clean({ item_id: f.item_id, description: f.description.trim(), work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim(),
-    ...(suspended ? { suspend_reason: f.suspend_reason.trim(), suspend_date: f.suspend_date, suspend_cr: f.suspend_cr } : {}) });
+    ...(suspended ? { suspend_reason: f.suspend_reason.trim(), suspend_date: f.suspend_date, suspend_cr_linked: !!f.suspend_cr_linked, suspend_cr: f.suspend_cr_linked ? f.suspend_cr : "" } : {}) });
   if (Object.keys(billing).length) body.billing = billing;
   const sub = state.drawer.sub;
   if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ المخرج")) openDrawer({ kind: "del", id, sub: sub || "review" });
@@ -1326,13 +1327,13 @@ function exportAll(btn) {
       { h: "أول تسليم", k: "first", w: 12, f: FMT.D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: FMT.D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: FMT.D },
       { h: "تاريخ القبول", k: "acc", w: 12, f: FMT.D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "أيام المراجعة", k: "review", w: 10 },
       { h: "أيام التأخير على العميل", k: "delay", w: 11 }, { h: "أيام لدى فريق المشروع", k: "vendor", w: 11 }, { h: "مشكلات مفتوحة", k: "issues", w: 9 }, { h: "طلبات التغيير", k: "crs", w: 14 },
-      { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "طلب التغيير المرتبط بالتعليق", k: "suspCr", w: 14 },
+      { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "التعليق مرتبط بطلب تغيير", k: "suspCr", w: 14 },
       ...BILLING.map((x) => ({ h: x.label, k: "b_" + x.k, w: x.yn ? 10 : 16 })), { h: "ملاحظات", k: "notes", w: 50, wrap: true },
     ], [...state.deliverables].sort(byId).map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d); return {
       id: d.id, item: it?.no, itemName: it?.name, desc: d.description, status: k.status, work: d.work_status, points: d.points === "" ? null : d.points,
       value: k.value, valueVat: k.valueVat, first: numD(k.firstSubmit), lastSub: numD(k.lastSubmit), lastRep: numD(k.lastReply), acc: numD(k.accepted),
       cycles: k.cycles, review: k.review, delay: k.delay, vendor: k.vendorDays, issues: k.openIssues, crs: k.crs.map((x) => x.code).join("، "),
-      suspReason: k.suspended ? (d.suspend_reason || null) : null, suspDate: k.suspended ? toDate(d.suspend_date) : null, suspCr: k.suspendCr?.code || null,
+      suspReason: k.suspended ? (d.suspend_reason || null) : null, suspDate: k.suspended ? toDate(d.suspend_date) : null, suspCr: k.suspended ? (k.suspendCr?.code || (d.suspend_cr_linked ? "نعم" : "لا")) : null,
       ...Object.fromEntries(BILLING.map((x) => ["b_" + x.k, b[x.k] ?? null])), notes: d.notes }; }));
     addSheet(wb, "سجل المراجعات", [
       { h: "رقم المخرج", k: "del", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "وصف المخرج", k: "desc", w: 40, wrap: true }, { h: "نوع الحركة", k: "act", w: 13 },
@@ -1498,6 +1499,7 @@ document.addEventListener("change", (ev) => {
     rFrom: () => { const [, b] = reportRange(); state.report = { preset: "custom", from: el.value, to: b }; },
     rTo: () => { const [a] = reportRange(); state.report = { preset: "custom", from: a, to: el.value }; } };
   if (set[id]) { set[id](); return render(); }
+  if (id === "dSuspLinked") { const box = document.getElementById("suspCrPick"); if (box) box.hidden = !el.checked; return; }
   if (id === "dWork") { const box = document.getElementById("suspFields"); if (box) box.hidden = el.value !== ST.SUS; return; }
   if (el.name === "critem") {
     const form = el.form, items = [...form.querySelectorAll('input[name="critem"]:checked')].map((x) => x.value);
