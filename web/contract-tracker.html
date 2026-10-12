@@ -118,6 +118,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .page-head .meta > span:empty { display: none; }
 .top-actions { display: flex; gap: 8px; align-items: center; }
 
+.theme-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0 10px; color: var(--ink-2); font-size: .85rem; font-weight: 500; }
+.theme-row .lbl { display: flex; align-items: center; gap: 8px; }
+.theme-row svg { width: 17px; height: 17px; color: var(--muted); }
+.switch { position: relative; width: 44px; height: 26px; border-radius: 13px; border: 0; background: var(--surface-3); cursor: pointer; flex: none; transition: background .2s; padding: 0; }
+.switch .knob { position: absolute; top: 3px; inset-inline-start: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: inset-inline-start .2s; }
+.switch[aria-checked="true"] { background: var(--st-acc); }
+.switch[aria-checked="true"] .knob { inset-inline-start: 21px; }
+.theme-m { display: none; }
+.theme-m svg { width: 17px; height: 17px; }
 main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; display: flex; flex-direction: column; gap: 22px; }
 
 /* ---------- buttons & inputs */
@@ -317,6 +326,7 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
   .app { grid-template-columns: 1fr; }
   .sidebar { position: fixed; z-index: 30; inset-inline: 0; bottom: 0; top: auto; height: auto; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); flex-direction: row; border-inline-end: 0; border-top: 1px solid var(--line); }
   .brand, .side-foot { display: none; }
+  .theme-m { display: inline-grid; place-items: center; width: 36px; height: 36px; }
   .nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; gap: 2px; width: 100%; }
   .nav button { flex: 0 0 78px; flex-direction: column; gap: 3px; padding: 6px 4px; font-size: .66rem; align-items: center; text-align: center; position: relative; }
   .nav .lbl { white-space: normal; line-height: 1.2; overflow: visible; }
@@ -347,13 +357,14 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
       <div class="brand-text"><strong>متابعة العقد</strong><span id="projCode"></span></div>
     </div>
     <nav class="nav" role="tablist" id="tabs"></nav>
-    <div class="side-foot"><span id="asOfLabel"></span><span>البيانات محفوظة تلقائيًا</span></div>
+    <div class="side-foot"><div class="theme-row"><span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>الوضع الداكن</span><button class="switch" id="themeToggle" type="button" role="switch" aria-checked="false" aria-label="الوضع الداكن"><span class="knob"></span></button></div><span id="asOfLabel"></span><span>البيانات محفوظة تلقائيًا</span></div>
   </aside>
   <div class="main-col">
     <header class="topbar">
       <div class="topbar-inner">
         <div class="page-head"><h1 id="pageTitle">لوحة المتابعة</h1><div class="meta"><span id="projTitle">متابعة عقد البوابة الموحدة</span><span id="pageMeta"></span></div></div>
         <div class="top-actions">
+          <button class="icon-btn theme-m" id="themeToggleM" type="button" aria-label="تبديل الوضع الداكن"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
           <button class="btn primary" id="exportBtn" type="button">تصدير إلى Excel</button>
         </div>
       </div>
@@ -372,6 +383,17 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 "use strict";
 document.documentElement.dir = "rtl";
 document.documentElement.lang = "ar";
+
+/* light / dark switch: follows the device until the viewer picks one, then remembers the choice */
+const systemDark = () => { try { return window.matchMedia("(prefers-color-scheme: dark)").matches; } catch (_) { return false; } };
+const currentTheme = () => document.documentElement.dataset.theme || (systemDark() ? "dark" : "light");
+function syncThemeSwitch() { const el = document.getElementById("themeToggle"); if (el) el.setAttribute("aria-checked", String(currentTheme() === "dark")); }
+function applyTheme(theme, remember) {
+  document.documentElement.dataset.theme = theme;
+  if (remember) { try { localStorage.setItem("theme", theme); } catch (_) {} }
+  syncThemeSwitch();
+}
+(() => { let saved = null; try { saved = localStorage.getItem("theme"); } catch (_) {} if (saved === "dark" || saved === "light") applyTheme(saved, false); else syncThemeSwitch(); })();
 
 /* ------------------------------------------------------------ constants */
 const ST = { ACC: "تم القبول", SUS: "معلق", RET: "مُعاد بملاحظات", WAIT: "في انتظار القبول", LATE: "متأخر", PROG: "جاري العمل", NEW: "لم يبدأ", CAN: "ملغى" };
@@ -1690,6 +1712,7 @@ document.addEventListener("click", async (ev) => {
     const i = Number(ds.delHol); const list = (state.settings.holidays || []).filter((_, j) => j !== i);
     return saveHolidays(list, t, "تم حذف الإجازة");
   }
+  if (t.id === "themeToggle" || t.id === "themeToggleM") return applyTheme(currentTheme() === "dark" ? "light" : "dark", true);
   if (t.id === "exportBtn") return exportAll(t);
   if (t.id === "reportExport") return exportReport(t);
   if (t.id === "reportCopy") {
