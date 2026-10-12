@@ -18,6 +18,7 @@
   --focus: #2F8AA0;
   --danger: #A4262C;
   --danger-soft: #FBE7E8;
+  --actual: #6B5BA8;
 
   --st-acc-bg: #DCF1E2; --st-acc-fg: #17643A; --st-acc: #2E8B57;
   --st-wait-bg: #DDEAF7; --st-wait-fg: #1F4E78; --st-wait: #3A73B0;
@@ -36,7 +37,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0E1618; --surface: #152024; --surface-2: #1A272B; --ink: #E3ECEB; --muted: #93A5A8;
     --line: #283A3E; --accent: #62B4C5; --accent-ink: #0E1618; --accent-soft: #1C343A; --focus: #8FD0DD;
-    --danger: #F08A90; --danger-soft: #3A1E21;
+    --danger: #F08A90; --danger-soft: #3A1E21; --actual: #A898E0;
     --st-acc-bg: #173527; --st-acc-fg: #8FDDAE; --st-acc: #4FB57C;
     --st-wait-bg: #182B40; --st-wait-fg: #A5C8EE; --st-wait: #5B93D1;
     --st-ret-bg: #3A2516; --st-ret-fg: #F4B788; --st-ret: #E08A48;
@@ -50,7 +51,7 @@
 :root[data-theme="dark"] {
   --bg: #0E1618; --surface: #152024; --surface-2: #1A272B; --ink: #E3ECEB; --muted: #93A5A8;
   --line: #283A3E; --accent: #62B4C5; --accent-ink: #0E1618; --accent-soft: #1C343A; --focus: #8FD0DD;
-  --danger: #F08A90; --danger-soft: #3A1E21;
+  --danger: #F08A90; --danger-soft: #3A1E21; --actual: #A898E0;
   --st-acc-bg: #173527; --st-acc-fg: #8FDDAE; --st-acc: #4FB57C;
   --st-wait-bg: #182B40; --st-wait-fg: #A5C8EE; --st-wait: #5B93D1;
   --st-ret-bg: #3A2516; --st-ret-fg: #F4B788; --st-ret: #E08A48;
@@ -68,6 +69,7 @@ body { font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
 .num, .date, .code { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; display: inline-block; }
 .date { white-space: nowrap; }
 .code { font-weight: 600; letter-spacing: .02em; }
+.sar { width: .82em; height: .92em; vertical-align: -0.08em; margin-inline-end: .28em; fill: currentColor; flex: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
@@ -122,13 +124,16 @@ main { max-width: 1400px; margin: 0 auto; padding: 20px 16px 48px; display: flex
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 20px; }
 
 /* KPI tiles */
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; }
-.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .kpi .label { color: var(--muted); font-size: .82rem; font-weight: 500; }
-.kpi .value { font-family: var(--font-display); font-size: 1.55rem; font-weight: 600; line-height: 1.3; }
+.kpi .value { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; line-height: 1.3; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; }
+.kpi .value .amt { font-size: .62em; color: var(--muted); font-weight: 500; }
 .kpi .foot { color: var(--muted); font-size: .8rem; }
-.kpi.lead { background: var(--accent-soft); border-color: transparent; }
-.kpi.lead .value { color: var(--accent); }
+.kpi .meter { height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; margin-top: 6px; }
+.kpi .meter span { display: block; height: 100%; }
+.kpi.wait .value { color: var(--st-wait-fg); }
+.kpi.acc .value { color: var(--st-acc-fg); }
 
 /* status */
 .pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
@@ -143,37 +148,37 @@ main { max-width: 1400px; margin: 0 auto; padding: 20px 16px 48px; display: flex
 .flag.soft { background: var(--st-prog-bg); color: var(--st-prog-fg); }
 .yes { color: var(--st-acc-fg); font-weight: 600; }
 .no { color: var(--muted); }
-.statusbar { display: flex; height: 18px; gap: 2px; border-radius: 4px; overflow: hidden; }
-.statusbar span { display: block; height: 100%; min-width: 3px; }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; }
-.legend .row { display: flex; align-items: center; gap: 6px; font-size: .88rem; }
-.legend .sw { width: 10px; height: 10px; border-radius: 2px; }
-.legend button { background: none; border: 0; padding: 0; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-.legend button:hover .lbl { text-decoration: underline; }
 
-/* item progress */
-.progress-list { display: flex; flex-direction: column; gap: 12px; }
-.prog-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; }
-.prog-row .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.prog-row .name .code { color: var(--muted); margin-inline-end: 6px; }
-.prog-row .pstat { color: var(--muted); font-size: .82rem; }
-.bar { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; display: flex; }
-.bar .acc { background: var(--st-acc); }
-.bar .del { background: var(--st-wait); opacity: .45; }
-.mini-bar { display: inline-flex; width: 70px; height: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; vertical-align: middle; margin-inline-start: 6px; }
-.mini-bar span { background: var(--st-acc); }
+/* donut */
+.donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 28px; }
+.donut { width: 220px; height: 220px; flex: none; max-width: 100%; }
+.donut path { cursor: pointer; transition: opacity .15s; }
+.donut path:hover { opacity: .82; }
+.donut .total { font-family: var(--font-display); font-size: 30px; font-weight: 600; fill: var(--ink); }
+.donut .total-lbl { font-size: 12px; fill: var(--muted); }
+.legend { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 200px; }
+.legend button { background: none; border: 0; padding: 3px 0; cursor: pointer; display: grid; grid-template-columns: 12px 1fr auto auto; gap: 8px; align-items: center; text-align: start; font-size: .9rem; }
+.legend button:hover .lbl { text-decoration: underline; }
+.legend .sw { width: 12px; height: 12px; border-radius: 3px; }
+.legend .share { color: var(--muted); font-size: .8rem; min-width: 46px; text-align: end; }
+
+/* bars */
+.mini-bar { display: inline-flex; width: 64px; height: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; vertical-align: middle; margin-inline-start: 8px; }
+.mini-bar span { display: block; height: 100%; background: var(--st-acc); }
+.mini-bar.del span { background: var(--st-wait); }
+.mini-bar.act span { background: var(--actual); }
 
 /* tables */
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 table { border-collapse: collapse; width: 100%; font-size: .88rem; }
 th, td { padding: 8px 10px; text-align: start; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { background: var(--surface-2); color: var(--muted); font-weight: 600; font-size: .8rem; white-space: nowrap; position: sticky; top: 0; }
-td.n, th.n { text-align: end; }
+td.n, th.n { text-align: end; white-space: nowrap; }
 td.c, th.c { text-align: center; }
 tbody tr.clickable { cursor: pointer; }
 tbody tr.clickable:hover { background: var(--accent-soft); }
 tfoot td { font-weight: 700; background: var(--surface-2); border-bottom: 0; }
-td .desc { max-width: 380px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+td .desc { max-width: 420px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .red { color: var(--danger); font-weight: 700; }
 .muted { color: var(--muted); }
 .warn-cell { color: var(--danger); font-weight: 600; font-size: .82rem; }
@@ -241,7 +246,7 @@ h4 { margin: 0; font-size: .95rem; font-weight: 600; }
 .toast { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); inset-inline-end: 18px; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; z-index: 60; font-weight: 500; max-width: calc(100% - 36px); }
 .toast.err { background: var(--danger); color: var(--surface); }
 .hol-add { display: grid; grid-template-columns: 160px 1fr 140px auto; gap: 10px; align-items: end; }
-@media (max-width: 640px) { .hol-add { grid-template-columns: 1fr 1fr; } .kpi .value { font-size: 1.3rem; } }
+@media (max-width: 640px) { .hol-add { grid-template-columns: 1fr 1fr; } .kpi .value { font-size: 1.3rem; } .donut-wrap { justify-content: center; } }
 @media (prefers-reduced-motion: no-preference) { .drawer { animation: slide .18s ease-out; } @keyframes slide { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } } }
 </style>
 
@@ -253,14 +258,14 @@ h4 { margin: 0; font-size: .95rem; font-weight: 600; }
         <div class="meta"><span id="projCode"></span><span id="asOfLabel"></span></div>
       </div>
       <div class="actions">
-        <button class="btn" id="exportBtn" type="button">تصدير Excel</button>
+        <button class="btn" id="exportBtn" type="button">تصدير إلى Excel</button>
       </div>
     </div>
     <nav class="tabs" role="tablist" id="tabs"></nav>
   </div>
 </header>
 <main id="view">
-  <div class="section"><div class="empty"><strong>جاري تحميل بيانات العقد…</strong><span>البنود والمخرجات وسجل المراجعات هتظهر هنا بعد ثواني.</span></div></div>
+  <div class="section"><div class="empty"><strong>جارٍ تحميل بيانات العقد…</strong><span>ستظهر البنود والمخرجات وسجل المراجعات خلال ثوانٍ.</span></div></div>
 </main>
 <div id="drawerRoot"></div>
 <div id="toastRoot" aria-live="polite"></div>
@@ -280,20 +285,21 @@ const ACTIONS = [ACT.SUB, ACT.REP, ACT.ACC];
 const WORK_STATUSES = [ST.NEW, ST.PROG, ST.LATE, ST.SUS];
 const YESNO = ["نعم", "لا"];
 const BILLING = [
-  { k: "certificate", label: "صدر له شهادة إنجاز", yn: true },
+  { k: "certificate", label: "صدرت له شهادة إنجاز", yn: true },
   { k: "acceptance_form", label: "نموذج قبول مخرج جديد", yn: true },
-  { k: "invoiced", label: "تم فوترته", yn: true },
-  { k: "ref_no", label: "تمت المطالبة به" },
+  { k: "invoiced", label: "تمت فوترته", yn: true },
   { k: "invoice_no", label: "رقم الفاتورة" },
-  { k: "claim_no", label: "رقم المطالبة" },
+  { k: "ref_no", label: "رقم المطالبة السابقة" },
+  { k: "claim_no", label: "رقم المطالبة الجديدة" },
   { k: "paid", label: "تم صرفه", yn: true },
 ];
 const ISSUE_TYPES = ["مشكلة", "قرار"];
-const ISSUE_OWNERS = ["العميل", "فريقنا", "مشترك"];
+const ISSUE_OWNERS = ["العميل", "فريق المشروع", "مشترك"];
 const OPEN = "مفتوح", CLOSED = "مغلق";
-const CR_STATUSES = ["قيد الإعداد", "مُرسل للعميل", "قيد الدراسة", "معتمد", "مرفوض", "ملغي"];
-const CR_OPEN = new Set(["قيد الإعداد", "مُرسل للعميل", "قيد الدراسة"]);
-const CR_CLASS = { "قيد الإعداد": "new", "مُرسل للعميل": "wait", "قيد الدراسة": "prog", "معتمد": "acc", "مرفوض": "late", "ملغي": "sus" };
+const BLOCKING = "يتوقف عليها الإجراء";
+const CR_STATUSES = ["قيد الإعداد", "مُرسل إلى العميل", "قيد الدراسة", "معتمد", "مرفوض", "ملغى"];
+const CR_OPEN = new Set(["قيد الإعداد", "مُرسل إلى العميل", "قيد الدراسة"]);
+const CR_CLASS = { "قيد الإعداد": "new", "مُرسل إلى العميل": "wait", "قيد الدراسة": "prog", "معتمد": "acc", "مرفوض": "late", "ملغى": "sus" };
 const WEEKENDS = [
   { key: "5,6", label: "الجمعة والسبت" },
   { key: "6,0", label: "السبت والأحد" },
@@ -305,10 +311,13 @@ const DEFAULT_SETTINGS = {
 };
 const TABS = [
   ["dashboard", "لوحة المتابعة"], ["items", "البنود"], ["deliverables", "المخرجات"], ["log", "سجل المراجعات"],
-  ["issues", "المشاكل والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["settings", "الإعدادات"],
+  ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["settings", "الإعدادات"],
 ];
 const TAB_KEYS = TABS.map((t) => t[0]);
 const COLLECTIONS = ["items", "deliverables", "events", "issues", "crs"];
+/* Saudi Riyal sign — glyph outline from the Saudi Riyal font (SIL OFL 1.1) */
+const SAR_PATH = "M750,1119C730,1163,716,1211,711,1262L1136,1172C1156,1127,1169,1079,1174,1028ZM1136,901C1156,857,1169,809,1174,758L843,828L843,693L1136,631C1156,587,1169,538,1174,488L843,558L843,72C793,100,748,138,711,183L711,586L579,614L579,6C528,34,483,72,447,117L447,642L151,705C131,750,117,798,112,849L447,777L447,948L88,1024C68,1068,55,1117,50,1167L425,1088C456,1081,482,1063,499,1038L568,936C575,926,579,913,579,899L579,749L711,721L711,992Z";
+const SAR = `<svg class="sar" viewBox="40 0 1145 1270" role="img" aria-label="ريال سعودي"><path d="${SAR_PATH}"/></svg>`;
 
 /* ------------------------------------------------------------ state */
 const state = {
@@ -327,8 +336,10 @@ const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const nf2 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 const money = (v) => `<span class="num">${Number.isFinite(v) && v !== 0 ? nf2.format(v) : "-"}</span>`;
+const sar = (v) => `<span class="num">${SAR}${Number.isFinite(v) ? nf2.format(v) : "-"}</span>`;
 const int = (v) => `<span class="num">${Number.isFinite(v) && v !== 0 ? nf0.format(v) : "-"}</span>`;
 const pct = (v) => `<span class="num">${Number.isFinite(v) ? (v * 100).toFixed(1) + "%" : "-"}</span>`;
+const bar = (v, cls = "") => `<span class="mini-bar ${cls}"><span style="width:${Math.max(0, Math.min(100, (v || 0) * 100))}%"></span></span>`;
 const dateHtml = (iso) => iso ? `<span class="date">${esc(iso)}</span>` : `<span class="muted">—</span>`;
 const pill = (s, cls) => `<span class="pill s-${cls || STATUS_CLASS[s] || "new"}">${esc(s)}</span>`;
 const ynHtml = (v) => v === "نعم" ? `<span class="yes">نعم</span>` : v === "لا" ? `<span class="no">لا</span>` : `<span class="muted">—</span>`;
@@ -350,8 +361,8 @@ function toast(msg, isErr) {
   toast.t = setTimeout(() => { root.innerHTML = ""; }, isErr ? 6000 : 2600);
 }
 const errText = (e) => {
-  const map = { quota_exceeded: "مساحة التخزين اتملت — احذف بيانات قديمة.", invalid_argument: "مفيش صلاحية حفظ أو البيانات غير صحيحة.", resource_exhausted: "طلبات كتير ورا بعض — استنى ثواني وجرّب تاني.", unavailable: "التخزين مش متاح دلوقتي — جرّب كمان شوية.", revoked: "صلاحية الوصول اتسحبت." };
-  return map[e?.code] || e?.message || "حصل خطأ غير متوقع";
+  const map = { quota_exceeded: "امتلأت مساحة التخزين؛ يُرجى حذف بيانات قديمة.", invalid_argument: "لا توجد صلاحية للحفظ أو البيانات غير صحيحة.", resource_exhausted: "طلبات كثيرة متتالية؛ يُرجى الانتظار ثوانيَ ثم المحاولة مجددًا.", unavailable: "التخزين غير متاح حاليًا؛ يُرجى المحاولة بعد قليل.", revoked: "سُحبت صلاحية الوصول." };
+  return map[e?.code] || e?.message || "حدث خطأ غير متوقع";
 };
 
 /* ------------------------------------------------------------ calculations
@@ -384,11 +395,11 @@ function computeModel(data, asOfIso) {
     const c = { cycle: null, end: null, open: false, review: null, delay: null, vendorDays: null, vendorOpen: false, warn: "" };
     const t = dn(e.date), list = evBy.get(e.deliverable) || [];
     if (!e.deliverable) c.warn = "رقم المخرج ناقص";
-    else if (!delById.has(e.deliverable)) c.warn = "رقم مخرج غير موجود";
+    else if (!delById.has(e.deliverable)) c.warn = "رقم المخرج غير موجود";
     else if (!ACTIONS.includes(e.action)) c.warn = "نوع الحركة ناقص";
     else if (!Number.isFinite(t)) c.warn = "التاريخ ناقص";
-    else if (t > asOf) c.warn = "تاريخ بعد تاريخ الاحتساب";
-    else if (e.action !== ACT.SUB && !list.some((x) => x.action === ACT.SUB && x.t <= t)) c.warn = "لا يوجد تسليم قبل الحركة دي";
+    else if (t > asOf) c.warn = "التاريخ بعد تاريخ الاحتساب";
+    else if (e.action !== ACT.SUB && !list.some((x) => x.action === ACT.SUB && x.t <= t)) c.warn = "لا يوجد تسليم سابق لهذه الحركة";
 
     if (Number.isFinite(t) && e.deliverable) {
       if (e.action === ACT.SUB) {
@@ -402,7 +413,7 @@ function computeModel(data, asOfIso) {
         c.review = span(t, c.end);
         c.delay = Math.max(0, c.review - reviewLimit);
       } else if (e.action === ACT.REP) {
-        // time on our side: from the reply until we resubmit
+        // time on the project team's side: from the reply until the resubmission
         const next = list.filter((x) => x.action === ACT.SUB && x.t >= t).map((x) => x.t);
         const accepted = list.some((x) => x.action === ACT.ACC && x.t >= t);
         if (next.length) c.vendorDays = span(t, Math.min(...next));
@@ -455,24 +466,35 @@ function computeModel(data, asOfIso) {
   }
 
   const items = new Map();
-  const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, late: 0, acceptedValue: 0, remaining: 0 };
+  const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, waiting: 0, late: 0, acceptedValue: 0, deliveredValue: 0, waitingValue: 0, remaining: 0, actualWeighted: 0 };
   for (const it of data.items) {
     const ds = data.deliverables.filter((d) => d.item_id === it.id);
     const qty = numOr(it.qty, 0), price = numOr(it.unit_price, 0), total = qty * price;
+    const k = (d) => del.get(d.id);
     const r = {
       qty, price, total, vat: total * vat, totalVat: total * (1 + vat), registered: ds.length,
-      delivered: ds.filter((d) => del.get(d.id).firstSubmit > 0).length,
-      accepted: ds.filter((d) => del.get(d.id).status === ST.ACC).length,
-      late: ds.filter((d) => del.get(d.id).status === ST.LATE).length,
+      delivered: ds.filter((d) => k(d).firstSubmit > 0).length,
+      accepted: ds.filter((d) => k(d).status === ST.ACC).length,
+      waiting: ds.filter((d) => k(d).status === ST.WAIT).length,
+      late: ds.filter((d) => k(d).status === ST.LATE).length,
+      actual: it.actual_progress === undefined || it.actual_progress === null || it.actual_progress === "" ? null : numOr(it.actual_progress, null),
       crs: crsByItem.get(it.id) || [],
     };
     r.progress = qty > 0 ? r.accepted / qty : null;
+    r.deliveredPct = qty > 0 ? r.delivered / qty : null;
     r.acceptedValue = r.accepted * price;
+    r.deliveredValue = r.delivered * price;
+    r.waitingValue = r.waiting * price;
     r.remaining = total - r.acceptedValue;
+    r.actualWeighted = (r.actual || 0) * total;
     items.set(it.id, r);
-    for (const k of Object.keys(tot)) tot[k] += r[k] || 0;
+    for (const key of Object.keys(tot)) tot[key] += r[key] || 0;
   }
-  tot.progress = tot.total > 0 ? tot.acceptedValue / tot.total : null;
+  tot.acceptedShare = tot.total > 0 ? tot.acceptedValue / tot.total : null;
+  tot.waitingShare = tot.total > 0 ? tot.waitingValue / tot.total : null;
+  tot.progress = tot.qty > 0 ? tot.accepted / tot.qty : null;
+  tot.deliveredPct = tot.qty > 0 ? tot.delivered / tot.qty : null;
+  tot.actual = tot.total > 0 ? tot.actualWeighted / tot.total : null;
 
   const statusCounts = Object.fromEntries(STATUS_ORDER.map((st) => [st, 0]));
   for (const d of data.deliverables) statusCounts[del.get(d.id).status]++;
@@ -498,8 +520,8 @@ function render() {
 
   const view = document.getElementById("view");
   const loading = !Object.values(state.ready).every(Boolean) && !state.offline;
-  let html = state.offline ? `<div class="notice">مش قادر أوصل لتخزين البيانات. افتح الصفحة من claude.ai وإنت مسجّل دخول عشان تشوف بيانات العقد وتعدّل فيها.</div>` : "";
-  if (loading) html += `<div class="section"><div class="empty"><strong>جاري تحميل بيانات العقد…</strong></div></div>`;
+  let html = state.offline ? `<div class="notice">تعذّر الوصول إلى تخزين البيانات. افتح الصفحة من claude.ai بعد تسجيل الدخول لعرض بيانات العقد وتعديلها.</div>` : "";
+  if (loading) html += `<div class="section"><div class="empty"><strong>جارٍ تحميل بيانات العقد…</strong></div></div>`;
   else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, settings: viewSettings })[state.tab]();
   view.innerHTML = html;
   if (state.drawer) renderDrawer();
@@ -513,15 +535,15 @@ function issueCard(i, opts = {}) {
   const closed = i.status === CLOSED;
   return `<div class="card ${i.blocking && !closed ? "blocking" : ""} ${closed ? "closed" : ""} ${opts.clickable ? "clickable" : ""}" ${opts.clickable ? `data-open-del="${esc(i.deliverable)}" data-sub="issues"` : ""}>
     <div class="head">${pill(i.type || "مشكلة", i.type === "قرار" ? "wait" : "ret")}
-      ${i.blocking && !closed ? `<span class="flag">واقف عليها الإجراء</span>` : ""}
-      ${closed ? pill("مغلق", "acc") : ""}
+      ${i.blocking && !closed ? `<span class="flag">${BLOCKING}</span>` : ""}
+      ${closed ? pill("مغلقة", "acc") : ""}
       <span class="title">${esc(i.title)}</span></div>
     <div class="meta">${opts.showDel ? `<span><span class="code">${esc(i.deliverable)}</span> ${esc(short(d?.description, 50))}</span>` : ""}
-      <span>من <span class="date">${esc(i.date || "")}</span></span>${i.owner ? `<span>على: ${esc(i.owner)}</span>` : ""}
-      ${closed && i.closed_date ? `<span>اتقفلت <span class="date">${esc(i.closed_date)}</span></span>` : ""}</div>
+      <span>بتاريخ <span class="date">${esc(i.date || "")}</span></span>${i.owner ? `<span>المسؤول: ${esc(i.owner)}</span>` : ""}
+      ${closed && i.closed_date ? `<span>أُغلقت في <span class="date">${esc(i.closed_date)}</span></span>` : ""}</div>
     ${i.details ? `<div class="body">${esc(i.details)}</div>` : ""}
     ${closed && i.resolution ? `<div class="body"><strong>الحل/القرار:</strong> ${esc(i.resolution)}</div>` : ""}
-    ${opts.actions ? `<div class="actions">${closed ? `<button class="btn small" type="button" data-reopen-issue="${esc(i.id)}">إعادة فتح</button>` : `<button class="btn small" type="button" data-close-issue="${esc(i.id)}">قفل</button>`}
+    ${opts.actions ? `<div class="actions">${closed ? `<button class="btn small" type="button" data-reopen-issue="${esc(i.id)}">إعادة فتح</button>` : `<button class="btn small" type="button" data-close-issue="${esc(i.id)}">إغلاق</button>`}
       <button class="btn small" type="button" data-edit-issue="${esc(i.id)}">تعديل</button></div>` : ""}
   </div>`;
 }
@@ -533,79 +555,107 @@ function crCard(cr) {
     <div class="meta">${cr.date ? `<span>تاريخ الطلب <span class="date">${esc(cr.date)}</span></span>` : ""}
       ${its.length ? `<span>البنود: ${its.map((x) => `<span class="code">${esc(x)}</span>`).join("، ")}</span>` : ""}
       ${(cr.deliverables || []).length ? `<span><span class="num">${cr.deliverables.length}</span> مخرج</span>` : ""}
-      ${Number.isFinite(cr.value_change) && cr.value_change ? `<span>الأثر المالي ${money(cr.value_change)}</span>` : ""}</div>
+      ${Number.isFinite(cr.value_change) && cr.value_change ? `<span>الأثر المالي ${sar(cr.value_change)}</span>` : ""}</div>
     ${cr.impact ? `<div class="body">${esc(short(cr.impact, 180))}</div>` : ""}
   </div>`;
+}
+
+/* ---- status donut */
+function donut(counts, total) {
+  const R = 100, r0 = 62, cx = 110, cy = 110;
+  const live = STATUS_ORDER.filter((s) => counts[s]);
+  if (!total) return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="لا توجد مخرجات"><circle cx="${cx}" cy="${cy}" r="${(R + r0) / 2}" fill="none" stroke="var(--line)" stroke-width="${R - r0}"/></svg>`;
+  let a = -Math.PI / 2;
+  const pt = (rad, ang) => `${(cx + rad * Math.cos(ang)).toFixed(2)},${(cy + rad * Math.sin(ang)).toFixed(2)}`;
+  const paths = live.map((s) => {
+    const n = counts[s], sweep = (n / total) * Math.PI * 2;
+    const a2 = a + sweep, large = sweep > Math.PI ? 1 : 0;
+    let d;
+    if (live.length === 1) d = `M${pt(R, -Math.PI / 2)}A${R},${R} 0 1 1 ${pt(R, Math.PI * 1.5 - 0.0001)}L${pt(r0, Math.PI * 1.5 - 0.0001)}A${r0},${r0} 0 1 0 ${pt(r0, -Math.PI / 2)}Z`;
+    else d = `M${pt(R, a)}A${R},${R} 0 ${large} 1 ${pt(R, a2)}L${pt(r0, a2)}A${r0},${r0} 0 ${large} 0 ${pt(r0, a)}Z`;
+    a = a2;
+    return `<path d="${d}" fill="var(--st-${STATUS_CLASS[s]})" stroke="var(--surface)" stroke-width="2" data-filter-status="${esc(s)}"><title>${esc(s)}: ${n} مخرج (${((n / total) * 100).toFixed(1)}%)</title></path>`;
+  }).join("");
+  return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="توزيع المخرجات حسب الحالة">${paths}
+    <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="total">${total}</text><text x="${cx}" y="${cy + 26}" text-anchor="middle" class="total-lbl">مخرجًا</text></svg>`;
 }
 
 /* ---- dashboard */
 function viewDashboard() {
   const c = state.calc, t = c.tot;
-  if (!state.items.length) return `<section class="section">${emptyBlock("لسه مفيش بنود للعقد", "ابدأ بإضافة بنود العقد من شاشة البنود، وبعدها ضيف المخرجات وسجّل حركات المراجعة.", `<button class="btn primary" data-go="items" type="button">إضافة أول بند</button>`)}</section>`;
-  const total = state.deliverables.length || 1;
-  const seg = STATUS_ORDER.filter((s) => c.statusCounts[s]).map((s) =>
-    `<span style="width:${(c.statusCounts[s] / total) * 100}%;background:var(--st-${STATUS_CLASS[s]})" title="${esc(s)}: ${c.statusCounts[s]}"></span>`).join("");
+  if (!state.items.length) return `<section class="section">${emptyBlock("لا توجد بنود للعقد بعد", "ابدأ بإضافة بنود العقد من شاشة البنود، ثم أضف المخرجات وسجّل حركات المراجعة.", `<button class="btn primary" data-go="items" type="button">إضافة أول بند</button>`)}</section>`;
+  const total = state.deliverables.length;
   const legend = STATUS_ORDER.map((s) =>
-    `<button type="button" class="row" data-filter-status="${esc(s)}"><span class="sw" style="background:var(--st-${STATUS_CLASS[s]})"></span><span class="lbl">${esc(s)}</span><strong class="num">${c.statusCounts[s] || 0}</strong></button>`).join("");
+    `<button type="button" data-filter-status="${esc(s)}"><span class="sw" style="background:var(--st-${STATUS_CLASS[s]})"></span><span class="lbl">${esc(s)}</span><strong class="num">${c.statusCounts[s] || 0}</strong><span class="share num">${total ? ((c.statusCounts[s] / total) * 100).toFixed(1) + "%" : "-"}</span></button>`).join("");
   const withK = state.deliverables.map((d) => ({ d, k: c.del.get(d.id) }));
   const open = withK.filter((x) => x.k.openCycle && x.k.status !== ST.ACC).sort((a, b) => b.k.openCycle.review - a.k.openCycle.review);
   const returned = withK.filter((x) => x.k.status === ST.RET).sort((a, b) => b.k.waitingSinceReply - a.k.waitingSinceReply);
   const openIssues = state.issues.filter((i) => i.status !== CLOSED).sort((a, b) => (b.blocking ? 1 : 0) - (a.blocking ? 1 : 0) || String(a.date).localeCompare(String(b.date)));
   const openCrs = state.crs.filter((x) => CR_OPEN.has(x.status)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const meter = (v, color) => `<div class="meter"><span style="width:${Math.max(0, Math.min(100, (v || 0) * 100))}%;background:var(${color})"></span></div>`;
+
   const itemRows = [...state.items].sort(byItemOrder).map((it) => {
     const r = c.items.get(it.id);
-    const accW = r.qty ? Math.min(100, (r.accepted / r.qty) * 100) : 0;
-    const delW = r.qty ? Math.max(0, Math.min(100, (r.delivered / r.qty) * 100) - accW) : 0;
     const crOpen = r.crs.some((x) => CR_OPEN.has(x.status));
-    return `<div class="prog-row" title="مقبول ${r.accepted} · مسلّم ${r.delivered} · الكمية ${r.qty}">
-      <div class="name"><span class="code">${esc(itemLabel(it))}</span>${esc(it.name)} ${crOpen ? `<span class="flag soft">طلب تغيير</span>` : ""}</div>
-      <div class="pstat">مقبول <span class="num">${r.accepted}</span> من <span class="num">${r.qty}</span> · ${pct(r.progress)}</div>
-      <div class="bar"><span class="acc" style="width:${accW}%"></span><span class="del" style="width:${delW}%"></span></div></div>`;
+    return `<tr class="clickable" tabindex="0" data-edit-item="${esc(it.id)}">
+      <td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(it.name)}</div>${crOpen ? `<span class="flag soft">طلب تغيير مفتوح</span>` : ""}</td>
+      <td class="n">${int(r.qty)}</td><td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td>
+      <td class="n">${pct(r.deliveredPct)}${bar(r.deliveredPct, "del")}</td>
+      <td class="n">${pct(r.progress)}${bar(r.progress)}</td>
+      <td class="n">${r.actual === null ? '<span class="muted">—</span>' : pct(r.actual) + bar(r.actual, "act")}</td></tr>`;
   }).join("");
 
   return `
   <div class="kpis">
-    <div class="kpi lead"><span class="label">الإنجاز المالي</span><span class="value">${pct(t.progress)}</span><span class="foot">قيمة المقبول ÷ قيمة العقد</span></div>
-    <div class="kpi"><span class="label">قيمة العقد قبل الضريبة (ر.س)</span><span class="value">${money(t.total)}</span><span class="foot">شامل الضريبة ${money(t.totalVat)}</span></div>
-    <div class="kpi"><span class="label">قيمة المقبول (ر.س)</span><span class="value">${money(t.acceptedValue)}</span><span class="foot"><span class="num">${t.accepted}</span> مخرج مقبول من <span class="num">${t.qty}</span></span></div>
-    <div class="kpi"><span class="label">المتبقي (ر.س)</span><span class="value">${money(t.remaining)}</span><span class="foot"><span class="num">${t.delivered}</span> مخرج اتسلّم مرة على الأقل</span></div>
+    <div class="kpi"><span class="label">قيمة العقد قبل الضريبة</span><span class="value">${sar(t.total)}</span><span class="foot">شاملة الضريبة ${sar(t.totalVat)}</span></div>
+    <div class="kpi wait"><span class="label">إجمالي في انتظار القبول</span><span class="value">${pct(t.waitingShare)}<span class="amt">${sar(t.waitingValue)}</span></span>${meter(t.waitingShare, "--st-wait")}<span class="foot"><span class="num">${t.waiting}</span> مخرجًا مسلَّمًا ينتظر قبول العميل</span></div>
+    <div class="kpi acc"><span class="label">إجمالي المقبول</span><span class="value">${pct(t.acceptedShare)}<span class="amt">${sar(t.acceptedValue)}</span></span>${meter(t.acceptedShare, "--st-acc")}<span class="foot"><span class="num">${t.accepted}</span> مخرجًا مقبولًا من <span class="num">${t.qty}</span></span></div>
+    <div class="kpi"><span class="label">المتبقي (غير المقبول)</span><span class="value">${sar(t.remaining)}</span><span class="foot">قيمة العقد مطروحًا منها المقبول</span></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><span class="label">نسبة الإنجاز (المقبول ÷ الإجمالي)</span><span class="value">${pct(t.progress)}</span>${meter(t.progress, "--st-acc")}<span class="foot"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
+    <div class="kpi"><span class="label">نسبة الإنجاز المسلَّم (المسلَّم ÷ الإجمالي)</span><span class="value">${pct(t.deliveredPct)}</span>${meter(t.deliveredPct, "--st-wait")}<span class="foot"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا سُلِّم مرة واحدة على الأقل</span></div>
+    <div class="kpi"><span class="label">نسبة الإنجاز الفعلي</span><span class="value">${pct(t.actual)}</span>${meter(t.actual, "--actual")}<span class="foot">مُدخلة يدويًا لكل بند، ومرجَّحة بقيمة البنود</span></div>
+  </div>
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head"><h2>حالة المخرجات</h2><span class="sub">اضغط على أي حالة لعرض مخرجاتها</span></div>
+      <div class="donut-wrap">${donut(c.statusCounts, total)}<div class="legend">${legend}</div></div>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>المشكلات والقرارات المفتوحة</h2><span class="sub">تظهر أولًا المشكلات التي ${BLOCKING}</span></div>
+      ${openIssues.length ? `<div class="cards">${openIssues.slice(0, 5).map((i) => issueCard(i, { clickable: true, showDel: true })).join("")}</div>
+        ${openIssues.length > 5 ? `<button class="btn small" type="button" data-go="issues">عرض الكل (<span class="num">${openIssues.length}</span>)</button>` : ""}`
+        : emptyBlock("لا توجد مشكلات مفتوحة", "سجّل أي مشكلة أو قرار من صفحة المخرج.")}
+    </section>
   </div>
   <section class="section">
-    <div class="section-head"><h2>حالة المخرجات</h2><span class="sub"><span class="num">${state.deliverables.length}</span> مخرج — اضغط على أي حالة لعرض مخرجاتها</span></div>
-    <div class="statusbar" role="img" aria-label="توزيع المخرجات حسب الحالة">${seg}</div>
-    <div class="legend">${legend}</div>
+    <div class="section-head"><h2>في انتظار رد العميل</h2><span class="sub">دورات مراجعة مفتوحة · المهلة <span class="num">${c.reviewLimit}</span> أيام عمل · <span class="num">${open.length}</span> مخرجًا</span></div>
+    ${open.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>البند</th><th>تاريخ التسليم</th><th class="n">رقم الدورة</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th></tr></thead><tbody>
+      ${open.slice(0, 15).map((x) => delRow(x.d, `<td><span class="code">${esc(itemLabel(c.itemsById.get(x.d.item_id)))}</span></td><td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.cycles)}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n ${x.k.openCycle.delay > 0 ? "red" : ""}">${int(x.k.openCycle.delay)}</td><td class="n">${money(x.k.value)}</td>`)).join("")}
+      </tbody></table></div>${open.length > 15 ? `<button class="btn small" type="button" data-filter-status="${ST.WAIT}">عرض الكل (<span class="num">${open.length}</span>)</button>` : ""}`
+      : emptyBlock("لا توجد مخرجات تنتظر الرد", "تم الرد على جميع التسليمات.")}
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>إنجاز البنود</h2><span class="sub">اضغط على البند لتعديل نسبة الإنجاز الفعلي</span></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>رقم البند</th><th>البند</th><th class="n">الكمية</th><th class="n">المسلَّم</th><th class="n">المقبول</th><th class="n">نسبة الإنجاز المسلَّم</th><th class="n">نسبة الإنجاز (المقبول)</th><th class="n">نسبة الإنجاز الفعلي</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+      <tfoot><tr><td colspan="2">الإجمالي</td><td class="n">${int(t.qty)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td></tr></tfoot>
+    </table></div>
   </section>
   <div class="grid-2">
     <section class="section">
-      <div class="section-head"><h2>في انتظار رد العميل</h2><span class="sub">دورات مراجعة مفتوحة · المهلة <span class="num">${c.reviewLimit}</span> أيام عمل</span></div>
-      ${open.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class="n">أيام المراجعة</th><th class="n">التأخير</th></tr></thead><tbody>
-        ${open.slice(0, 10).map((x) => delRow(x.d, `<td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n ${x.k.openCycle.delay > 0 ? "red" : ""}">${int(x.k.openCycle.delay)}</td>`)).join("")}
-        </tbody></table></div>${open.length > 10 ? `<button class="btn small" type="button" data-filter-status="${ST.WAIT}">عرض الكل (<span class="num">${open.length}</span>)</button>` : ""}`
-        : emptyBlock("مفيش مخرجات مستنية رد", "كل التسليمات اتردّ عليها.")}
-    </section>
-    <section class="section">
-      <div class="section-head"><h2>مشاكل وقرارات مفتوحة</h2><span class="sub">اللي واقف عليها الإجراء الأول</span></div>
-      ${openIssues.length ? `<div class="cards">${openIssues.slice(0, 6).map((i) => issueCard(i, { clickable: true, showDel: true })).join("")}</div>
-        ${openIssues.length > 6 ? `<button class="btn small" type="button" data-go="issues">عرض الكل (<span class="num">${openIssues.length}</span>)</button>` : ""}`
-        : emptyBlock("مفيش مشاكل مفتوحة", "سجّل أي مشكلة أو قرار من صفحة المخرج.")}
-    </section>
-  </div>
-  <div class="grid-2">
-    <section class="section">
-      <div class="section-head"><h2>مُعادة بملاحظات</h2><span class="sub">الدور علينا — محتاجة إعادة تسليم</span></div>
-      ${returned.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th><th class="n">أيام عمل من الرد</th></tr></thead><tbody>
+      <div class="section-head"><h2>مُعادة بملاحظات</h2><span class="sub">تنتظر إعادة التسليم من فريق المشروع</span></div>
+      ${returned.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th><th class="n">أيام العمل منذ الرد</th></tr></thead><tbody>
         ${returned.map((x) => delRow(x.d, `<td>${dateHtml(isoOf(x.k.lastReply))}</td><td class="n">${int(x.k.waitingSinceReply)}</td>`)).join("")}</tbody></table></div>`
-        : emptyBlock("مفيش مخرجات مُعادة", "مفيش ملاحظات مستنية إعادة تسليم.")}
+        : emptyBlock("لا توجد مخرجات مُعادة", "لا توجد ملاحظات تنتظر إعادة التسليم.")}
     </section>
     <section class="section">
-      <div class="section-head"><h2>طلبات تغيير مفتوحة</h2><span class="sub">قيد الإعداد أو مُرسلة أو قيد الدراسة</span></div>
-      ${openCrs.length ? `<div class="cards">${openCrs.map(crCard).join("")}</div>` : emptyBlock("مفيش طلبات تغيير مفتوحة", "", `<button class="btn small" type="button" data-go="crs">طلبات التغيير</button>`)}
+      <div class="section-head"><h2>طلبات التغيير المفتوحة</h2><span class="sub">قيد الإعداد أو مُرسلة أو قيد الدراسة</span></div>
+      ${openCrs.length ? `<div class="cards">${openCrs.map(crCard).join("")}</div>` : emptyBlock("لا توجد طلبات تغيير مفتوحة", "", `<button class="btn small" type="button" data-go="crs">طلبات التغيير</button>`)}
     </section>
-  </div>
-  <section class="section">
-    <div class="section-head"><h2>إنجاز البنود</h2><span class="sub">الأخضر مقبول · الأزرق الفاتح مسلّم ولسه ماتقبلش</span></div>
-    <div class="progress-list">${itemRows}</div>
-  </section>`;
+  </div>`;
 }
 
 /* ---- items */
@@ -618,19 +668,19 @@ function viewItems() {
     return `<tr class="clickable" tabindex="0" data-edit-item="${esc(it.id)}">
       <td><span class="code">${esc(itemLabel(it))}</span></td><td><span class="code muted">${esc(it.wbs)}</span></td><td><div class="desc">${esc(it.name)}</div></td>
       <td class="n">${int(r.qty)}</td><td class="n">${money(r.price)}</td><td class="n">${money(r.total)}</td><td class="n">${money(r.totalVat)}</td>
-      <td class="n ${mismatch ? "red" : ""}" title="${mismatch ? "عدد المخرجات المسجلة مختلف عن الكمية التعاقدية" : ""}">${int(r.registered)}</td>
+      <td class="n ${mismatch ? "red" : ""}" title="${mismatch ? "عدد المخرجات المسجلة يختلف عن الكمية التعاقدية" : ""}">${int(r.registered)}</td>
       <td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td>
-      <td class="n">${pct(r.progress)}<span class="mini-bar"><span style="width:${Math.min(100, (r.progress || 0) * 100)}%"></span></span></td>
+      <td class="n">${pct(r.deliveredPct)}</td><td class="n">${pct(r.progress)}</td><td class="n">${r.actual === null ? '<span class="muted">—</span>' : pct(r.actual)}</td>
       <td class="n">${money(r.acceptedValue)}</td><td class="n">${money(r.remaining)}</td>
       <td class="c">${r.crs.length ? `<span class="${crOpen ? "flag soft" : "muted"}">${r.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""}</td></tr>`;
   }).join("");
   return `<section class="section">
-    <div class="section-head"><h2>بنود العقد</h2><div class="actions"><span class="count">المبالغ بالريال · اضغط على أي بند لتعديله</span><button class="btn primary" data-new-item type="button">+ بند جديد</button></div></div>
+    <div class="section-head"><h2>بنود العقد</h2><div class="actions"><span class="count">المبالغ بالريال ${SAR} · اضغط على أي بند لتعديله</span><button class="btn primary" data-new-item type="button">+ بند جديد</button></div></div>
     ${state.items.length ? `<div class="table-wrap"><table>
-      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي قبل الضريبة</th><th class="n">شامل الضريبة</th><th class="n">المسجلة</th><th class="n">المسلّمة</th><th class="n">المقبولة</th><th class="n">الإنجاز</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th><th class="c">طلبات التغيير</th></tr></thead>
+      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي قبل الضريبة</th><th class="n">الإجمالي شاملًا الضريبة</th><th class="n">المسجلة</th><th class="n">المسلَّمة</th><th class="n">المقبولة</th><th class="n">نسبة المسلَّم</th><th class="n">نسبة الإنجاز</th><th class="n">الإنجاز الفعلي</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th><th class="c">طلبات التغيير</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${money(t.totalVat)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n" title="موزون بالقيمة المالية">${pct(t.progress)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td><td></td></tr></tfoot>
-    </table></div>` : emptyBlock("لسه مفيش بنود", "ضيف بنود العقد كما في جدول الكميات: رقم البند، الاسم، الكمية، وسعر الوحدة.")}
+      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${money(t.totalVat)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td><td></td></tr></tfoot>
+    </table></div>` : emptyBlock("لا توجد بنود بعد", "أضف بنود العقد كما وردت في جدول الكميات: رقم البند، والاسم، والكمية، وسعر الوحدة.")}
   </section>`;
 }
 
@@ -653,13 +703,13 @@ function viewDeliverables() {
   const list = filteredDeliverables();
   const itemOpts = [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${f.item === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(short(it.name, 40))}</option>`).join("");
   const statusOpts = STATUS_ORDER.map((s) => `<option${f.status === s ? " selected" : ""}>${esc(s)}</option>`).join("");
-  const issueOpts = [["", "كل المخرجات"], ["open", "عليها مشكلة/قرار مفتوح"], ["blocking", "واقف عليها الإجراء"], ["cr", "مرتبطة بطلب تغيير"]]
+  const issueOpts = [["", "جميع المخرجات"], ["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"]]
     .map(([v, l]) => `<option value="${v}"${f.issue === v ? " selected" : ""}>${l}</option>`).join("");
-  const flags = (k) => [k.blocking ? `<span class="flag" title="مشكلة واقف عليها الإجراء">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشاكل/قرارات مفتوحة">${k.openIssues}</span>` : "",
+  const flags = (k) => [k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
     k.crs.length ? `<span class="flag soft" title="طلب تغيير">${k.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""].join(" ");
   const head = billingView
     ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}`
-    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة قبل الضريبة</th>`;
+    : `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th><th>تنبيهات</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة قبل الضريبة ${SAR}</th>`;
   const rows = list.map((d) => {
     const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d);
     const common = `<td><span class="code">${esc(d.id)}</span></td><td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(d.description)}</div></td><td>${pill(k.status)}</td>`;
@@ -674,14 +724,14 @@ function viewDeliverables() {
       <div class="seg" role="group" aria-label="طريقة العرض"><button type="button" data-delview="review" aria-pressed="${!billingView}">المتابعة</button><button type="button" data-delview="billing" aria-pressed="${billingView}">الفوترة</button></div>
       <button class="btn primary" data-new-del type="button">+ مخرج جديد</button></div></div>
     <div class="filters">
-      <input id="fQ" type="search" placeholder="بحث برقم المخرج أو الوصف أو رقم الفاتورة/المطالبة" value="${esc(f.q)}" aria-label="بحث">
-      <select id="fItem" aria-label="البند"><option value="">كل البنود</option>${itemOpts}</select>
-      <select id="fStatus" aria-label="الحالة"><option value="">كل الحالات</option>${statusOpts}</select>
+      <input id="fQ" type="search" placeholder="ابحث برقم المخرج أو الوصف أو رقم الفاتورة أو المطالبة" value="${esc(f.q)}" aria-label="بحث">
+      <select id="fItem" aria-label="البند"><option value="">جميع البنود</option>${itemOpts}</select>
+      <select id="fStatus" aria-label="الحالة"><option value="">جميع الحالات</option>${statusOpts}</select>
       <select id="fIssue" aria-label="التنبيهات">${issueOpts}</select>
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.length}</span></span>
     </div>
     ${list.length ? `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
-      : state.deliverables.length ? emptyBlock("مفيش مخرجات بالفلتر ده", "غيّر البحث أو الفلتر.") : emptyBlock("لسه مفيش مخرجات", state.items.length ? "ضيف المخرجات تحت كل بند، كل مخرج برقم ثابت زي D-001." : "ضيف بنود العقد الأول من شاشة البنود.")}
+      : state.deliverables.length ? emptyBlock("لا توجد مخرجات مطابقة", "غيّر البحث أو عوامل التصفية.") : emptyBlock("لا توجد مخرجات بعد", state.items.length ? "أضف المخرجات تحت كل بند، ولكل مخرج رقم ثابت مثل D-001." : "أضف بنود العقد أولًا من شاشة البنود.")}
   </section>`;
 }
 
@@ -702,15 +752,15 @@ function viewLog() {
   }).join("");
   return `<section class="section">
     <div class="section-head"><h2>سجل المراجعات</h2><button class="btn primary" data-new-ev type="button">+ حركة جديدة</button></div>
-    <p class="muted" style="margin:0">كل تسليم بيفتح دورة مراجعة عند العميل، والدورة بتقفل عند أول رد أو قبول (أو تسليم جديد). الأيام أيام عمل من اليوم التالي للتسليم، من غير الإجازة الأسبوعية والأجازات الرسمية. التأخير = الزيادة عن المهلة في كل دورة. «أيام عندنا» = من الرد بملاحظات لحد ما نعيد التسليم، ومش بتتحسب على العميل.</p>
+    <p class="muted" style="margin:0">يفتح كل تسليم دورة مراجعة لدى العميل، وتُغلق الدورة عند أول رد أو قبول (أو عند تسليم جديد). تُحسب الأيام أيامَ عمل بدءًا من اليوم التالي للتسليم، مع استبعاد الإجازة الأسبوعية والإجازات الرسمية. التأخير هو ما يزيد على المهلة في كل دورة على حدة. أما «أيام لدى فريق المشروع» فهي المدة من الرد بملاحظات حتى إعادة التسليم، ولا تُحتسب على العميل.</p>
     <div class="filters">
-      <input id="lQ" type="search" placeholder="بحث برقم المخرج أو الملاحظات" value="${esc(f.q)}" aria-label="بحث">
-      <select id="lAction" aria-label="نوع الحركة"><option value="">كل الحركات</option>${actOpts}</select>
+      <input id="lQ" type="search" placeholder="ابحث برقم المخرج أو الملاحظات" value="${esc(f.q)}" aria-label="بحث">
+      <select id="lAction" aria-label="نوع الحركة"><option value="">جميع الحركات</option>${actOpts}</select>
       <span class="count"><span class="num">${list.length}</span> حركة</span>
     </div>
     ${list.length ? `<div class="table-wrap"><table>
-      <thead><tr><th>المخرج</th><th>الوصف</th><th>الحركة</th><th>التاريخ</th><th class="n">الدورة</th><th>نهاية الدورة</th><th>حالة الدورة</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">أيام عندنا</th><th>تنبيه</th><th>ملاحظات</th></tr></thead>
-      <tbody>${rows}</tbody></table></div>` : emptyBlock(state.events.length ? "مفيش حركات بالفلتر ده" : "لسه مفيش حركات", "سجّل كل تسليم أو رد بملاحظات أو قبول كحركة بتاريخها.")}
+      <thead><tr><th>المخرج</th><th>الوصف</th><th>الحركة</th><th>التاريخ</th><th class="n">الدورة</th><th>نهاية الدورة</th><th>حالة الدورة</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">أيام لدى فريق المشروع</th><th>تنبيه</th><th>ملاحظات</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>` : emptyBlock(state.events.length ? "لا توجد حركات مطابقة" : "لا توجد حركات بعد", "سجّل كل تسليم أو رد بملاحظات أو قبول حركةً مستقلة بتاريخها.")}
   </section>`;
 }
 
@@ -720,18 +770,18 @@ function viewIssues() {
   const stateOk = (i) => f.state === "" ? true : f.state === OPEN ? i.status !== CLOSED : f.state === CLOSED ? i.status === CLOSED : (i.blocking && i.status !== CLOSED);
   const list = [...state.issues].filter((i) => stateOk(i) && (!f.type || i.type === f.type) && (!q || `${i.deliverable} ${i.title} ${i.details || ""} ${i.resolution || ""}`.includes(q)))
     .sort((a, b) => (b.blocking ? 1 : 0) - (a.blocking ? 1 : 0) || String(b.date).localeCompare(String(a.date)));
-  const stateOpts = [[OPEN, "المفتوحة"], ["blocking", "واقف عليها الإجراء"], [CLOSED, "المغلقة"], ["", "الكل"]].map(([v, l]) => `<option value="${v}"${f.state === v ? " selected" : ""}>${l}</option>`).join("");
+  const stateOpts = [[OPEN, "المفتوحة"], ["blocking", BLOCKING], [CLOSED, "المغلقة"], ["", "الكل"]].map(([v, l]) => `<option value="${v}"${f.state === v ? " selected" : ""}>${l}</option>`).join("");
   const typeOpts = ISSUE_TYPES.map((t) => `<option${f.type === t ? " selected" : ""}>${t}</option>`).join("");
   return `<section class="section">
-    <div class="section-head"><h2>المشاكل والقرارات</h2><button class="btn primary" data-new-issue type="button">+ مشكلة أو قرار</button></div>
+    <div class="section-head"><h2>المشكلات والقرارات</h2><button class="btn primary" data-new-issue type="button">+ مشكلة أو قرار</button></div>
     <div class="filters">
-      <input id="iQ" type="search" placeholder="بحث برقم المخرج أو العنوان" value="${esc(f.q)}" aria-label="بحث">
+      <input id="iQ" type="search" placeholder="ابحث برقم المخرج أو العنوان" value="${esc(f.q)}" aria-label="بحث">
       <select id="iState" aria-label="الحالة">${stateOpts}</select>
-      <select id="iType" aria-label="النوع"><option value="">مشاكل وقرارات</option>${typeOpts}</select>
+      <select id="iType" aria-label="النوع"><option value="">المشكلات والقرارات</option>${typeOpts}</select>
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.issues.length}</span></span>
     </div>
     ${list.length ? `<div class="cards">${list.map((i) => issueCard(i, { showDel: true, actions: true })).join("")}</div>`
-      : emptyBlock(state.issues.length ? "مفيش نتايج بالفلتر ده" : "لسه مفيش مشاكل أو قرارات", "كل مشكلة أو قرار بيتسجل على مخرج معيّن، وتقدر تعلّم عليه إنه واقف عليه الإجراء.")}
+      : emptyBlock(state.issues.length ? "لا توجد نتائج مطابقة" : "لا توجد مشكلات أو قرارات بعد", "تُسجَّل كل مشكلة أو قرار على مخرج محدد، ويمكن تمييزها بأنه يتوقف عليها الإجراء.")}
   </section>`;
 }
 
@@ -740,8 +790,8 @@ function viewCrs() {
   const list = [...state.crs].sort((a, b) => (CR_OPEN.has(b.status) ? 1 : 0) - (CR_OPEN.has(a.status) ? 1 : 0) || String(b.date).localeCompare(String(a.date)));
   return `<section class="section">
     <div class="section-head"><h2>طلبات التغيير</h2><button class="btn primary" data-new-cr type="button">+ طلب تغيير</button></div>
-    <p class="muted" style="margin:0">طلب التغيير بيتربط بالبنود والمخرجات اللي بيأثر عليها، فيظهر عندهم في الجداول وفي صفحة المخرج. اعتماد الطلب مش بيغيّر كميات أو أسعار البنود لوحده — عدّل البند بنفسك بعد الاعتماد.</p>
-    ${list.length ? `<div class="cards">${list.map(crCard).join("")}</div>` : emptyBlock("لسه مفيش طلبات تغيير", "سجّل أي طلب تغيير على العقد مع البنود والمخرجات اللي بيأثر عليها.")}
+    <p class="muted" style="margin:0">يُربط طلب التغيير بالبنود والمخرجات التي يؤثر فيها، فيظهر في جداولها وفي صفحة المخرج. اعتماد الطلب لا يغيّر كميات البنود أو أسعارها تلقائيًا؛ عدّل البند يدويًا بعد الاعتماد.</p>
+    ${list.length ? `<div class="cards">${list.map(crCard).join("")}</div>` : emptyBlock("لا توجد طلبات تغيير بعد", "سجّل أي طلب تغيير على العقد مع البنود والمخرجات التي يؤثر فيها.")}
   </section>`;
 }
 
@@ -779,22 +829,26 @@ function buildReport() {
   return { from, to, end, accepted, submitted, returned, acceptedValue, openCycles, overLimit, issuesOpened, issuesClosed, blockingOpen, crsTouched, crsOpen };
 }
 function reportText(R) {
-  const L = [], s = state.settings, e = R.end;
+  const L = [], s = state.settings, t = R.end.tot;
+  const p = (v) => v === null ? "-" : (v * 100).toFixed(1) + "%";
   L.push(`تقرير متابعة ${s.project_name || "العقد"}${s.contract_no ? ` (${s.contract_no})` : ""}`);
   L.push(`الفترة: من ${R.from} إلى ${R.to}`);
   L.push("");
-  L.push(`الوضع في ${R.to}: الإنجاز المالي ${e.tot.progress === null ? "-" : (e.tot.progress * 100).toFixed(1) + "%"} — ${e.tot.accepted} مخرج مقبول من ${e.tot.qty} — قيمة المقبول ${nf2.format(e.tot.acceptedValue)} ر.س`);
-  L.push(`في انتظار رد العميل: ${R.openCycles.length} مخرج (منهم ${R.overLimit.length} عدّوا المهلة) — مُعادة بملاحظات: ${e.statusCounts[ST.RET]}`);
+  L.push(`الوضع في ${R.to}:`);
+  L.push(`- إجمالي المقبول: ${p(t.acceptedShare)} (${nf2.format(t.acceptedValue)} ريال)`);
+  L.push(`- إجمالي في انتظار القبول: ${p(t.waitingShare)} (${nf2.format(t.waitingValue)} ريال)`);
+  L.push(`- نسبة الإنجاز: ${p(t.progress)} — نسبة الإنجاز المسلَّم: ${p(t.deliveredPct)} — نسبة الإنجاز الفعلي: ${p(t.actual)}`);
+  L.push(`- في انتظار رد العميل: ${R.openCycles.length} مخرجًا، منها ${R.overLimit.length} تجاوزت المهلة — المُعادة بملاحظات: ${R.end.statusCounts[ST.RET]}`);
   L.push("");
-  L.push(`خلال الفترة: ${R.submitted.length} تسليم، ${R.returned.length} رد بملاحظات، ${R.accepted.length} قبول بقيمة ${nf2.format(R.acceptedValue)} ر.س`);
+  L.push(`خلال الفترة: ${R.submitted.length} تسليمًا، و${R.returned.length} ردًّا بملاحظات، و${R.accepted.length} قبولًا بقيمة ${nf2.format(R.acceptedValue)} ريال`);
   const list = (title, arr, fmt) => { if (arr.length) { L.push(""); L.push(title); arr.forEach((x) => L.push("- " + fmt(x))); } };
   list("المخرجات المقبولة:", R.accepted, (x) => `${x.d.id} ${short(x.d.description, 80)} (${x.e.date})`);
-  list("المخرجات المسلّمة:", R.submitted, (x) => `${x.d.id} ${short(x.d.description, 80)} (${x.e.date})`);
+  list("المخرجات المسلَّمة:", R.submitted, (x) => `${x.d.id} ${short(x.d.description, 80)} (${x.e.date})`);
   list("المُعادة بملاحظات:", R.returned, (x) => `${x.d.id} ${short(x.d.description, 80)} (${x.e.date})`);
-  list("متأخرة في الرد عن المهلة:", R.overLimit, (x) => `${x.d.id} ${short(x.d.description, 60)} — مسلّم ${isoOf(x.k.openCycle.start)} — ${x.k.openCycle.review} يوم عمل (تأخير ${x.k.openCycle.delay})`);
-  list("مشاكل واقف عليها الإجراء:", R.blockingOpen, (i) => `${i.deliverable}: ${i.title}${i.owner ? ` (على: ${i.owner})` : ""}`);
-  list("اتقفلت خلال الفترة:", R.issuesClosed, (i) => `${i.deliverable}: ${i.title}${i.resolution ? ` — ${i.resolution}` : ""}`);
-  list("طلبات تغيير مفتوحة:", R.crsOpen, (x) => `${x.code} ${x.title} — ${x.status}`);
+  list("مخرجات تجاوزت مهلة الرد:", R.overLimit, (x) => `${x.d.id} ${short(x.d.description, 60)} — سُلِّم في ${isoOf(x.k.openCycle.start)} — ${x.k.openCycle.review} يوم عمل (تأخير ${x.k.openCycle.delay})`);
+  list(`مشكلات ${BLOCKING}:`, R.blockingOpen, (i) => `${i.deliverable}: ${i.title}${i.owner ? ` (المسؤول: ${i.owner})` : ""}`);
+  list("أُغلقت خلال الفترة:", R.issuesClosed, (i) => `${i.deliverable}: ${i.title}${i.resolution ? ` — ${i.resolution}` : ""}`);
+  list("طلبات التغيير المفتوحة:", R.crsOpen, (x) => `${x.code} ${x.title} — ${x.status}`);
   return L.join("\n");
 }
 function viewReport() {
@@ -804,41 +858,43 @@ function viewReport() {
   const issuesAll = [...new Set([...R.blockingOpen, ...R.issuesOpened, ...R.issuesClosed])];
   const crsAll = [...new Set([...R.crsOpen, ...R.crsTouched])];
   return `<section class="section">
-    <div class="section-head"><h2>التقرير الدوري</h2><span class="sub">الأسبوع بيبدأ الأحد</span></div>
+    <div class="section-head"><h2>التقرير الدوري</h2><span class="sub">يبدأ الأسبوع يوم الأحد</span></div>
     <div class="report-controls">
       <div class="field"><label for="rPreset">الفترة</label><select id="rPreset">${presets.map(([v, l]) => `<option value="${v}"${r.preset === v ? " selected" : ""}>${l}</option>`).join("")}</select></div>
       <div class="field"><label for="rFrom">من</label><input id="rFrom" type="date" value="${esc(R.from)}"></div>
       <div class="field"><label for="rTo">إلى</label><input id="rTo" type="date" value="${esc(R.to)}"></div>
-      <div class="actions"><button class="btn primary" type="button" id="reportExport">تصدير التقرير Excel</button><button class="btn" type="button" id="reportCopy">نسخ كنص</button></div>
+      <div class="actions"><button class="btn primary" type="button" id="reportExport">تصدير التقرير إلى Excel</button><button class="btn" type="button" id="reportCopy">نسخ نصًّا</button></div>
     </div>
     <div id="copyFallback"></div>
   </section>
   <section class="section">
     <div class="section-head"><h2>الوضع في <span class="date">${esc(R.to)}</span></h2></div>
     <div class="stat-row">
-      <div class="stat"><span class="k">الإنجاز المالي</span><span class="v">${pct(e.tot.progress)}</span></div>
-      <div class="stat"><span class="k">مخرجات مقبولة</span><span class="v"><span class="num">${e.tot.accepted}</span> / <span class="num">${e.tot.qty}</span></span></div>
+      <div class="stat"><span class="k">إجمالي المقبول</span><span class="v">${pct(e.tot.acceptedShare)}</span></div>
+      <div class="stat"><span class="k">إجمالي في انتظار القبول</span><span class="v">${pct(e.tot.waitingShare)}</span></div>
+      <div class="stat"><span class="k">نسبة الإنجاز</span><span class="v">${pct(e.tot.progress)}</span></div>
+      <div class="stat"><span class="k">نسبة الإنجاز المسلَّم</span><span class="v">${pct(e.tot.deliveredPct)}</span></div>
       <div class="stat"><span class="k">في انتظار رد العميل</span><span class="v num">${R.openCycles.length}</span></div>
-      <div class="stat"><span class="k">عدّت المهلة</span><span class="v num ${R.overLimit.length ? "red" : ""}">${R.overLimit.length}</span></div>
+      <div class="stat"><span class="k">تجاوزت المهلة</span><span class="v num ${R.overLimit.length ? "red" : ""}">${R.overLimit.length}</span></div>
       <div class="stat"><span class="k">مُعادة بملاحظات</span><span class="v num">${e.statusCounts[ST.RET]}</span></div>
-      <div class="stat"><span class="k">واقف عليها الإجراء</span><span class="v num ${R.blockingOpen.length ? "red" : ""}">${R.blockingOpen.length}</span></div>
+      <div class="stat"><span class="k">${BLOCKING}</span><span class="v num ${R.blockingOpen.length ? "red" : ""}">${R.blockingOpen.length}</span></div>
     </div>
   </section>
   <section class="section">
-    <div class="section-head"><h2>حركة الفترة</h2><span class="sub"><span class="num">${R.submitted.length}</span> تسليم · <span class="num">${R.returned.length}</span> رد بملاحظات · <span class="num">${R.accepted.length}</span> قبول بقيمة ${money(R.acceptedValue)} ر.س</span></div>
+    <div class="section-head"><h2>حركة الفترة</h2><span class="sub"><span class="num">${R.submitted.length}</span> تسليم · <span class="num">${R.returned.length}</span> رد بملاحظات · <span class="num">${R.accepted.length}</span> قبول بقيمة ${sar(R.acceptedValue)}</span></div>
     <div class="grid-2">
-      <div class="block"><h4>المقبولة</h4>${tbl(R.accepted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.k.review)}</td><td class="n ${x.k.delay ? "red" : ""}">${int(x.k.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ القبول</th><th class='n'>أيام المراجعة</th><th class='n'>التأخير</th>", "مفيش قبول في الفترة دي.")}</div>
-      <div class="block"><h4>المسلّمة</h4>${tbl(R.submitted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.x?.cycle)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>الدورة</th>", "مفيش تسليمات في الفترة دي.")}</div>
-      <div class="block"><h4>المُعادة بملاحظات</h4>${tbl(R.returned.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th>", "مفيش ردود بملاحظات في الفترة دي.")}</div>
-      <div class="block"><h4>متأخرة في الرد عن المهلة</h4>${tbl(R.overLimit.map((x) => delRow(x.d, `<td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n red">${int(x.k.openCycle.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>أيام المراجعة</th><th class='n'>التأخير</th>", "مفيش دورات عدّت المهلة.")}</div>
+      <div class="block"><h4>المقبولة</h4>${tbl(R.accepted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.k.review)}</td><td class="n ${x.k.delay ? "red" : ""}">${int(x.k.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ القبول</th><th class='n'>أيام المراجعة</th><th class='n'>أيام التأخير</th>", "لا يوجد قبول في هذه الفترة.")}</div>
+      <div class="block"><h4>المسلَّمة</h4>${tbl(R.submitted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.x?.cycle)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>الدورة</th>", "لا توجد تسليمات في هذه الفترة.")}</div>
+      <div class="block"><h4>المُعادة بملاحظات</h4>${tbl(R.returned.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th>", "لا توجد ردود بملاحظات في هذه الفترة.")}</div>
+      <div class="block"><h4>تجاوزت مهلة الرد</h4>${tbl(R.overLimit.map((x) => delRow(x.d, `<td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n red">${int(x.k.openCycle.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>أيام المراجعة</th><th class='n'>أيام التأخير</th>", "لا توجد دورات تجاوزت المهلة.")}</div>
     </div>
   </section>
   <div class="grid-2">
-    <section class="section"><div class="section-head"><h2>المشاكل والقرارات</h2><span class="sub">اتفتح <span class="num">${R.issuesOpened.length}</span> · اتقفل <span class="num">${R.issuesClosed.length}</span> · واقف عليها الإجراء <span class="num">${R.blockingOpen.length}</span></span></div>
-      ${issuesAll.length ? `<div class="cards">${issuesAll.map((i) => issueCard(i, { clickable: true, showDel: true })).join("")}</div>` : emptyBlock("مفيش جديد", "")}
+    <section class="section"><div class="section-head"><h2>المشكلات والقرارات</h2><span class="sub">فُتح <span class="num">${R.issuesOpened.length}</span> · أُغلق <span class="num">${R.issuesClosed.length}</span> · ${BLOCKING} <span class="num">${R.blockingOpen.length}</span></span></div>
+      ${issuesAll.length ? `<div class="cards">${issuesAll.map((i) => issueCard(i, { clickable: true, showDel: true })).join("")}</div>` : emptyBlock("لا جديد", "")}
     </section>
-    <section class="section"><div class="section-head"><h2>طلبات التغيير</h2><span class="sub">مفتوحة <span class="num">${R.crsOpen.length}</span></span></div>
-      ${crsAll.length ? `<div class="cards">${crsAll.map(crCard).join("")}</div>` : emptyBlock("مفيش طلبات تغيير", "")}
+    <section class="section"><div class="section-head"><h2>طلبات التغيير</h2><span class="sub">المفتوحة <span class="num">${R.crsOpen.length}</span></span></div>
+      ${crsAll.length ? `<div class="cards">${crsAll.map(crCard).join("")}</div>` : emptyBlock("لا توجد طلبات تغيير", "")}
     </section>
   </div>`;
 }
@@ -852,20 +908,20 @@ function viewSettings() {
     <div class="section-head"><h2>بيانات العقد والإعدادات</h2></div>
     <form id="settingsForm" class="form-grid" autocomplete="off">
       <div class="field"><label for="sName">اسم المشروع</label><input id="sName" name="project_name" value="${esc(s.project_name)}"></div>
-      <div class="field"><label for="sCode">رقم العقد / كود المشروع</label><input id="sCode" name="contract_no" value="${esc(s.contract_no)}"></div>
+      <div class="field"><label for="sCode">رقم العقد / رمز المشروع</label><input id="sCode" name="contract_no" value="${esc(s.contract_no)}"></div>
       <div class="field"><label for="sClient">الجهة المالكة</label><input id="sClient" name="client" value="${esc(s.client)}"></div>
-      <div class="field"><label for="sVendor">المورد / المنفذ</label><input id="sVendor" name="vendor" value="${esc(s.vendor)}"></div>
+      <div class="field"><label for="sVendor">المورّد / المنفّذ</label><input id="sVendor" name="vendor" value="${esc(s.vendor)}"></div>
       <div class="field"><label for="sStart">تاريخ بداية العقد</label><input id="sStart" name="start_date" type="date" value="${esc(s.start_date)}"></div>
       <div class="field"><label for="sDur">مدة العقد (بالأشهر)</label><input id="sDur" name="duration_months" type="number" min="0" step="1" value="${esc(s.duration_months ?? "")}"></div>
       <div class="field"><label for="sVat">نسبة الضريبة (%)</label><input id="sVat" name="vat" type="number" min="0" step="0.01" value="${esc(numOr(s.vat, 0.15) * 100)}"></div>
-      <div class="field"><label for="sReview">مهلة المراجعة (أيام عمل)</label><input id="sReview" name="review_days" type="number" min="0" step="1" value="${esc(s.review_days ?? 10)}"><span class="hint">أي يوم زيادة عن المهلة في أي دورة بيتحسب تأخير على العميل.</span></div>
+      <div class="field"><label for="sReview">مهلة المراجعة (أيام عمل)</label><input id="sReview" name="review_days" type="number" min="0" step="1" value="${esc(s.review_days ?? 10)}"><span class="hint">يُحتسب على العميل تأخيرًا كلُّ يوم يزيد على المهلة في أي دورة.</span></div>
       <div class="field"><label for="sWeek">الإجازة الأسبوعية</label><select id="sWeek" name="weekend">${WEEKENDS.map((w) => `<option value="${w.key}"${w.key === wk ? " selected" : ""}>${w.label}</option>`).join("")}</select></div>
-      <div class="field"><label for="sAsOf">تاريخ احتساب ثابت (اختياري)</label><input id="sAsOf" name="as_of_override" type="date" value="${esc(s.as_of_override)}"><span class="hint">سيبه فاضي عشان الحساب يبقى لحد النهارده.</span></div>
+      <div class="field"><label for="sAsOf">تاريخ احتساب ثابت (اختياري)</label><input id="sAsOf" name="as_of_override" type="date" value="${esc(s.as_of_override)}"><span class="hint">اتركه فارغًا ليكون الاحتساب حتى تاريخ اليوم.</span></div>
       <div class="actions wide"><button class="btn primary" type="submit" id="saveSettings">حفظ الإعدادات</button></div>
     </form>
   </section>
   <section class="section">
-    <div class="section-head"><h2>الأجازات الرسمية</h2><span class="sub">تُستثنى من حساب أيام المراجعة والتأخير · <span class="num">${hol.length}</span> يوم</span></div>
+    <div class="section-head"><h2>الإجازات الرسمية</h2><span class="sub">تُستبعد من حساب أيام المراجعة والتأخير · <span class="num">${hol.length}</span> يومًا</span></div>
     <form id="holForm" class="hol-add" autocomplete="off">
       <div class="field"><label for="hDate">التاريخ</label><input id="hDate" type="date" required></div>
       <div class="field"><label for="hName">المناسبة</label><input id="hName" required placeholder="مثال: عيد الفطر 1448"></div>
@@ -874,7 +930,7 @@ function viewSettings() {
     </form>
     ${hol.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>المناسبة</th><th>ملاحظة</th><th></th></tr></thead><tbody>
       ${hol.map((h) => `<tr><td>${dateHtml(h.date)}</td><td>${esc(h.name)}</td><td class="muted">${esc(h.note)}</td><td class="n"><button class="btn small danger" type="button" data-del-hol="${h.i}">حذف</button></td></tr>`).join("")}
-    </tbody></table></div>` : emptyBlock("مفيش أجازات مسجلة", "ضيف الأجازات الرسمية عشان تتشال من حساب الأيام.")}
+    </tbody></table></div>` : emptyBlock("لا توجد إجازات مسجلة", "أضف الإجازات الرسمية لاستبعادها من حساب الأيام.")}
   </section>`;
 }
 
@@ -902,20 +958,27 @@ function drawerItem() {
   const d = state.drawer, it = d.id ? state.items.find((x) => x.id === d.id) : null;
   if (d.id && !it) return null;
   const linked = it ? state.deliverables.filter((x) => x.item_id === it.id).length : 0;
-  const crs = it ? state.calc.items.get(it.id).crs : [];
+  const r = it ? state.calc.items.get(it.id) : null;
   const v = it || {};
+  const actualPct = v.actual_progress === undefined || v.actual_progress === null || v.actual_progress === "" ? "" : Math.round(Number(v.actual_progress) * 1000) / 10;
   return { title: it ? `تعديل البند ${itemLabel(it)}` : "بند جديد", html: `
+    ${r ? `<div class="kv">
+      <div><span class="k">نسبة الإنجاز المسلَّم</span><span class="v">${pct(r.deliveredPct)}</span></div>
+      <div><span class="k">نسبة الإنجاز (المقبول)</span><span class="v">${pct(r.progress)}</span></div>
+      <div><span class="k">نسبة الإنجاز الفعلي</span><span class="v">${r.actual === null ? "—" : pct(r.actual)}</span></div>
+    </div>` : ""}
     <form id="itemForm" class="form-grid" autocomplete="off">
       <div class="field"><label for="iNo">رقم البند</label><input id="iNo" name="no" required value="${esc(v.no ?? "")}" placeholder="مثال: 5.ج"></div>
       <div class="field"><label for="iWbs">WBS</label><input id="iWbs" name="wbs" value="${esc(v.wbs ?? "")}"></div>
       <div class="field wide"><label for="iName">اسم البند</label><input id="iName" name="name" required value="${esc(v.name ?? "")}"></div>
       <div class="field"><label for="iQty">الكمية التعاقدية</label><input id="iQty" name="qty" type="number" min="0" step="1" required value="${esc(v.qty ?? "")}"></div>
-      <div class="field"><label for="iPrice">سعر الوحدة قبل الضريبة (ر.س)</label><input id="iPrice" name="unit_price" type="number" min="0" step="0.01" required value="${esc(v.unit_price ?? "")}"></div>
+      <div class="field"><label for="iPrice">سعر الوحدة قبل الضريبة (ريال)</label><input id="iPrice" name="unit_price" type="number" min="0" step="0.01" required value="${esc(v.unit_price ?? "")}"></div>
+      <div class="field"><label for="iActual">نسبة الإنجاز الفعلي (%)</label><input id="iActual" name="actual_progress" type="number" min="0" max="100" step="0.1" value="${esc(actualPct)}"><span class="hint">تقدير يدوي لحجم العمل المنجز فعليًا في البند.</span></div>
       <div class="field"><label for="iOrder">ترتيب العرض</label><input id="iOrder" name="order" type="number" step="1" value="${esc(v.order ?? state.items.length + 1)}"></div>
       <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${it ? `<button class="btn danger" type="button" data-ask-delete>حذف البند</button>` : ""}</div>
     </form>
-    ${crs.length ? `<div class="block"><h4>طلبات التغيير على البند</h4><div class="cards">${crs.map(crCard).join("")}</div></div>` : ""}
-    ${d.confirm ? (linked ? `<div class="notice">البند ده مربوط بيه <span class="num">${linked}</span> مخرج. انقل المخرجات لبند تاني أو احذفها الأول.</div>` : confirmBlock("هيتم حذف البند نهائياً.", "item")) : ""}` };
+    ${r && r.crs.length ? `<div class="block"><h4>طلبات التغيير على البند</h4><div class="cards">${r.crs.map(crCard).join("")}</div></div>` : ""}
+    ${d.confirm ? (linked ? `<div class="notice">يرتبط بهذا البند <span class="num">${linked}</span> مخرجًا. انقل المخرجات إلى بند آخر أو احذفها أولًا.</div>` : confirmBlock("سيُحذف البند نهائيًا.", "item")) : ""}` };
 }
 
 function drawerDel() {
@@ -923,12 +986,12 @@ function drawerDel() {
   if (!del) return null;
   const c = state.calc, k = c.del.get(del.id), it = c.itemsById.get(del.item_id), sub = d.sub || "review";
   const issues = state.issues.filter((i) => i.deliverable === del.id).sort((a, b) => (a.status === CLOSED ? 1 : 0) - (b.status === CLOSED ? 1 : 0) || String(b.date).localeCompare(String(a.date)));
-  const tabs = `<nav class="tabs" role="tablist">${[["review", "المراجعات"], ["issues", `المشاكل والقرارات${k.openIssues ? ` (${k.openIssues})` : ""}`], ["billing", "الفوترة"]]
+  const tabs = `<nav class="tabs" role="tablist">${[["review", "المراجعات"], ["issues", `المشكلات والقرارات${k.openIssues ? ` (${k.openIssues})` : ""}`], ["billing", "الفوترة"]]
     .map(([v, l]) => `<button type="button" role="tab" data-sub-tab="${v}" aria-selected="${sub === v}">${l}</button>`).join("")}</nav>`;
   const head = `<div class="kv">
       <div><span class="k">البند</span><span class="v"><span class="code">${esc(itemLabel(it))}</span> ${esc(short(it?.name, 60) || "بند غير موجود")}</span></div>
-      <div><span class="k">القيمة قبل الضريبة</span><span class="v">${money(k.value)}</span></div>
-      <div><span class="k">حالة العمل (يدوي)</span><span class="v">${esc(del.work_status || "—")}</span></div>
+      <div><span class="k">القيمة قبل الضريبة</span><span class="v">${sar(k.value)}</span></div>
+      <div><span class="k">حالة العمل (يدوية)</span><span class="v">${esc(del.work_status || "—")}</span></div>
     </div>
     <div><h4>وصف المخرج</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.description)}</p></div>
     ${del.notes ? `<div><h4>ملاحظات</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.notes)}</p></div>` : ""}
@@ -939,9 +1002,9 @@ function drawerDel() {
   if (sub === "issues") {
     const editing = d.editIssue ? state.issues.find((i) => i.id === d.editIssue) : null;
     html = `${issueForm(editing, del.id)}
-      ${d.confirmIssue ? confirmBlock("هيتم حذف المشكلة/القرار نهائياً.", "issue:" + d.confirmIssue) : ""}
+      ${d.confirmIssue ? confirmBlock("ستُحذف المشكلة أو القرار نهائيًا.", "issue:" + d.confirmIssue) : ""}
       <div class="block"><h4>السجل (<span class="num">${issues.length}</span>)</h4>
-      ${issues.length ? `<div class="cards">${issues.map((i) => issueCard(i, { actions: true })).join("")}</div>` : `<span class="muted">مفيش مشاكل أو قرارات على المخرج ده.</span>`}</div>`;
+      ${issues.length ? `<div class="cards">${issues.map((i) => issueCard(i, { actions: true })).join("")}</div>` : `<span class="muted">لا توجد مشكلات أو قرارات على هذا المخرج.</span>`}</div>`;
   } else if (sub === "billing") {
     const b = billingOf(del);
     html = `<div class="kv">${BILLING.map((x) => `<div><span class="k">${x.label}</span><span class="v">${x.yn ? ynHtml(b[x.k]) : b[x.k] ? `<span class="code">${esc(b[x.k])}</span>` : '<span class="muted">—</span>'}</span></div>`).join("")}</div>
@@ -952,8 +1015,8 @@ function drawerDel() {
     const tl = evs.map((e) => {
       const x = c.ev.get(e.id);
       let info = "";
-      if (x.cycle !== null) info = `دورة <span class="num">${x.cycle}</span> عند العميل · ${x.open ? "لسه مفتوحة" : `انتهت <span class="date">${isoOf(x.end)}</span>`} · <span class="num">${x.review}</span> يوم عمل${x.delay ? ` · <span class="red">تأخير <span class="num">${x.delay}</span></span>` : ""}`;
-      else if (x.vendorDays !== null) info = `عندنا <span class="num">${x.vendorDays}</span> يوم عمل${x.vendorOpen ? " لحد النهارده" : " لحد إعادة التسليم"}`;
+      if (x.cycle !== null) info = `الدورة <span class="num">${x.cycle}</span> لدى العميل · ${x.open ? "ما زالت مفتوحة" : `انتهت في <span class="date">${isoOf(x.end)}</span>`} · <span class="num">${x.review}</span> يوم عمل${x.delay ? ` · <span class="red">تأخير <span class="num">${x.delay}</span></span>` : ""}`;
+      else if (x.vendorDays !== null) info = `لدى فريق المشروع <span class="num">${x.vendorDays}</span> يوم عمل${x.vendorOpen ? " حتى اليوم" : " حتى إعادة التسليم"}`;
       return `<div class="tl ${cls[e.action] || ""}"><div class="line1"><span class="what">${esc(e.action)}</span>${dateHtml(e.date)}
         <button class="btn small danger del-ev" type="button" data-del-ev="${esc(e.id)}" aria-label="حذف الحركة">حذف</button></div>
         ${info ? `<div class="info">${info}</div>` : ""}${x.warn ? `<div class="warn-cell">${esc(x.warn)}</div>` : ""}${e.notes ? `<div class="info">${esc(e.notes)}</div>` : ""}</div>`;
@@ -962,22 +1025,22 @@ function drawerDel() {
         <div><span class="k">أول تسليم</span><span class="v">${dateHtml(k.firstSubmit ? isoOf(k.firstSubmit) : "")}</span></div>
         <div><span class="k">تاريخ القبول</span><span class="v">${dateHtml(k.accepted ? isoOf(k.accepted) : "")}</span></div>
         <div><span class="k">مرات التسليم</span><span class="v">${int(k.cycles)}</span></div>
-        <div><span class="k">أيام المراجعة (عند العميل)</span><span class="v">${int(k.review)}</span></div>
+        <div><span class="k">أيام المراجعة (لدى العميل)</span><span class="v">${int(k.review)}</span></div>
         <div><span class="k">أيام التأخير على العميل</span><span class="v ${k.delay ? "red" : ""}">${int(k.delay)}</span></div>
-        <div><span class="k">أيام عندنا (بعد الملاحظات)</span><span class="v">${int(k.vendorDays)}</span></div>
+        <div><span class="k">أيام لدى فريق المشروع</span><span class="v">${int(k.vendorDays)}</span></div>
       </div>
       <div class="block"><h4>تسجيل حركة</h4>
         <form id="quickEv" class="form-grid" autocomplete="off">
           <div class="field"><label for="qAct">نوع الحركة</label><select id="qAct" name="action">${ACTIONS.map((a) => `<option>${esc(a)}</option>`).join("")}</select></div>
           <div class="field"><label for="qDate">التاريخ</label><input id="qDate" name="date" type="date" required value="${esc(todayIso())}"></div>
           <div class="field wide"><label for="qNotes">ملاحظات</label><input id="qNotes" name="notes"></div>
-          <div class="actions wide"><button class="btn primary" type="submit">إضافة للسجل</button></div>
+          <div class="actions wide"><button class="btn primary" type="submit">إضافة إلى السجل</button></div>
         </form></div>
       <div class="block"><h4>سجل المراجعات (<span class="num">${evs.length}</span>)</h4>
-        ${d.confirmEv ? confirmBlock("هيتم حذف الحركة دي من السجل.", "ev:" + d.confirmEv) : ""}
-        ${evs.length ? `<div class="timeline">${tl}</div>` : `<span class="muted">لسه مفيش حركات على المخرج ده.</span>`}</div>`;
+        ${d.confirmEv ? confirmBlock("ستُحذف هذه الحركة من السجل.", "ev:" + d.confirmEv) : ""}
+        ${evs.length ? `<div class="timeline">${tl}</div>` : `<span class="muted">لا توجد حركات على هذا المخرج بعد.</span>`}</div>`;
   }
-  return { title: del.id, titleHtml: `<span class="code">${esc(del.id)}</span> ${pill(k.status)} ${k.blocking ? `<span class="flag">واقف عليها الإجراء</span>` : ""}`, tabs, html: head + html };
+  return { title: del.id, titleHtml: `<span class="code">${esc(del.id)}</span> ${pill(k.status)} ${k.blocking ? `<span class="flag">${BLOCKING}</span>` : ""}`, tabs, html: head + html };
 }
 
 function issueForm(i, deliverable) {
@@ -987,19 +1050,19 @@ function issueForm(i, deliverable) {
     ${deliverable ? `<input type="hidden" name="deliverable" value="${esc(deliverable)}">` : `<div class="field wide"><label for="isDel">المخرج</label><select id="isDel" name="deliverable" required><option value="">اختر المخرج</option>${delOptions(v.deliverable)}</select></div>`}
     <div class="field"><label for="isType">النوع</label><select id="isType" name="type">${ISSUE_TYPES.map((t) => `<option${v.type === t ? " selected" : ""}>${t}</option>`).join("")}</select></div>
     <div class="field"><label for="isDate">التاريخ</label><input id="isDate" name="date" type="date" required value="${esc(v.date || "")}"></div>
-    <div class="field"><label for="isOwner">على مين</label><select id="isOwner" name="owner"><option value="">—</option>${ISSUE_OWNERS.map((o) => `<option${v.owner === o ? " selected" : ""}>${o}</option>`).join("")}</select></div>
-    <div class="field wide"><label for="isTitle">العنوان</label><input id="isTitle" name="title" required value="${esc(v.title || "")}" placeholder="مثال: العميل طلب تغيير نطاق المخرج"></div>
+    <div class="field"><label for="isOwner">المسؤول</label><select id="isOwner" name="owner"><option value="">—</option>${ISSUE_OWNERS.map((o) => `<option${v.owner === o ? " selected" : ""}>${o}</option>`).join("")}</select></div>
+    <div class="field wide"><label for="isTitle">العنوان</label><input id="isTitle" name="title" required value="${esc(v.title || "")}" placeholder="مثال: طلب العميل تعديل نطاق المخرج"></div>
     <div class="field wide"><label for="isDetails">التفاصيل</label><textarea id="isDetails" name="details">${esc(v.details || "")}</textarea></div>
-    <label class="check wide"><input type="checkbox" name="blocking" ${v.blocking ? "checked" : ""}> واقف عليها الإجراء</label>
-    ${i && i.status === CLOSED ? `<div class="field"><label for="isClosed">تاريخ القفل</label><input id="isClosed" name="closed_date" type="date" value="${esc(i.closed_date || "")}"></div>` : ""}
-    <div class="field wide"><label for="isRes">الحل / القرار النهائي</label><textarea id="isRes" name="resolution" placeholder="بيظهر لما المشكلة تتقفل">${esc(v.resolution || "")}</textarea></div>
+    <label class="check wide"><input type="checkbox" name="blocking" ${v.blocking ? "checked" : ""}> ${BLOCKING}</label>
+    ${i && i.status === CLOSED ? `<div class="field"><label for="isClosed">تاريخ الإغلاق</label><input id="isClosed" name="closed_date" type="date" value="${esc(i.closed_date || "")}"></div>` : ""}
+    <div class="field wide"><label for="isRes">الحل / القرار النهائي</label><textarea id="isRes" name="resolution" placeholder="يظهر عند إغلاق المشكلة">${esc(v.resolution || "")}</textarea></div>
     <div class="actions wide"><button class="btn primary" type="submit">${i ? "حفظ التعديل" : "إضافة"}</button>${i ? `<button class="btn" type="button" data-cancel-issue>إلغاء</button><button class="btn danger" type="button" data-ask-del-issue="${esc(i.id)}">حذف</button>` : ""}</div>
   </form>`;
 }
 function drawerIssue() {
   const d = state.drawer, i = d.id ? state.issues.find((x) => x.id === d.id) : null;
   if (d.id && !i) return null;
-  return { title: i ? "تعديل مشكلة/قرار" : "مشكلة أو قرار جديد", html: state.deliverables.length ? issueForm(i, null) + (d.confirmIssue ? confirmBlock("هيتم حذف المشكلة/القرار نهائياً.", "issue:" + d.confirmIssue) : "") : emptyBlock("مفيش مخرجات", "ضيف المخرجات الأول.") };
+  return { title: i ? "تعديل مشكلة أو قرار" : "مشكلة أو قرار جديد", html: state.deliverables.length ? issueForm(i, null) + (d.confirmIssue ? confirmBlock("ستُحذف المشكلة أو القرار نهائيًا.", "issue:" + d.confirmIssue) : "") : emptyBlock("لا توجد مخرجات", "أضف المخرجات أولًا.") };
 }
 
 function nextDeliverableId() {
@@ -1014,20 +1077,20 @@ function drawerDelForm() {
   const counts = del ? [state.events.filter((e) => e.deliverable === del.id).length, state.issues.filter((i) => i.deliverable === del.id).length] : [0, 0];
   return { title: del ? `تعديل ${del.id}` : "مخرج جديد", html: state.items.length ? `
     <form id="delForm" class="form-grid" autocomplete="off">
-      <div class="field"><label for="dId">رقم المخرج</label><input id="dId" name="did" required pattern="[A-Za-z0-9_.~:@+\\-]+" value="${esc(v.id)}" ${del ? "readonly" : ""}><span class="hint">${del ? "الرقم ثابت لأنه مربوط بسجل المراجعات." : "حروف إنجليزي وأرقام وشرطة فقط."}</span></div>
+      <div class="field"><label for="dId">رقم المخرج</label><input id="dId" name="did" required pattern="[A-Za-z0-9_.~:@+\\-]+" value="${esc(v.id)}" ${del ? "readonly" : ""}><span class="hint">${del ? "الرقم ثابت لارتباطه بسجل المراجعات." : "حروف إنجليزية وأرقام وشرطة فقط."}</span></div>
       <div class="field"><label for="dItem">البند</label><select id="dItem" name="item_id" required><option value="">اختر البند</option>${itemOptions(v.item_id)}</select></div>
       <div class="field wide"><label for="dDesc">وصف المخرج</label><textarea id="dDesc" name="description" required>${esc(v.description ?? "")}</textarea></div>
-      <div class="field"><label for="dWork">حالة العمل (يدوي)</label><select id="dWork" name="work_status"><option value="">—</option>${WORK_STATUSES.map((w) => `<option${v.work_status === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">بتستخدم قبل التسليم. «معلق» تغلب على أي حالة ما عدا «تم القبول».</span></div>
+      <div class="field"><label for="dWork">حالة العمل (يدوية)</label><select id="dWork" name="work_status"><option value="">—</option>${WORK_STATUSES.map((w) => `<option${v.work_status === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">تُستخدم قبل التسليم، وتتقدم حالة «معلق» على أي حالة عدا «تم القبول».</span></div>
       <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
       <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>
       <div class="form-group">بيانات الفوترة</div>
       ${BILLING.map((x) => `<div class="field"><label for="b_${x.k}">${x.label}</label>${x.yn
         ? `<select id="b_${x.k}" name="b_${x.k}"><option value="">—</option>${YESNO.map((o) => `<option${b[x.k] === o ? " selected" : ""}>${o}</option>`).join("")}</select>`
-        : `<input id="b_${x.k}" name="b_${x.k}" value="${esc(b[x.k] ?? "")}">`}</div>`).join("")}
+        : `<input id="b_${x.k}" name="b_${x.k}" value="${esc(b[x.k] ?? "")}">`}${x.k === "ref_no" ? `<span class="hint">رقم المطالبة الأولى التي أُعيدت المطالبة بها برقم جديد.</span>` : ""}</div>`).join("")}
       <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${del ? `<button class="btn" type="button" data-open-del="${esc(del.id)}" data-sub="${esc(d.sub || "review")}">رجوع</button><button class="btn danger" type="button" data-ask-delete>حذف المخرج</button>` : ""}</div>
     </form>
-    ${d.confirm ? confirmBlock(`هيتم حذف المخرج${counts[0] ? ` و ${counts[0]} حركة مراجعة` : ""}${counts[1] ? ` و ${counts[1]} مشكلة/قرار` : ""} نهائياً.`, "del") : ""}`
-    : emptyBlock("لازم يكون في بند الأول", "ضيف بنود العقد من شاشة البنود قبل المخرجات.") };
+    ${d.confirm ? confirmBlock(`سيُحذف المخرج${counts[0] ? ` و${counts[0]} حركة مراجعة` : ""}${counts[1] ? ` و${counts[1]} مشكلة أو قرار` : ""} نهائيًا.`, "del") : ""}`
+    : emptyBlock("يجب إضافة بند أولًا", "أضف بنود العقد من شاشة البنود قبل المخرجات.") };
 }
 
 function drawerEv() {
@@ -1037,8 +1100,8 @@ function drawerEv() {
       <div class="field"><label for="eAct">نوع الحركة</label><select id="eAct" name="action">${ACTIONS.map((a) => `<option>${esc(a)}</option>`).join("")}</select></div>
       <div class="field"><label for="eDate">التاريخ</label><input id="eDate" name="date" type="date" required value="${esc(todayIso())}"></div>
       <div class="field wide"><label for="eNotes">ملاحظات</label><input id="eNotes" name="notes"></div>
-      <div class="actions wide"><button class="btn primary" type="submit">إضافة للسجل</button></div>
-    </form>` : emptyBlock("مفيش مخرجات", "ضيف المخرجات الأول عشان تسجّل حركاتها.") };
+      <div class="actions wide"><button class="btn primary" type="submit">إضافة إلى السجل</button></div>
+    </form>` : emptyBlock("لا توجد مخرجات", "أضف المخرجات أولًا لتسجيل حركاتها.") };
 }
 
 function nextCrCode() {
@@ -1046,9 +1109,9 @@ function nextCrCode() {
   return "CR-" + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(2, "0");
 }
 function crDelChecks(itemIds, selected) {
-  if (!itemIds.length) return `<span class="muted">اختار البنود الأول عشان تظهر مخرجاتها.</span>`;
+  if (!itemIds.length) return `<span class="muted">اختر البنود أولًا لعرض مخرجاتها.</span>`;
   const dels = state.deliverables.filter((d) => itemIds.includes(d.item_id)).sort(byId);
-  return dels.length ? `<div class="checks">${dels.map((d) => `<label class="check"><input type="checkbox" name="crdel" value="${esc(d.id)}" ${selected.includes(d.id) ? "checked" : ""}><span class="code">${esc(d.id)}</span> ${esc(short(d.description, 45))}</label>`).join("")}</div>` : `<span class="muted">مفيش مخرجات للبنود دي.</span>`;
+  return dels.length ? `<div class="checks">${dels.map((d) => `<label class="check"><input type="checkbox" name="crdel" value="${esc(d.id)}" ${selected.includes(d.id) ? "checked" : ""}><span class="code">${esc(d.id)}</span> ${esc(short(d.description, 45))}</label>`).join("")}</div>` : `<span class="muted">لا توجد مخرجات لهذه البنود.</span>`;
 }
 function drawerCr() {
   const d = state.drawer, cr = d.id ? state.crs.find((x) => x.id === d.id) : null;
@@ -1061,18 +1124,18 @@ function drawerCr() {
       <div class="field"><label for="cDate">تاريخ الطلب</label><input id="cDate" name="date" type="date" value="${esc(v.date || "")}"></div>
       <div class="field"><label for="cDecision">تاريخ القرار</label><input id="cDecision" name="decision_date" type="date" value="${esc(v.decision_date || "")}"></div>
       <div class="field wide"><label for="cTitle">العنوان</label><input id="cTitle" name="title" required value="${esc(v.title || "")}" placeholder="مثال: استبدال بند الدعم بتوريد رخص"></div>
-      <div class="field wide"><label for="cImpact">الأثر على البنود</label><textarea id="cImpact" name="impact" placeholder="إيه اللي هيتغير في الكميات أو النطاق أو المدة">${esc(v.impact || "")}</textarea></div>
-      <div class="field"><label for="cValue">الأثر المالي (ر.س، بالسالب لو تخفيض)</label><input id="cValue" name="value_change" type="number" step="0.01" value="${esc(v.value_change ?? "")}"></div>
+      <div class="field wide"><label for="cImpact">الأثر في البنود</label><textarea id="cImpact" name="impact" placeholder="ما الذي سيتغير في الكميات أو النطاق أو المدة">${esc(v.impact || "")}</textarea></div>
+      <div class="field"><label for="cValue">الأثر المالي (ريال، بالسالب عند التخفيض)</label><input id="cValue" name="value_change" type="number" step="0.01" value="${esc(v.value_change ?? "")}"></div>
       <div class="field wide"><span class="label">البنود المتأثرة</span><div class="checks">${[...state.items].sort(byItemOrder).map((it) => `<label class="check"><input type="checkbox" name="critem" value="${esc(it.id)}" ${(v.items || []).includes(it.id) ? "checked" : ""}><span class="code">${esc(itemLabel(it))}</span> ${esc(short(it.name, 40))}</label>`).join("")}</div></div>
       <div class="field wide"><span class="label">المخرجات المتأثرة</span><div id="crDels">${crDelChecks(v.items || [], v.deliverables || [])}</div></div>
       <div class="field wide"><label for="cNotes">ملاحظات</label><textarea id="cNotes" name="notes">${esc(v.notes || "")}</textarea></div>
       <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${cr ? `<button class="btn danger" type="button" data-ask-delete>حذف الطلب</button>` : ""}</div>
     </form>
-    ${d.confirm ? confirmBlock("هيتم حذف طلب التغيير نهائياً.", "cr") : ""}` };
+    ${d.confirm ? confirmBlock("سيُحذف طلب التغيير نهائيًا.", "cr") : ""}` };
 }
 
 /* ------------------------------------------------------------ writes */
-function requireDb() { if (!state.db) { toast("التخزين مش متاح — افتح الصفحة من claude.ai وإنت مسجّل دخول.", true); return false; } return true; }
+function requireDb() { if (!state.db) { toast("التخزين غير متاح؛ افتح الصفحة من claude.ai بعد تسجيل الدخول.", true); return false; } return true; }
 async function run(btn, fn, okMsg) {
   if (!requireDb()) return false;
   if (btn) btn.disabled = true;
@@ -1087,15 +1150,16 @@ const newId = (p) => p + Date.now().toString(36) + Math.random().toString(36).sl
 async function saveItem(form, btn) {
   const f = formData(form), id = state.drawer.id || newId("i");
   const no = /^\d+$/.test(f.no.trim()) ? Number(f.no.trim()) : f.no.trim();
-  if (state.items.some((x) => x.id !== id && String(x.no) === String(no))) { toast("رقم البند ده موجود قبل كده.", true); return; }
-  const body = clean({ no, wbs: f.wbs.trim(), name: f.name.trim(), qty: numOr(f.qty, 0), unit_price: numOr(f.unit_price, 0), order: numOr(f.order, state.items.length + 1) });
-  if (await run(btn, () => state.db.collection("items").doc(id).set(body), "اتحفظ البند")) closeDrawer();
+  if (state.items.some((x) => x.id !== id && String(x.no) === String(no))) { toast("رقم البند مستخدم من قبل.", true); return; }
+  const actual = f.actual_progress === "" ? "" : Math.max(0, Math.min(100, Number(f.actual_progress))) / 100;
+  const body = clean({ no, wbs: f.wbs.trim(), name: f.name.trim(), qty: numOr(f.qty, 0), unit_price: numOr(f.unit_price, 0), actual_progress: actual, order: numOr(f.order, state.items.length + 1) });
+  if (await run(btn, () => state.db.collection("items").doc(id).set(body), "تم حفظ البند")) closeDrawer();
 }
 async function saveDeliverable(form, btn) {
   const f = formData(form), editing = state.drawer.id;
   const id = editing || f.did.trim();
-  if (!/^[A-Za-z0-9_.~:@+-]+$/.test(id)) { toast("رقم المخرج لازم يكون حروف إنجليزي وأرقام وشرطة بس.", true); return; }
-  if (!editing && state.deliverables.some((x) => x.id === id)) { toast(`الرقم ${id} مستخدم قبل كده.`, true); return; }
+  if (!/^[A-Za-z0-9_.~:@+-]+$/.test(id)) { toast("يجب أن يتكون رقم المخرج من حروف إنجليزية وأرقام وشرطة فقط.", true); return; }
+  if (!editing && state.deliverables.some((x) => x.id === id)) { toast(`الرقم ${id} مستخدم من قبل.`, true); return; }
   const prevB = editing ? billingOf(state.deliverables.find((x) => x.id === id) || {}) : {};
   const billing = {};
   for (const x of BILLING) {
@@ -1105,23 +1169,23 @@ async function saveDeliverable(form, btn) {
   const body = clean({ item_id: f.item_id, description: f.description.trim(), work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim() });
   if (Object.keys(billing).length) body.billing = billing;
   const sub = state.drawer.sub;
-  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "اتحفظ المخرج")) openDrawer({ kind: "del", id, sub: sub || "review" });
+  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ المخرج")) openDrawer({ kind: "del", id, sub: sub || "review" });
 }
 async function addEvent(form, btn, deliverable) {
   const f = formData(form);
   const body = clean({ deliverable: deliverable || f.deliverable, action: f.action, date: f.date, notes: (f.notes || "").trim() });
-  if (!body.deliverable || !isIso(body.date)) { toast("اختار المخرج واكتب التاريخ.", true); return; }
-  const ok = await run(btn, () => state.db.collection("events").add(body), `اتسجّل «${body.action}» على ${body.deliverable}`);
+  if (!body.deliverable || !isIso(body.date)) { toast("اختر المخرج وأدخل التاريخ.", true); return; }
+  const ok = await run(btn, () => state.db.collection("events").add(body), `سُجّل «${body.action}» على ${body.deliverable}`);
   if (ok) { if (deliverable) render(); else openDrawer({ kind: "del", id: body.deliverable }); }
 }
 async function saveIssue(form, btn) {
   const f = formData(form), id = form.dataset.issueId || newId("q");
   const prev = state.issues.find((i) => i.id === id) || {};
-  if (!f.deliverable || !f.title.trim() || !isIso(f.date)) { toast("اختار المخرج واكتب العنوان والتاريخ.", true); return; }
+  if (!f.deliverable || !f.title.trim() || !isIso(f.date)) { toast("اختر المخرج وأدخل العنوان والتاريخ.", true); return; }
   const body = clean({ deliverable: f.deliverable, type: f.type, date: f.date, owner: f.owner, title: f.title.trim(), details: (f.details || "").trim(),
     resolution: (f.resolution || "").trim(), status: prev.status || OPEN, closed_date: f.closed_date ?? prev.closed_date });
   body.blocking = !!f.blocking;
-  const ok = await run(btn, () => state.db.collection("issues").doc(id).set(body), form.dataset.issueId ? "اتحفظ التعديل" : "اتسجلت");
+  const ok = await run(btn, () => state.db.collection("issues").doc(id).set(body), form.dataset.issueId ? "تم حفظ التعديل" : "تم التسجيل");
   if (!ok) return;
   if (state.drawer?.kind === "del") { state.drawer.editIssue = null; render(); } else closeDrawer();
 }
@@ -1130,17 +1194,17 @@ async function setIssueStatus(id, closed, btn) {
   const { id: _omit, ...rest } = i;
   const body = closed ? { ...rest, status: CLOSED, closed_date: todayIso() } : { ...rest, status: OPEN };
   if (!closed) delete body.closed_date;
-  await run(btn, () => state.db.collection("issues").doc(id).set(body), closed ? "اتقفلت" : "اتفتحت تاني");
+  await run(btn, () => state.db.collection("issues").doc(id).set(body), closed ? "تم الإغلاق" : "أُعيد فتحها");
 }
 async function saveCr(form, btn) {
   const f = formData(form), id = state.drawer.id || newId("c");
   const items = [...form.querySelectorAll('input[name="critem"]:checked')].map((x) => x.value);
   const dels = [...form.querySelectorAll('input[name="crdel"]:checked')].map((x) => x.value);
-  if (state.crs.some((x) => x.id !== id && x.code === f.code.trim())) { toast("رقم طلب التغيير ده موجود قبل كده.", true); return; }
+  if (state.crs.some((x) => x.id !== id && x.code === f.code.trim())) { toast("رقم طلب التغيير مستخدم من قبل.", true); return; }
   const body = clean({ code: f.code.trim(), status: f.status, date: f.date, decision_date: f.decision_date, title: f.title.trim(), impact: f.impact.trim(),
     value_change: f.value_change === "" ? "" : Number(f.value_change), notes: f.notes.trim() });
   body.items = items; body.deliverables = dels;
-  if (await run(btn, () => state.db.collection("crs").doc(id).set(body), "اتحفظ طلب التغيير")) closeDrawer();
+  if (await run(btn, () => state.db.collection("crs").doc(id).set(body), "تم حفظ طلب التغيير")) closeDrawer();
 }
 async function saveSettings(form, btn) {
   const f = formData(form);
@@ -1149,7 +1213,7 @@ async function saveSettings(form, btn) {
     start_date: f.start_date, duration_months: f.duration_months === "" ? null : Number(f.duration_months),
     vat: numOr(f.vat, 15) / 100, review_days: numOr(f.review_days, 10), weekend: f.weekend.split(",").map(Number), as_of_override: f.as_of_override,
   } };
-  await run(btn, () => state.db.doc("contract/settings").set(body), "اتحفظت الإعدادات");
+  await run(btn, () => state.db.doc("contract/settings").set(body), "تم حفظ الإعدادات");
 }
 async function saveHolidays(list, btn, msg) { await run(btn, () => state.db.doc("contract/settings").set({ ...state.settings, holidays: list }), msg); }
 
@@ -1171,34 +1235,34 @@ function addSheet(wb, name, cols, rows, opts = {}) {
   return ws;
 }
 function kvSheet(wb, name, rows) {
-  const ws = addSheet(wb, name, [{ h: "البيان", k: "a", w: 38 }, { h: "القيمة", k: "b", w: 30 }], rows.map(([a, b]) => ({ a, b: b && typeof b === "object" && "v" in b ? b.v : b })));
+  const ws = addSheet(wb, name, [{ h: "البيان", k: "a", w: 40 }, { h: "القيمة", k: "b", w: 30 }], rows.map(([a, b]) => ({ a, b: b && typeof b === "object" && "v" in b ? b.v : b })));
   rows.forEach(([, b], i) => { const cell = ws.getRow(i + 2).getCell(2); if (b && typeof b === "object" && b.f) cell.numFmt = b.f; else if (b instanceof Date) cell.numFmt = FMT.D; });
   return ws;
 }
 const issuesSheetRows = (list, c) => list.map((i) => ({ del: i.deliverable, desc: c.delById.get(i.deliverable)?.description, type: i.type, title: i.title, details: i.details,
   owner: i.owner, blocking: i.blocking ? "نعم" : "لا", status: i.status || OPEN, date: toDate(i.date), closed: toDate(i.closed_date), res: i.resolution }));
 const ISSUE_COLS = [{ h: "رقم المخرج", k: "del", w: 10 }, { h: "وصف المخرج", k: "desc", w: 36, wrap: true }, { h: "النوع", k: "type", w: 9 }, { h: "العنوان", k: "title", w: 36, wrap: true },
-  { h: "التفاصيل", k: "details", w: 44, wrap: true }, { h: "على مين", k: "owner", w: 10 }, { h: "واقف عليها الإجراء", k: "blocking", w: 10 }, { h: "الحالة", k: "status", w: 9 },
-  { h: "التاريخ", k: "date", w: 12, f: FMT.D }, { h: "تاريخ القفل", k: "closed", w: 12, f: FMT.D }, { h: "الحل / القرار", k: "res", w: 40, wrap: true }];
+  { h: "التفاصيل", k: "details", w: 44, wrap: true }, { h: "المسؤول", k: "owner", w: 12 }, { h: BLOCKING, k: "blocking", w: 12 }, { h: "الحالة", k: "status", w: 9 },
+  { h: "التاريخ", k: "date", w: 12, f: FMT.D }, { h: "تاريخ الإغلاق", k: "closed", w: 12, f: FMT.D }, { h: "الحل / القرار", k: "res", w: 40, wrap: true }];
 const crSheetRows = (list, c) => list.map((x) => ({ code: x.code, title: x.title, status: x.status, date: toDate(x.date), decision: toDate(x.decision_date),
   items: (x.items || []).map((id) => itemLabel(c.itemsById.get(id))).filter(Boolean).join("، "), dels: (x.deliverables || []).join("، "),
   value: Number.isFinite(x.value_change) ? x.value_change : null, impact: x.impact, notes: x.notes }));
-const CR_COLS = [{ h: "رقم الطلب", k: "code", w: 10 }, { h: "العنوان", k: "title", w: 36, wrap: true }, { h: "الحالة", k: "status", w: 12 }, { h: "تاريخ الطلب", k: "date", w: 12, f: FMT.D },
-  { h: "تاريخ القرار", k: "decision", w: 12, f: FMT.D }, { h: "البنود", k: "items", w: 14 }, { h: "المخرجات", k: "dels", w: 30, wrap: true }, { h: "الأثر المالي", k: "value", w: 15, f: FMT.M },
-  { h: "الأثر على البنود", k: "impact", w: 44, wrap: true }, { h: "ملاحظات", k: "notes", w: 30, wrap: true }];
+const CR_COLS = [{ h: "رقم الطلب", k: "code", w: 10 }, { h: "العنوان", k: "title", w: 36, wrap: true }, { h: "الحالة", k: "status", w: 14 }, { h: "تاريخ الطلب", k: "date", w: 12, f: FMT.D },
+  { h: "تاريخ القرار", k: "decision", w: 12, f: FMT.D }, { h: "البنود", k: "items", w: 14 }, { h: "المخرجات", k: "dels", w: 30, wrap: true }, { h: "الأثر المالي (ريال)", k: "value", w: 15, f: FMT.M },
+  { h: "الأثر في البنود", k: "impact", w: 44, wrap: true }, { h: "ملاحظات", k: "notes", w: 30, wrap: true }];
 
 async function withExcel(btn, fn) {
-  if (!window.ExcelJS) { toast("مكتبة Excel ماتحمّلتش — جرّب تحدّث الصفحة.", true); return; }
-  if (!state.downloads) { toast("التحميل مش متاح في العرض ده.", true); return; }
+  if (!window.ExcelJS) { toast("تعذّر تحميل مكتبة Excel؛ يُرجى تحديث الصفحة.", true); return; }
+  if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
   btn.disabled = true;
   try {
     const [wb, filename] = await fn();
     const buf = await wb.xlsx.writeBuffer();
     await state.downloads.save({ filename, data: new Blob([buf]) });
-    toast("اتحفظ ملف Excel");
+    toast("تم حفظ ملف Excel");
   } catch (e) {
-    if (e?.code === "declined") toast("اتلغى التحميل.");
-    else toast(e?.code ? errText(e) : "مقدرتش أعمل ملف Excel: " + (e?.message || e), true);
+    if (e?.code === "declined") toast("أُلغي التنزيل.");
+    else toast(e?.code ? errText(e) : "تعذّر إنشاء ملف Excel: " + (e?.message || e), true);
   } finally { btn.disabled = false; }
 }
 
@@ -1208,30 +1272,35 @@ function exportAll(btn) {
     const c = state.calc, s = state.settings, t = c.tot;
     const wb = new ExcelJS.Workbook();
     kvSheet(wb, "ملخص", [
-      ["اسم المشروع", s.project_name], ["رقم العقد", s.contract_no], ["الجهة المالكة", s.client], ["المورد", s.vendor],
-      ["تاريخ بداية العقد", toDate(s.start_date)], ["مدة العقد (شهر)", s.duration_months], ["تاريخ الاحتساب", toDate(c.asOfIso)],
+      ["اسم المشروع", s.project_name], ["رقم العقد", s.contract_no], ["الجهة المالكة", s.client], ["المورّد", s.vendor],
+      ["تاريخ بداية العقد", toDate(s.start_date)], ["مدة العقد (بالأشهر)", s.duration_months], ["تاريخ الاحتساب", toDate(c.asOfIso)],
       ["مهلة المراجعة (أيام عمل)", c.reviewLimit], ["نسبة الضريبة", { v: c.vat, f: FMT.P }],
-      ["قيمة العقد قبل الضريبة", { v: t.total, f: FMT.M }], ["قيمة العقد شامل الضريبة", { v: t.totalVat, f: FMT.M }], ["قيمة المقبول", { v: t.acceptedValue, f: FMT.M }],
-      ["المتبقي", { v: t.remaining, f: FMT.M }], ["الإنجاز المالي", { v: t.progress, f: FMT.P }],
+      ["قيمة العقد قبل الضريبة (ريال)", { v: t.total, f: FMT.M }], ["قيمة العقد شاملةً الضريبة (ريال)", { v: t.totalVat, f: FMT.M }],
+      ["إجمالي في انتظار القبول (ريال)", { v: t.waitingValue, f: FMT.M }], ["إجمالي في انتظار القبول (%)", { v: t.waitingShare, f: FMT.P }],
+      ["إجمالي المقبول (ريال)", { v: t.acceptedValue, f: FMT.M }], ["إجمالي المقبول (%)", { v: t.acceptedShare, f: FMT.P }],
+      ["المتبقي غير المقبول (ريال)", { v: t.remaining, f: FMT.M }],
+      ["نسبة الإنجاز (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم (المسلَّم ÷ الإجمالي)", { v: t.deliveredPct, f: FMT.P }],
+      ["نسبة الإنجاز الفعلي (مرجَّحة بقيمة البنود)", { v: t.actual, f: FMT.P }],
       ...STATUS_ORDER.map((st) => [`عدد المخرجات — ${st}`, c.statusCounts[st] || 0]),
-      ["مشاكل وقرارات مفتوحة", state.issues.filter((i) => i.status !== CLOSED).length], ["واقف عليها الإجراء", state.issues.filter((i) => i.status !== CLOSED && i.blocking).length],
+      ["مشكلات وقرارات مفتوحة", state.issues.filter((i) => i.status !== CLOSED).length], [BLOCKING, state.issues.filter((i) => i.status !== CLOSED && i.blocking).length],
       ["طلبات تغيير مفتوحة", state.crs.filter((x) => CR_OPEN.has(x.status)).length],
     ]);
     addSheet(wb, "البنود", [
       { h: "رقم البند", k: "no", w: 10 }, { h: "WBS", k: "wbs", w: 19 }, { h: "اسم البند", k: "name", w: 44, wrap: true }, { h: "الكمية", k: "qty", w: 9 },
-      { h: "سعر الوحدة", k: "price", w: 15, f: FMT.M }, { h: "الإجمالي قبل الضريبة", k: "total", w: 17, f: FMT.M }, { h: "الضريبة", k: "vat", w: 14, f: FMT.M },
-      { h: "الإجمالي شامل الضريبة", k: "totalVat", w: 17, f: FMT.M }, { h: "المخرجات المسجلة", k: "registered", w: 10 }, { h: "المسلّمة", k: "delivered", w: 9 },
-      { h: "المقبولة", k: "accepted", w: 9 }, { h: "نسبة الإنجاز", k: "progress", w: 10, f: FMT.P },
+      { h: "سعر الوحدة (ريال)", k: "price", w: 15, f: FMT.M }, { h: "الإجمالي قبل الضريبة", k: "total", w: 17, f: FMT.M }, { h: "الضريبة", k: "vat", w: 14, f: FMT.M },
+      { h: "الإجمالي شاملًا الضريبة", k: "totalVat", w: 17, f: FMT.M }, { h: "المخرجات المسجلة", k: "registered", w: 10 }, { h: "المسلَّمة", k: "delivered", w: 9 },
+      { h: "المقبولة", k: "accepted", w: 9 }, { h: "نسبة الإنجاز المسلَّم", k: "deliveredPct", w: 11, f: FMT.P }, { h: "نسبة الإنجاز (المقبول)", k: "progress", w: 11, f: FMT.P },
+      { h: "نسبة الإنجاز الفعلي", k: "actual", w: 11, f: FMT.P },
       { h: "قيمة المقبول", k: "acceptedValue", w: 17, f: FMT.M }, { h: "المتبقي", k: "remaining", w: 17, f: FMT.M }, { h: "طلبات التغيير", k: "crs", w: 16 },
     ], [...state.items].sort(byItemOrder).map((it) => { const r = c.items.get(it.id); return { no: it.no, wbs: it.wbs, name: it.name, ...r, crs: r.crs.map((x) => x.code).join("، ") }; }),
-    { total: { name: "الإجمالي", qty: t.qty, total: t.total, vat: t.vat, totalVat: t.totalVat, registered: t.registered, delivered: t.delivered, accepted: t.accepted, progress: t.progress, acceptedValue: t.acceptedValue, remaining: t.remaining } });
+    { total: { name: "الإجمالي", qty: t.qty, total: t.total, vat: t.vat, totalVat: t.totalVat, registered: t.registered, delivered: t.delivered, accepted: t.accepted, deliveredPct: t.deliveredPct, progress: t.progress, actual: t.actual, acceptedValue: t.acceptedValue, remaining: t.remaining } });
     addSheet(wb, "المخرجات", [
       { h: "رقم المخرج", k: "id", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "اسم البند", k: "itemName", w: 30, wrap: true }, { h: "وصف المخرج", k: "desc", w: 46, wrap: true },
-      { h: "الحالة", k: "status", w: 15 }, { h: "حالة العمل (يدوي)", k: "work", w: 12 }, { h: "النقاط المنجزة", k: "points", w: 9 },
-      { h: "القيمة قبل الضريبة", k: "value", w: 15, f: FMT.M }, { h: "القيمة شامل الضريبة", k: "valueVat", w: 15, f: FMT.M },
+      { h: "الحالة", k: "status", w: 15 }, { h: "حالة العمل (يدوية)", k: "work", w: 12 }, { h: "النقاط المنجزة", k: "points", w: 9 },
+      { h: "القيمة قبل الضريبة (ريال)", k: "value", w: 15, f: FMT.M }, { h: "القيمة شاملةً الضريبة", k: "valueVat", w: 15, f: FMT.M },
       { h: "أول تسليم", k: "first", w: 12, f: FMT.D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: FMT.D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: FMT.D },
       { h: "تاريخ القبول", k: "acc", w: 12, f: FMT.D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "أيام المراجعة", k: "review", w: 10 },
-      { h: "أيام التأخير على العميل", k: "delay", w: 11 }, { h: "أيام عندنا", k: "vendor", w: 10 }, { h: "مشاكل مفتوحة", k: "issues", w: 9 }, { h: "طلبات التغيير", k: "crs", w: 14 },
+      { h: "أيام التأخير على العميل", k: "delay", w: 11 }, { h: "أيام لدى فريق المشروع", k: "vendor", w: 11 }, { h: "مشكلات مفتوحة", k: "issues", w: 9 }, { h: "طلبات التغيير", k: "crs", w: 14 },
       ...BILLING.map((x) => ({ h: x.label, k: "b_" + x.k, w: x.yn ? 10 : 16 })), { h: "ملاحظات", k: "notes", w: 50, wrap: true },
     ], [...state.deliverables].sort(byId).map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d); return {
       id: d.id, item: it?.no, itemName: it?.name, desc: d.description, status: k.status, work: d.work_status, points: d.points === "" ? null : d.points,
@@ -1242,14 +1311,14 @@ function exportAll(btn) {
       { h: "رقم المخرج", k: "del", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "وصف المخرج", k: "desc", w: 40, wrap: true }, { h: "نوع الحركة", k: "act", w: 13 },
       { h: "التاريخ", k: "date", w: 12, f: FMT.D }, { h: "ملاحظات", k: "notes", w: 34, wrap: true }, { h: "رقم الدورة", k: "cycle", w: 8 },
       { h: "نهاية الدورة", k: "end", w: 12, f: FMT.D }, { h: "حالة الدورة", k: "state", w: 9 }, { h: "أيام المراجعة", k: "review", w: 9 }, { h: "أيام التأخير", k: "delay", w: 9 },
-      { h: "أيام عندنا", k: "vendor", w: 9 }, { h: "تنبيه", k: "warn", w: 22 },
+      { h: "أيام لدى فريق المشروع", k: "vendor", w: 11 }, { h: "تنبيه", k: "warn", w: 24 },
     ], [...state.events].sort((a, b) => String(a.deliverable).localeCompare(String(b.deliverable), "en", { numeric: true }) || (dn(a.date) || 0) - (dn(b.date) || 0)).map((e) => {
       const k = c.ev.get(e.id), d = c.delById.get(e.deliverable), it = d && c.itemsById.get(d.item_id), sub = k.cycle !== null;
       return { del: e.deliverable, item: it?.no, desc: d?.description, act: e.action, date: toDate(e.date), notes: e.notes, cycle: sub ? k.cycle : null,
         end: sub ? numD(k.end) : null, state: sub ? (k.open ? "جارية" : "مغلقة") : null, review: sub ? k.review : null, delay: sub ? k.delay : null, vendor: k.vendorDays, warn: k.warn || null }; }));
-    addSheet(wb, "المشاكل والقرارات", ISSUE_COLS, issuesSheetRows([...state.issues].sort((a, b) => String(a.date).localeCompare(String(b.date))), c));
+    addSheet(wb, "المشكلات والقرارات", ISSUE_COLS, issuesSheetRows([...state.issues].sort((a, b) => String(a.date).localeCompare(String(b.date))), c));
     addSheet(wb, "طلبات التغيير", CR_COLS, crSheetRows([...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })), c));
-    addSheet(wb, "الأجازات", [{ h: "التاريخ", k: "date", w: 14, f: FMT.D }, { h: "المناسبة", k: "name", w: 30 }, { h: "ملاحظة", k: "note", w: 20 }],
+    addSheet(wb, "الإجازات", [{ h: "التاريخ", k: "date", w: 14, f: FMT.D }, { h: "المناسبة", k: "name", w: 30 }, { h: "ملاحظة", k: "note", w: 20 }],
       [...(s.holidays || [])].sort((a, b) => String(a.date).localeCompare(String(b.date))).map((h) => ({ date: toDate(h.date), name: h.name, note: h.note })));
     return [wb, `متابعة_عقد_البوابة_${c.asOfIso}.xlsx`];
   });
@@ -1257,27 +1326,29 @@ function exportAll(btn) {
 
 function exportReport(btn) {
   return withExcel(btn, async () => {
-    const R = buildReport(), e = R.end, s = state.settings;
+    const R = buildReport(), e = R.end, s = state.settings, t = e.tot;
     const wb = new ExcelJS.Workbook();
     kvSheet(wb, "ملخص التقرير", [
       ["المشروع", s.project_name], ["رقم العقد", s.contract_no], ["من", toDate(R.from)], ["إلى", toDate(R.to)],
-      ["الإنجاز المالي في نهاية الفترة", { v: e.tot.progress, f: FMT.P }], ["مخرجات مقبولة", `${e.tot.accepted} من ${e.tot.qty}`], ["قيمة المقبول", { v: e.tot.acceptedValue, f: FMT.M }],
-      ["في انتظار رد العميل", R.openCycles.length], ["منهم عدّوا المهلة", R.overLimit.length], ["مُعادة بملاحظات", e.statusCounts[ST.RET]],
+      ["إجمالي المقبول (%)", { v: t.acceptedShare, f: FMT.P }], ["إجمالي المقبول (ريال)", { v: t.acceptedValue, f: FMT.M }],
+      ["إجمالي في انتظار القبول (%)", { v: t.waitingShare, f: FMT.P }], ["إجمالي في انتظار القبول (ريال)", { v: t.waitingValue, f: FMT.M }],
+      ["نسبة الإنجاز (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم", { v: t.deliveredPct, f: FMT.P }], ["نسبة الإنجاز الفعلي", { v: t.actual, f: FMT.P }],
+      ["في انتظار رد العميل", R.openCycles.length], ["منها تجاوزت المهلة", R.overLimit.length], ["مُعادة بملاحظات", e.statusCounts[ST.RET]],
       ["تسليمات خلال الفترة", R.submitted.length], ["ردود بملاحظات خلال الفترة", R.returned.length], ["قبول خلال الفترة", R.accepted.length],
-      ["قيمة المقبول خلال الفترة", { v: R.acceptedValue, f: FMT.M }], ["مشاكل اتفتحت", R.issuesOpened.length], ["مشاكل اتقفلت", R.issuesClosed.length],
-      ["واقف عليها الإجراء", R.blockingOpen.length], ["طلبات تغيير مفتوحة", R.crsOpen.length],
+      ["قيمة المقبول خلال الفترة (ريال)", { v: R.acceptedValue, f: FMT.M }], ["مشكلات فُتحت", R.issuesOpened.length], ["مشكلات أُغلقت", R.issuesClosed.length],
+      [BLOCKING, R.blockingOpen.length], ["طلبات تغيير مفتوحة", R.crsOpen.length],
     ]);
     const delCols = (extra) => [{ h: "رقم المخرج", k: "id", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "وصف المخرج", k: "desc", w: 46, wrap: true }, ...extra];
     const base = (d) => ({ id: d.id, item: e.itemsById.get(d.item_id)?.no, desc: d.description });
-    addSheet(wb, "المقبولة", delCols([{ h: "تاريخ القبول", k: "date", w: 12, f: FMT.D }, { h: "القيمة", k: "value", w: 15, f: FMT.M }, { h: "أيام المراجعة", k: "review", w: 10 }, { h: "أيام التأخير", k: "delay", w: 10 }]),
+    addSheet(wb, "المقبولة", delCols([{ h: "تاريخ القبول", k: "date", w: 12, f: FMT.D }, { h: "القيمة (ريال)", k: "value", w: 15, f: FMT.M }, { h: "أيام المراجعة", k: "review", w: 10 }, { h: "أيام التأخير", k: "delay", w: 10 }]),
       R.accepted.map((x) => ({ ...base(x.d), date: toDate(x.e.date), value: x.k.value, review: x.k.review, delay: x.k.delay })));
-    addSheet(wb, "المسلّمة", delCols([{ h: "تاريخ التسليم", k: "date", w: 12, f: FMT.D }, { h: "رقم الدورة", k: "cycle", w: 9 }]),
+    addSheet(wb, "المسلَّمة", delCols([{ h: "تاريخ التسليم", k: "date", w: 12, f: FMT.D }, { h: "رقم الدورة", k: "cycle", w: 9 }]),
       R.submitted.map((x) => ({ ...base(x.d), date: toDate(x.e.date), cycle: x.x?.cycle })));
     addSheet(wb, "المُعادة بملاحظات", delCols([{ h: "تاريخ الرد", k: "date", w: 12, f: FMT.D }, { h: "ملاحظات", k: "notes", w: 34, wrap: true }]),
       R.returned.map((x) => ({ ...base(x.d), date: toDate(x.e.date), notes: x.e.notes })));
     addSheet(wb, "في انتظار الرد", delCols([{ h: "تاريخ التسليم", k: "date", w: 12, f: FMT.D }, { h: "أيام المراجعة", k: "review", w: 10 }, { h: "أيام التأخير", k: "delay", w: 10 }]),
       R.openCycles.map((x) => ({ ...base(x.d), date: numD(x.k.openCycle.start), review: x.k.openCycle.review, delay: x.k.openCycle.delay })));
-    addSheet(wb, "المشاكل والقرارات", ISSUE_COLS, issuesSheetRows([...new Set([...R.blockingOpen, ...R.issuesOpened, ...R.issuesClosed])], e));
+    addSheet(wb, "المشكلات والقرارات", ISSUE_COLS, issuesSheetRows([...new Set([...R.blockingOpen, ...R.issuesOpened, ...R.issuesClosed])], e));
     addSheet(wb, "طلبات التغيير", CR_COLS, crSheetRows([...new Set([...R.crsOpen, ...R.crsTouched])], e));
     return [wb, `تقرير_متابعة_${R.from}_${R.to}.xlsx`];
   });
@@ -1295,7 +1366,7 @@ function setTab(tab) {
 
 document.addEventListener("click", async (ev) => {
   if (ev.target.closest("input, select, textarea, label") && !ev.target.closest("button")) return;
-  const t = ev.target.closest("button, tr, .card, [data-close]");
+  const t = ev.target.closest("button, tr, .card, path[data-filter-status], [data-close]");
   if (!t) return;
   const ds = t.dataset;
   if (ds.tab) return setTab(ds.tab);
@@ -1326,36 +1397,36 @@ document.addEventListener("click", async (ev) => {
   if ("cancelConfirm" in ds) { Object.assign(state.drawer, { confirm: false, confirmEv: null, confirmIssue: null }); return renderDrawer(); }
   if (ds.confirm) {
     const d = state.drawer;
-    if (ds.confirm === "item") { if (await run(t, () => state.db.collection("items").doc(d.id).delete(), "اتحذف البند")) closeDrawer(); }
-    else if (ds.confirm === "cr") { if (await run(t, () => state.db.collection("crs").doc(d.id).delete(), "اتحذف طلب التغيير")) closeDrawer(); }
+    if (ds.confirm === "item") { if (await run(t, () => state.db.collection("items").doc(d.id).delete(), "تم حذف البند")) closeDrawer(); }
+    else if (ds.confirm === "cr") { if (await run(t, () => state.db.collection("crs").doc(d.id).delete(), "تم حذف طلب التغيير")) closeDrawer(); }
     else if (ds.confirm === "del") {
       const evs = state.events.filter((e) => e.deliverable === d.id), iss = state.issues.filter((i) => i.deliverable === d.id);
       if (await run(t, async () => {
         for (const e of evs) await state.db.collection("events").doc(e.id).delete();
         for (const i of iss) await state.db.collection("issues").doc(i.id).delete();
         await state.db.collection("deliverables").doc(d.id).delete();
-      }, "اتحذف المخرج")) closeDrawer();
+      }, "تم حذف المخرج")) closeDrawer();
     } else if (ds.confirm.startsWith("ev:")) {
-      if (await run(t, () => state.db.collection("events").doc(ds.confirm.slice(3)).delete(), "اتحذفت الحركة")) { d.confirmEv = null; renderDrawer(); }
+      if (await run(t, () => state.db.collection("events").doc(ds.confirm.slice(3)).delete(), "تم حذف الحركة")) { d.confirmEv = null; renderDrawer(); }
     } else if (ds.confirm.startsWith("issue:")) {
-      if (await run(t, () => state.db.collection("issues").doc(ds.confirm.slice(6)).delete(), "اتحذفت")) { if (d.kind === "issue") closeDrawer(); else { d.confirmIssue = null; d.editIssue = null; renderDrawer(); } }
+      if (await run(t, () => state.db.collection("issues").doc(ds.confirm.slice(6)).delete(), "تم الحذف")) { if (d.kind === "issue") closeDrawer(); else { d.confirmIssue = null; d.editIssue = null; renderDrawer(); } }
     }
     return;
   }
   if (ds.delHol !== undefined) {
     const i = Number(ds.delHol); const list = (state.settings.holidays || []).filter((_, j) => j !== i);
-    return saveHolidays(list, t, "اتحذفت الإجازة");
+    return saveHolidays(list, t, "تم حذف الإجازة");
   }
   if (t.id === "exportBtn") return exportAll(t);
   if (t.id === "reportExport") return exportReport(t);
   if (t.id === "reportCopy") {
     const text = reportText(buildReport());
-    try { await navigator.clipboard.writeText(text); toast("اتنسخ التقرير — الصقه في الإيميل أو الرسالة"); }
+    try { await navigator.clipboard.writeText(text); toast("نُسخ التقرير؛ يمكنك لصقه في البريد أو الرسالة"); }
     catch (_) {
       const box = document.getElementById("copyFallback");
       box.innerHTML = `<textarea class="copybox" readonly aria-label="نص التقرير">${esc(text)}</textarea>`;
       const ta = box.querySelector("textarea"); ta.focus(); ta.select();
-      toast("مقدرتش أنسخ تلقائياً — النص متحدد، اضغط Ctrl+C");
+      toast("تعذّر النسخ التلقائي؛ النص محدد، اضغط Ctrl+C");
     }
   }
 });
@@ -1373,9 +1444,9 @@ document.addEventListener("submit", (ev) => {
   if (fid === "settingsForm") return saveSettings(form, btn);
   if (fid === "holForm") {
     const date = form.querySelector("#hDate").value, name = form.querySelector("#hName").value.trim(), note = form.querySelector("#hNote").value.trim();
-    if (!isIso(date) || !name) return toast("اكتب التاريخ والمناسبة.", true);
-    if ((state.settings.holidays || []).some((h) => h.date === date)) return toast("التاريخ ده متسجل قبل كده.", true);
-    return saveHolidays([...(state.settings.holidays || []), clean({ date, name, note })], btn, "اتضافت الإجازة");
+    if (!isIso(date) || !name) return toast("أدخل التاريخ والمناسبة.", true);
+    if ((state.settings.holidays || []).some((h) => h.date === date)) return toast("هذا التاريخ مسجل من قبل.", true);
+    return saveHolidays([...(state.settings.holidays || []), clean({ date, name, note })], btn, "تمت إضافة الإجازة");
   }
 });
 
