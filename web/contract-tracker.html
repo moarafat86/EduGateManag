@@ -1,0 +1,1004 @@
+<title>متابعة عقد البوابة الموحدة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+/* Layout: a contract ledger. Sticky header + tab rail, then one working surface per tab; tables scroll inside their own frame. */
+:root {
+  --bg: #F2F5F4;
+  --surface: #FFFFFF;
+  --surface-2: #F7F9F8;
+  --ink: #13262B;
+  --muted: #5A6B70;
+  --line: #D8E0DF;
+  --accent: #1F5C6B;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E2EDEF;
+  --focus: #2F8AA0;
+  --danger: #A4262C;
+  --danger-soft: #FBE7E8;
+
+  --st-acc-bg: #DCF1E2; --st-acc-fg: #17643A; --st-acc: #2E8B57;
+  --st-wait-bg: #DDEAF7; --st-wait-fg: #1F4E78; --st-wait: #3A73B0;
+  --st-ret-bg: #FBE5D5; --st-ret-fg: #8A3D0E; --st-ret: #D27530;
+  --st-late-bg: #FBDCDF; --st-late-fg: #9C1C26; --st-late: #C8323F;
+  --st-prog-bg: #FBF0CC; --st-prog-fg: #6F5600; --st-prog: #C9A21E;
+  --st-sus-bg: #E3E6E6; --st-sus-fg: #3F4A4C; --st-sus: #8A9497;
+  --st-new-bg: #EEF1F1; --st-new-fg: #5A6B70; --st-new: #C3CBCB;
+
+  --font-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-display: "Readex Pro", "IBM Plex Sans Arabic", "Segoe UI", sans-serif;
+  --radius: 6px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1618; --surface: #152024; --surface-2: #1A272B; --ink: #E3ECEB; --muted: #93A5A8;
+    --line: #283A3E; --accent: #62B4C5; --accent-ink: #0E1618; --accent-soft: #1C343A; --focus: #8FD0DD;
+    --danger: #F08A90; --danger-soft: #3A1E21;
+    --st-acc-bg: #173527; --st-acc-fg: #8FDDAE; --st-acc: #4FB57C;
+    --st-wait-bg: #182B40; --st-wait-fg: #A5C8EE; --st-wait: #5B93D1;
+    --st-ret-bg: #3A2516; --st-ret-fg: #F4B788; --st-ret: #E08A48;
+    --st-late-bg: #3D1B20; --st-late-fg: #F5A1A8; --st-late: #E0545F;
+    --st-prog-bg: #352D10; --st-prog-fg: #EBCF6E; --st-prog: #CFAA2E;
+    --st-sus-bg: #273134; --st-sus-fg: #B7C2C4; --st-sus: #7D8A8D;
+    --st-new-bg: #1E2A2D; --st-new-fg: #93A5A8; --st-new: #44555A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1618; --surface: #152024; --surface-2: #1A272B; --ink: #E3ECEB; --muted: #93A5A8;
+  --line: #283A3E; --accent: #62B4C5; --accent-ink: #0E1618; --accent-soft: #1C343A; --focus: #8FD0DD;
+  --danger: #F08A90; --danger-soft: #3A1E21;
+  --st-acc-bg: #173527; --st-acc-fg: #8FDDAE; --st-acc: #4FB57C;
+  --st-wait-bg: #182B40; --st-wait-fg: #A5C8EE; --st-wait: #5B93D1;
+  --st-ret-bg: #3A2516; --st-ret-fg: #F4B788; --st-ret: #E08A48;
+  --st-late-bg: #3D1B20; --st-late-fg: #F5A1A8; --st-late: #E0545F;
+  --st-prog-bg: #352D10; --st-prog-fg: #EBCF6E; --st-prog: #CFAA2E;
+  --st-sus-bg: #273134; --st-sus-fg: #B7C2C4; --st-sus: #7D8A8D;
+  --st-new-bg: #1E2A2D; --st-new-fg: #93A5A8; --st-new: #44555A;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { direction: rtl; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
+.num, .date, .code { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.date { white-space: nowrap; }
+.code { font-weight: 600; letter-spacing: .02em; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* header */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-inner { max-width: 1400px; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 10px; }
+.title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; justify-content: space-between; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; text-wrap: balance; }
+.brand .meta { color: var(--muted); font-size: .82rem; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.tabs button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 14px 9px; cursor: pointer; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.tabs button:hover { color: var(--ink); }
+
+main { max-width: 1400px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 20px; }
+
+/* buttons & inputs */
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 6px 14px; border-radius: var(--radius); cursor: pointer; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--danger); border-color: var(--danger); background: var(--surface); }
+.btn.danger.solid { background: var(--danger); color: var(--surface); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.btn.small { padding: 3px 10px; font-size: .85rem; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: .82rem; color: var(--muted); font-weight: 500; }
+.field input, .field select, .field textarea, .filters input, .filters select {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 7px 10px; width: 100%; min-width: 0;
+}
+.field textarea { resize: vertical; min-height: 70px; }
+.field .hint { font-size: .78rem; color: var(--muted); }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.form-grid .wide { grid-column: 1 / -1; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* sections */
+.section { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.section-head h2 { margin: 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; }
+.section-head .sub { color: var(--muted); font-size: .85rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 20px; }
+
+/* KPI tiles */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.kpi .label { color: var(--muted); font-size: .82rem; font-weight: 500; }
+.kpi .value { font-family: var(--font-display); font-size: 1.55rem; font-weight: 600; line-height: 1.3; }
+.kpi .foot { color: var(--muted); font-size: .8rem; }
+.kpi.lead { background: var(--accent-soft); border-color: transparent; }
+.kpi.lead .value { color: var(--accent); }
+
+/* status */
+.pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.s-acc { background: var(--st-acc-bg); color: var(--st-acc-fg); }
+.s-wait { background: var(--st-wait-bg); color: var(--st-wait-fg); }
+.s-ret { background: var(--st-ret-bg); color: var(--st-ret-fg); }
+.s-late { background: var(--st-late-bg); color: var(--st-late-fg); }
+.s-prog { background: var(--st-prog-bg); color: var(--st-prog-fg); }
+.s-sus { background: var(--st-sus-bg); color: var(--st-sus-fg); }
+.s-new { background: var(--st-new-bg); color: var(--st-new-fg); }
+.statusbar { display: flex; height: 18px; gap: 2px; border-radius: 4px; overflow: hidden; }
+.statusbar span { display: block; height: 100%; min-width: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.legend .row { display: flex; align-items: center; gap: 6px; font-size: .88rem; }
+.legend .sw { width: 10px; height: 10px; border-radius: 2px; }
+.legend button { background: none; border: 0; padding: 0; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.legend button:hover .lbl { text-decoration: underline; }
+
+/* item progress */
+.progress-list { display: flex; flex-direction: column; gap: 12px; }
+.prog-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; }
+.prog-row .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prog-row .name .code { color: var(--muted); margin-inline-end: 6px; }
+.prog-row .stat { color: var(--muted); font-size: .82rem; }
+.bar { grid-column: 1 / -1; height: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; display: flex; }
+.bar .acc { background: var(--st-acc); }
+.bar .del { background: var(--st-wait); opacity: .45; }
+.mini-bar { display: inline-flex; width: 70px; height: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; vertical-align: middle; margin-inline-start: 6px; }
+.mini-bar span { background: var(--st-acc); }
+
+/* tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { padding: 8px 10px; text-align: start; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); color: var(--muted); font-weight: 600; font-size: .8rem; white-space: nowrap; position: sticky; top: 0; }
+td.n, th.n { text-align: end; }
+tbody tr.clickable { cursor: pointer; }
+tbody tr.clickable:hover { background: var(--accent-soft); }
+tfoot td { font-weight: 700; background: var(--surface-2); border-bottom: 0; }
+td .desc { max-width: 380px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.red { color: var(--danger); font-weight: 700; }
+.muted { color: var(--muted); }
+.warn-cell { color: var(--danger); font-weight: 600; font-size: .82rem; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.filters input { width: auto; flex: 1 1 200px; }
+.filters select { width: auto; flex: 0 1 200px; }
+.count { color: var(--muted); font-size: .85rem; }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(8, 20, 24, .45); z-index: 40; }
+.drawer { position: fixed; inset-block: 0; inset-inline-start: 0; width: min(560px, 100%); background: var(--surface); z-index: 41; display: flex; flex-direction: column; border-inline-end: 1px solid var(--line); box-shadow: 0 0 40px rgba(0,0,0,.18); }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px; border-bottom: 1px solid var(--line); }
+.drawer-head h3 { margin: 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; min-width: 0; }
+.drawer-body { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+.icon-btn { background: none; border: 1px solid var(--line); border-radius: var(--radius); width: 34px; height: 34px; cursor: pointer; font-size: 1.1rem; line-height: 1; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; }
+.kv div { display: flex; flex-direction: column; }
+.kv .k { font-size: .78rem; color: var(--muted); }
+.kv .v { font-weight: 600; }
+.confirm { border: 1px solid var(--danger); background: var(--danger-soft); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+h4 { margin: 0; font-size: .95rem; font-weight: 600; }
+
+/* timeline */
+.timeline { display: flex; flex-direction: column; gap: 0; border-inline-start: 2px solid var(--line); margin-inline-start: 6px; }
+.tl { position: relative; padding: 4px 18px 14px 0; padding-inline-start: 18px; padding-inline-end: 0; }
+.tl::before { content: ""; position: absolute; inset-inline-start: -7px; top: 9px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); }
+.tl.sub::before { border-color: var(--st-wait); }
+.tl.rep::before { border-color: var(--st-ret); }
+.tl.acc::before { border-color: var(--st-acc); background: var(--st-acc); }
+.tl .line1 { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.tl .what { font-weight: 600; }
+.tl .info { color: var(--muted); font-size: .82rem; }
+.tl .del-ev { margin-inline-start: auto; }
+
+/* misc */
+.empty { text-align: center; padding: 36px 16px; color: var(--muted); display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.empty strong { color: var(--ink); font-size: 1.05rem; }
+.notice { background: var(--danger-soft); color: var(--danger); border-radius: 8px; padding: 12px 16px; font-weight: 500; }
+.toast { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); inset-inline-end: 18px; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; z-index: 60; font-weight: 500; max-width: calc(100% - 36px); }
+.toast.err { background: var(--danger); color: var(--surface); }
+.hol-add { display: grid; grid-template-columns: 160px 1fr 140px auto; gap: 10px; align-items: end; }
+@media (max-width: 640px) { .hol-add { grid-template-columns: 1fr 1fr; } .kpi .value { font-size: 1.3rem; } }
+@media (prefers-reduced-motion: no-preference) { .drawer { animation: slide .18s ease-out; } @keyframes slide { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } } }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="title-row">
+      <div class="brand">
+        <h1 id="projTitle">متابعة عقد البوابة الموحدة</h1>
+        <div class="meta"><span id="projCode"></span><span id="asOfLabel"></span></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="exportBtn" type="button">تصدير Excel</button>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="dashboard" type="button">لوحة المتابعة</button>
+      <button role="tab" data-tab="items" type="button">البنود</button>
+      <button role="tab" data-tab="deliverables" type="button">المخرجات</button>
+      <button role="tab" data-tab="log" type="button">سجل المراجعات</button>
+      <button role="tab" data-tab="settings" type="button">الإعدادات</button>
+    </nav>
+  </div>
+</header>
+<main id="view">
+  <div class="section"><div class="empty"><strong>جاري تحميل بيانات العقد…</strong><span>البنود والمخرجات وسجل المراجعات هتظهر هنا بعد ثواني.</span></div></div>
+</main>
+<div id="drawerRoot"></div>
+<div id="toastRoot" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+document.documentElement.dir = "rtl";
+document.documentElement.lang = "ar";
+
+/* ------------------------------------------------------------ constants */
+const ST = { ACC: "تم القبول", SUS: "معلق", RET: "مُعاد بملاحظات", WAIT: "في انتظار القبول", LATE: "متأخر", PROG: "جاري العمل", NEW: "لم يبدأ" };
+const STATUS_ORDER = [ST.ACC, ST.WAIT, ST.RET, ST.LATE, ST.PROG, ST.SUS, ST.NEW];
+const STATUS_CLASS = { [ST.ACC]: "acc", [ST.WAIT]: "wait", [ST.RET]: "ret", [ST.LATE]: "late", [ST.PROG]: "prog", [ST.SUS]: "sus", [ST.NEW]: "new" };
+const ACT = { SUB: "تسليم", REP: "رد بملاحظات", ACC: "قبول" };
+const ACTIONS = [ACT.SUB, ACT.REP, ACT.ACC];
+const WORK_STATUSES = [ST.NEW, ST.PROG, ST.SUS];
+const WEEKENDS = [
+  { key: "5,6", label: "الجمعة والسبت" },
+  { key: "6,0", label: "السبت والأحد" },
+  { key: "5", label: "الجمعة فقط" },
+];
+const DEFAULT_SETTINGS = {
+  project_name: "", contract_no: "", client: "", vendor: "", start_date: "", duration_months: null,
+  vat: 0.15, review_days: 10, weekend: [5, 6], as_of_override: "", holidays: [],
+};
+const TABS = ["dashboard", "items", "deliverables", "log", "settings"];
+
+/* ------------------------------------------------------------ state */
+const state = {
+  db: null, downloads: null, ready: { settings: false, items: false, deliverables: false, events: false },
+  settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [],
+  tab: "dashboard", filters: { q: "", item: "", status: "" }, logFilters: { q: "", action: "" },
+  calc: null, drawer: null, offline: false,
+};
+
+/* ------------------------------------------------------------ utils */
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nf2 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+const money = (v) => `<span class="num">${Number.isFinite(v) && v !== 0 ? nf2.format(v) : "-"}</span>`;
+const int = (v) => `<span class="num">${Number.isFinite(v) && v !== 0 ? nf0.format(v) : "-"}</span>`;
+const pct = (v) => `<span class="num">${Number.isFinite(v) ? (v * 100).toFixed(1) + "%" : "-"}</span>`;
+const dateHtml = (iso) => iso ? `<span class="date">${esc(iso)}</span>` : `<span class="muted">—</span>`;
+const pill = (s) => `<span class="pill s-${STATUS_CLASS[s] || "new"}">${esc(s)}</span>`;
+const isIso = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const dn = (iso) => { if (!isIso(iso)) return NaN; const [y, m, d] = iso.split("-").map(Number); return Math.floor(Date.UTC(y, m - 1, d) / 864e5); };
+const isoOf = (n) => new Date(n * 864e5).toISOString().slice(0, 10);
+const todayIso = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
+const numOr = (v, d) => (v === "" || v === null || v === undefined || !Number.isFinite(Number(v))) ? d : Number(v);
+const itemLabel = (it) => it ? String(it.no ?? "") : "";
+const byItemOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.no).localeCompare(String(b.no), "ar");
+
+function toast(msg, isErr) {
+  const root = document.getElementById("toastRoot");
+  root.innerHTML = `<div class="toast${isErr ? " err" : ""}">${esc(msg)}</div>`;
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => { root.innerHTML = ""; }, isErr ? 6000 : 2600);
+}
+const errText = (e) => {
+  const map = { quota_exceeded: "مساحة التخزين اتملت — احذف بيانات قديمة.", invalid_argument: "مفيش صلاحية حفظ أو البيانات غير صحيحة.", resource_exhausted: "طلبات كتير ورا بعض — استنى ثواني وجرّب تاني.", unavailable: "التخزين مش متاح دلوقتي — جرّب كمان شوية.", revoked: "صلاحية الوصول اتسحبت." };
+  return map[e?.code] || e?.message || "حصل خطأ غير متوقع";
+};
+
+/* ------------------------------------------------------------ calculations (same rules as the Excel workbook) */
+function compute() {
+  const s = state.settings;
+  const asOfIso = isIso(s.as_of_override) ? s.as_of_override : todayIso();
+  const asOf = dn(asOfIso);
+  const weekend = new Set((Array.isArray(s.weekend) ? s.weekend : [5, 6]).map(Number));
+  const hol = new Set((s.holidays || []).map((h) => dn(h.date)).filter(Number.isFinite));
+  const reviewLimit = numOr(s.review_days, 10);
+  const vat = numOr(s.vat, 0.15);
+
+  // working days between a and b inclusive (NETWORKDAYS.INTL); 0 when b < a
+  const workdays = (a, b) => {
+    if (!(b >= a)) return 0;
+    let c = 0;
+    for (let d = a; d <= b; d++) if (!weekend.has((d + 4) % 7) && !hol.has(d)) c++;
+    return c;
+  };
+  const reviewSpan = (a, b) => Math.max(0, workdays(a, b) - 1);
+
+  const itemsById = new Map(state.items.map((i) => [i.id, i]));
+  const delById = new Map(state.deliverables.map((d) => [d.id, d]));
+
+  // group valid events per deliverable
+  const evBy = new Map();
+  for (const e of state.events) {
+    const t = dn(e.date);
+    if (!e.deliverable || !Number.isFinite(t) || !ACTIONS.includes(e.action)) continue;
+    if (!evBy.has(e.deliverable)) evBy.set(e.deliverable, []);
+    evBy.get(e.deliverable).push({ ...e, t });
+  }
+
+  const ev = new Map(); // event id -> calc
+  for (const e of state.events) {
+    const c = { cycle: null, nextAnswer: null, nextSubmit: null, end: null, open: false, review: null, delay: null, warn: "" };
+    const t = dn(e.date);
+    const list = evBy.get(e.deliverable) || [];
+    if (!e.deliverable) c.warn = "رقم المخرج ناقص";
+    else if (!delById.has(e.deliverable)) c.warn = "رقم مخرج غير موجود";
+    else if (!ACTIONS.includes(e.action)) c.warn = "نوع الحركة ناقص";
+    else if (!Number.isFinite(t)) c.warn = "التاريخ ناقص";
+    else if (t > asOf) c.warn = "تاريخ بعد تاريخ الاحتساب";
+    else if (e.action !== ACT.SUB && !list.some((x) => x.action === ACT.SUB && x.t <= t)) c.warn = "لا يوجد تسليم قبل الحركة دي";
+
+    if (e.action === ACT.SUB && Number.isFinite(t) && e.deliverable) {
+      c.cycle = list.filter((x) => x.action === ACT.SUB && x.t < t).length + 1;
+      const answers = list.filter((x) => x.action !== ACT.SUB && x.t >= t).map((x) => x.t);
+      const subs = list.filter((x) => x.action === ACT.SUB && x.t > t).map((x) => x.t);
+      c.nextAnswer = answers.length ? Math.min(...answers) : null;
+      c.nextSubmit = subs.length ? Math.min(...subs) : null;
+      const candidates = [c.nextAnswer, c.nextSubmit].filter((x) => x !== null);
+      c.open = candidates.length === 0;
+      c.end = c.open ? asOf : Math.min(...candidates);
+      c.review = reviewSpan(t, c.end);
+      c.delay = Math.max(0, c.review - reviewLimit);
+    }
+    ev.set(e.id, c);
+  }
+
+  const del = new Map();
+  for (const d of state.deliverables) {
+    const list = evBy.get(d.id) || [];
+    const subs = list.filter((x) => x.action === ACT.SUB).map((x) => x.t);
+    const reps = list.filter((x) => x.action === ACT.REP).map((x) => x.t);
+    const accs = list.filter((x) => x.action === ACT.ACC).map((x) => x.t);
+    const firstSubmit = subs.length ? Math.min(...subs) : 0;
+    const lastSubmit = subs.length ? Math.max(...subs) : 0;
+    const lastReply = reps.length ? Math.max(...reps) : 0;
+    const accepted = accs.length ? Math.max(...accs) : 0;
+    const planned = dn(d.planned);
+    let status;
+    if (accepted > 0) status = ST.ACC;
+    else if (d.work_status === ST.SUS) status = ST.SUS;
+    else if (lastReply > 0 && lastReply >= lastSubmit) status = ST.RET;
+    else if (lastSubmit > 0) status = ST.WAIT;
+    else if (Number.isFinite(planned) && planned < asOf) status = ST.LATE;
+    else status = d.work_status || ST.NEW;
+
+    let review = 0, delay = 0, openCycle = null;
+    for (const e of state.events) {
+      if (e.deliverable !== d.id) continue;
+      const c = ev.get(e.id);
+      if (c && c.review !== null) { review += c.review; delay += c.delay; if (c.open) openCycle = { start: dn(e.date), review: c.review, delay: c.delay }; }
+    }
+    const submitDelay = Number.isFinite(planned) ? reviewSpan(planned, firstSubmit > 0 ? firstSubmit : asOf) : null;
+    const item = itemsById.get(d.item_id);
+    const value = item ? numOr(item.unit_price, 0) : 0;
+    del.set(d.id, {
+      firstSubmit, lastSubmit, lastReply, accepted, cycles: subs.length, status, review, delay, submitDelay, openCycle,
+      value, valueVat: value * (1 + vat),
+      waitingSinceReply: status === ST.RET ? reviewSpan(lastReply, asOf) : null,
+    });
+  }
+
+  const items = new Map();
+  const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, late: 0, acceptedValue: 0, remaining: 0 };
+  for (const it of state.items) {
+    const ds = state.deliverables.filter((d) => d.item_id === it.id);
+    const qty = numOr(it.qty, 0), price = numOr(it.unit_price, 0);
+    const total = qty * price;
+    const r = {
+      qty, price, total, vat: total * vat, totalVat: total * (1 + vat),
+      registered: ds.length,
+      delivered: ds.filter((d) => del.get(d.id).firstSubmit > 0).length,
+      accepted: ds.filter((d) => del.get(d.id).status === ST.ACC).length,
+      late: ds.filter((d) => del.get(d.id).status === ST.LATE).length,
+    };
+    r.progress = qty > 0 ? r.accepted / qty : null;
+    r.deliveredShare = qty > 0 ? r.delivered / qty : null;
+    r.acceptedValue = r.accepted * price;
+    r.remaining = total - r.acceptedValue;
+    items.set(it.id, r);
+    for (const k of Object.keys(tot)) tot[k] += r[k] || 0;
+  }
+  tot.progress = tot.total > 0 ? tot.acceptedValue / tot.total : null;
+
+  const statusCounts = Object.fromEntries(STATUS_ORDER.map((s) => [s, 0]));
+  for (const d of state.deliverables) statusCounts[del.get(d.id).status] = (statusCounts[del.get(d.id).status] || 0) + 1;
+
+  state.calc = { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, itemsById, delById, isoOf };
+}
+
+/* ------------------------------------------------------------ rendering */
+function render() {
+  compute();
+  const s = state.settings, c = state.calc;
+  document.getElementById("projTitle").textContent = s.project_name || "متابعة عقد البوابة الموحدة";
+  document.getElementById("projCode").innerHTML = [s.contract_no && `<span class="code">${esc(s.contract_no)}</span>`, s.client && esc(s.client)].filter(Boolean).join(" · ");
+  document.getElementById("asOfLabel").innerHTML = `محسوب حتى <span class="date">${esc(c.asOfIso)}</span>${isIso(s.as_of_override) ? " (تاريخ ثابت)" : ""}`;
+  for (const b of document.querySelectorAll("#tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === state.tab));
+
+  const view = document.getElementById("view");
+  const loading = !Object.values(state.ready).every(Boolean) && !state.offline;
+  let html = state.offline ? `<div class="notice">مش قادر أوصل لتخزين البيانات. افتح الصفحة من claude.ai وإنت مسجّل دخول عشان تشوف بيانات العقد وتعدّل فيها.</div>` : "";
+  if (loading) html += `<div class="section"><div class="empty"><strong>جاري تحميل بيانات العقد…</strong></div></div>`;
+  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, settings: viewSettings })[state.tab]();
+  view.innerHTML = html;
+  if (state.drawer) renderDrawer();
+}
+
+function emptyBlock(title, text, btn) {
+  return `<div class="empty"><strong>${esc(title)}</strong><span>${esc(text)}</span>${btn || ""}</div>`;
+}
+
+/* ---- dashboard */
+function viewDashboard() {
+  const c = state.calc, t = c.tot;
+  if (!state.items.length) return `<section class="section">${emptyBlock("لسه مفيش بنود للعقد", "ابدأ بإضافة بنود العقد من شاشة البنود، وبعدها ضيف المخرجات وسجّل حركات المراجعة.", `<button class="btn primary" data-go="items" type="button">إضافة أول بند</button>`)}</section>`;
+
+  const total = state.deliverables.length || 1;
+  const seg = STATUS_ORDER.filter((s) => c.statusCounts[s]).map((s) =>
+    `<span style="width:${(c.statusCounts[s] / total) * 100}%;background:var(--st-${STATUS_CLASS[s]})" title="${esc(s)}: ${c.statusCounts[s]}"></span>`).join("");
+  const legend = STATUS_ORDER.map((s) =>
+    `<button type="button" class="row" data-filter-status="${esc(s)}"><span class="sw" style="background:var(--st-${STATUS_CLASS[s]})"></span><span class="lbl">${esc(s)}</span><strong class="num">${c.statusCounts[s] || 0}</strong></button>`).join("");
+
+  const open = state.deliverables.map((d) => ({ d, k: c.del.get(d.id) })).filter((x) => x.k.openCycle && x.k.status !== ST.ACC)
+    .sort((a, b) => b.k.openCycle.review - a.k.openCycle.review);
+  const returned = state.deliverables.map((d) => ({ d, k: c.del.get(d.id) })).filter((x) => x.k.status === ST.RET)
+    .sort((a, b) => b.k.waitingSinceReply - a.k.waitingSinceReply);
+  const late = state.deliverables.map((d) => ({ d, k: c.del.get(d.id) })).filter((x) => x.k.status === ST.LATE)
+    .sort((a, b) => (b.k.submitDelay || 0) - (a.k.submitDelay || 0));
+
+  const itemRows = [...state.items].sort(byItemOrder).map((it) => {
+    const r = c.items.get(it.id);
+    const accW = r.qty ? Math.min(100, (r.accepted / r.qty) * 100) : 0;
+    const delW = r.qty ? Math.max(0, Math.min(100, (r.delivered / r.qty) * 100) - accW) : 0;
+    return `<div class="prog-row" title="مقبول ${r.accepted} · مسلّم ${r.delivered} · الكمية ${r.qty}">
+      <div class="name"><span class="code">${esc(itemLabel(it))}</span>${esc(it.name)}</div>
+      <div class="stat">مقبول <span class="num">${r.accepted}</span> من <span class="num">${r.qty}</span> · ${pct(r.progress)}</div>
+      <div class="bar"><span class="acc" style="width:${accW}%"></span><span class="del" style="width:${delW}%"></span></div></div>`;
+  }).join("");
+
+  const delRow = (x, cells) => `<tr class="clickable" tabindex="0" data-open-del="${esc(x.d.id)}"><td><span class="code">${esc(x.d.id)}</span></td><td><div class="desc">${esc(x.d.description)}</div></td>${cells}</tr>`;
+
+  return `
+  <div class="kpis">
+    <div class="kpi lead"><span class="label">الإنجاز المالي</span><span class="value">${pct(t.progress)}</span><span class="foot">قيمة المقبول ÷ قيمة العقد</span></div>
+    <div class="kpi"><span class="label">قيمة العقد قبل الضريبة (ر.س)</span><span class="value">${money(t.total)}</span><span class="foot">شامل الضريبة ${money(t.totalVat)}</span></div>
+    <div class="kpi"><span class="label">قيمة المقبول (ر.س)</span><span class="value">${money(t.acceptedValue)}</span><span class="foot"><span class="num">${t.accepted}</span> مخرج مقبول من <span class="num">${t.qty}</span></span></div>
+    <div class="kpi"><span class="label">المتبقي (ر.س)</span><span class="value">${money(t.remaining)}</span><span class="foot"><span class="num">${t.delivered}</span> مخرج اتسلّم مرة على الأقل</span></div>
+  </div>
+
+  <section class="section">
+    <div class="section-head"><h2>حالة المخرجات</h2><span class="sub"><span class="num">${state.deliverables.length}</span> مخرج — اضغط على أي حالة لعرض مخرجاتها</span></div>
+    <div class="statusbar" role="img" aria-label="توزيع المخرجات حسب الحالة">${seg}</div>
+    <div class="legend">${legend}</div>
+  </section>
+
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head"><h2>في انتظار رد العميل</h2><span class="sub">دورات مراجعة مفتوحة · المهلة <span class="num">${c.reviewLimit}</span> أيام عمل</span></div>
+      ${open.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class="n">أيام المراجعة</th><th class="n">التأخير</th></tr></thead><tbody>
+        ${open.slice(0, 12).map((x) => delRow(x, `<td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n ${x.k.openCycle.delay > 0 ? "red" : ""}">${int(x.k.openCycle.delay)}</td>`)).join("")}
+        </tbody></table></div>${open.length > 12 ? `<span class="count">و <span class="num">${open.length - 12}</span> مخرج تاني — شوف شاشة المخرجات</span>` : ""}`
+        : emptyBlock("مفيش مخرجات مستنية رد", "كل التسليمات اتردّ عليها.")}
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>إنجاز البنود</h2><span class="sub">الأخضر مقبول · الأزرق الفاتح مسلّم ولسه ماتقبلش</span></div>
+      <div class="progress-list">${itemRows}</div>
+    </section>
+  </div>
+
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head"><h2>مُعادة بملاحظات</h2><span class="sub">الدور علينا — محتاجة إعادة تسليم</span></div>
+      ${returned.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th><th class="n">أيام عمل من الرد</th></tr></thead><tbody>
+        ${returned.map((x) => delRow(x, `<td>${dateHtml(isoOf(x.k.lastReply))}</td><td class="n">${int(x.k.waitingSinceReply)}</td>`)).join("")}</tbody></table></div>`
+        : emptyBlock("مفيش مخرجات مُعادة", "مفيش ملاحظات مستنية إعادة تسليم.")}
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>متأخرة عن التاريخ المخطط</h2><span class="sub">عدّى تاريخ التسليم المخطط ولسه ماتسلمتش</span></div>
+      ${late.length ? `<div class="table-wrap"><table><thead><tr><th>المخرج</th><th>الوصف</th><th>التاريخ المخطط</th><th class="n">أيام التأخير</th></tr></thead><tbody>
+        ${late.map((x) => delRow(x, `<td>${dateHtml(x.d.planned)}</td><td class="n red">${int(x.k.submitDelay)}</td>`)).join("")}</tbody></table></div>`
+        : emptyBlock("مفيش مخرجات متأخرة", "اكتب تاريخ التسليم المخطط لكل مخرج عشان التأخير يتحسب تلقائياً.")}
+    </section>
+  </div>`;
+}
+
+/* ---- items */
+function viewItems() {
+  const c = state.calc, t = c.tot;
+  const rows = [...state.items].sort(byItemOrder).map((it) => {
+    const r = c.items.get(it.id);
+    const mismatch = r.registered !== r.qty;
+    return `<tr class="clickable" tabindex="0" data-edit-item="${esc(it.id)}">
+      <td><span class="code">${esc(itemLabel(it))}</span></td><td><span class="code muted">${esc(it.wbs)}</span></td><td><div class="desc">${esc(it.name)}</div></td>
+      <td class="n">${int(r.qty)}</td><td class="n">${money(r.price)}</td><td class="n">${money(r.total)}</td><td class="n">${money(r.totalVat)}</td>
+      <td class="n ${mismatch ? "red" : ""}" title="${mismatch ? "عدد المخرجات المسجلة مختلف عن الكمية التعاقدية" : ""}">${int(r.registered)}</td>
+      <td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td><td class="n ${r.late ? "red" : ""}">${int(r.late)}</td>
+      <td class="n">${pct(r.progress)}<span class="mini-bar"><span style="width:${Math.min(100, (r.progress || 0) * 100)}%"></span></span></td>
+      <td class="n">${money(r.acceptedValue)}</td><td class="n">${money(r.remaining)}</td></tr>`;
+  }).join("");
+  return `<section class="section">
+    <div class="section-head"><h2>بنود العقد</h2><div class="actions"><span class="count">المبالغ بالريال · اضغط على أي بند لتعديله</span><button class="btn primary" data-new-item type="button">+ بند جديد</button></div></div>
+    ${state.items.length ? `<div class="table-wrap"><table>
+      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي قبل الضريبة</th><th class="n">شامل الضريبة</th><th class="n">المسجلة</th><th class="n">المسلّمة</th><th class="n">المقبولة</th><th class="n">المتأخرة</th><th class="n">الإنجاز</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${money(t.totalVat)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${int(t.late)}</td><td class="n" title="موزون بالقيمة المالية">${pct(t.progress)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td></tr></tfoot>
+    </table></div>` : emptyBlock("لسه مفيش بنود", "ضيف بنود العقد كما في جدول الكميات: رقم البند، الاسم، الكمية، وسعر الوحدة.")}
+  </section>`;
+}
+
+/* ---- deliverables */
+function filteredDeliverables() {
+  const c = state.calc, f = state.filters, q = f.q.trim();
+  return [...state.deliverables].filter((d) => {
+    const k = c.del.get(d.id);
+    if (f.item && d.item_id !== f.item) return false;
+    if (f.status && k.status !== f.status) return false;
+    if (q && !(`${d.id} ${d.description || ""} ${d.notes || ""}`.includes(q))) return false;
+    return true;
+  }).sort((a, b) => a.id.localeCompare(b.id, "en", { numeric: true }));
+}
+function viewDeliverables() {
+  const c = state.calc, f = state.filters;
+  const list = filteredDeliverables();
+  const itemOpts = [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${f.item === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(it.name)}</option>`).join("");
+  const statusOpts = STATUS_ORDER.map((s) => `<option${f.status === s ? " selected" : ""}>${esc(s)}</option>`).join("");
+  const rows = list.map((d) => {
+    const k = c.del.get(d.id), it = c.itemsById.get(d.item_id);
+    return `<tr class="clickable" tabindex="0" data-open-del="${esc(d.id)}">
+      <td><span class="code">${esc(d.id)}</span></td><td><span class="code">${esc(itemLabel(it))}</span></td><td><div class="desc">${esc(d.description)}</div></td>
+      <td>${pill(k.status)}</td><td>${dateHtml(k.firstSubmit ? isoOf(k.firstSubmit) : "")}</td><td>${dateHtml(k.accepted ? isoOf(k.accepted) : "")}</td>
+      <td class="n">${int(k.cycles)}</td><td class="n">${int(k.review)}</td><td class="n ${k.delay ? "red" : ""}">${int(k.delay)}</td>
+      <td class="n ${k.submitDelay ? "red" : ""}">${k.submitDelay === null ? '<span class="muted">—</span>' : int(k.submitDelay)}</td><td class="n">${money(k.value)}</td></tr>`;
+  }).join("");
+  return `<section class="section">
+    <div class="section-head"><h2>المخرجات</h2><button class="btn primary" data-new-del type="button">+ مخرج جديد</button></div>
+    <div class="filters">
+      <input id="fQ" type="search" placeholder="بحث برقم المخرج أو الوصف" value="${esc(f.q)}" aria-label="بحث">
+      <select id="fItem" aria-label="البند"><option value="">كل البنود</option>${itemOpts}</select>
+      <select id="fStatus" aria-label="الحالة"><option value="">كل الحالات</option>${statusOpts}</select>
+      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.length}</span></span>
+    </div>
+    ${list.length ? `<div class="table-wrap"><table>
+      <thead><tr><th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th><th>أول تسليم</th><th>تاريخ القبول</th><th class="n">مرات التسليم</th><th class="n">أيام المراجعة</th><th class="n">تأخير القبول</th><th class="n">تأخير التسليم</th><th class="n">القيمة قبل الضريبة</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`
+      : state.deliverables.length ? emptyBlock("مفيش مخرجات بالفلتر ده", "غيّر البحث أو الفلتر.") : emptyBlock("لسه مفيش مخرجات", state.items.length ? "ضيف المخرجات تحت كل بند، كل مخرج برقم ثابت زي D-001." : "ضيف بنود العقد الأول من شاشة البنود.")}
+  </section>`;
+}
+
+/* ---- log */
+function viewLog() {
+  const c = state.calc, f = state.logFilters, q = f.q.trim();
+  const list = [...state.events].filter((e) => (!f.action || e.action === f.action) && (!q || `${e.deliverable} ${e.notes || ""}`.includes(q)))
+    .sort((a, b) => (dn(b.date) || 0) - (dn(a.date) || 0) || String(b.deliverable).localeCompare(String(a.deliverable), "en", { numeric: true }));
+  const actOpts = ACTIONS.map((a) => `<option${f.action === a ? " selected" : ""}>${esc(a)}</option>`).join("");
+  const rows = list.map((e) => {
+    const k = c.ev.get(e.id), d = c.delById.get(e.deliverable);
+    const isSub = k.cycle !== null;
+    return `<tr class="clickable" tabindex="0" data-open-del="${esc(e.deliverable)}">
+      <td><span class="code">${esc(e.deliverable)}</span></td><td><div class="desc">${esc(d?.description)}</div></td><td>${esc(e.action)}</td><td>${dateHtml(e.date)}</td>
+      <td class="n">${isSub ? int(k.cycle) : ""}</td><td>${isSub ? dateHtml(isoOf(k.end)) : ""}</td><td>${isSub ? (k.open ? '<span class="pill s-prog">جارية</span>' : '<span class="muted">مغلقة</span>') : ""}</td>
+      <td class="n">${isSub ? int(k.review) : ""}</td><td class="n ${isSub && k.delay ? "red" : ""}">${isSub ? int(k.delay) : ""}</td>
+      <td class="warn-cell">${esc(k.warn)}</td><td><div class="desc">${esc(e.notes)}</div></td></tr>`;
+  }).join("");
+  return `<section class="section">
+    <div class="section-head"><h2>سجل المراجعات</h2><button class="btn primary" data-new-ev type="button">+ حركة جديدة</button></div>
+    <p class="muted" style="margin:0">كل تسليم بيفتح دورة مراجعة، والدورة بتقفل عند أول رد أو قبول أو تسليم جديد بعده. الأيام أيام عمل من اليوم التالي للتسليم، من غير الإجازة الأسبوعية والأجازات الرسمية.</p>
+    <div class="filters">
+      <input id="lQ" type="search" placeholder="بحث برقم المخرج أو الملاحظات" value="${esc(f.q)}" aria-label="بحث">
+      <select id="lAction" aria-label="نوع الحركة"><option value="">كل الحركات</option>${actOpts}</select>
+      <span class="count"><span class="num">${list.length}</span> حركة</span>
+    </div>
+    ${list.length ? `<div class="table-wrap"><table>
+      <thead><tr><th>المخرج</th><th>الوصف</th><th>الحركة</th><th>التاريخ</th><th class="n">الدورة</th><th>نهاية الدورة</th><th>حالة الدورة</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th>تنبيه</th><th>ملاحظات</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>` : emptyBlock(state.events.length ? "مفيش حركات بالفلتر ده" : "لسه مفيش حركات", "سجّل كل تسليم أو رد بملاحظات أو قبول كحركة بتاريخها.")}
+  </section>`;
+}
+
+/* ---- settings */
+function viewSettings() {
+  const s = state.settings;
+  const wk = (Array.isArray(s.weekend) ? s.weekend : [5, 6]).join(",");
+  const hol = [...(s.holidays || [])].map((h, i) => ({ ...h, i })).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  return `<section class="section">
+    <div class="section-head"><h2>بيانات العقد والإعدادات</h2></div>
+    <form id="settingsForm" class="form-grid" autocomplete="off">
+      <div class="field"><label for="sName">اسم المشروع</label><input id="sName" name="project_name" value="${esc(s.project_name)}"></div>
+      <div class="field"><label for="sCode">رقم العقد / كود المشروع</label><input id="sCode" name="contract_no" value="${esc(s.contract_no)}"></div>
+      <div class="field"><label for="sClient">الجهة المالكة</label><input id="sClient" name="client" value="${esc(s.client)}"></div>
+      <div class="field"><label for="sVendor">المورد / المنفذ</label><input id="sVendor" name="vendor" value="${esc(s.vendor)}"></div>
+      <div class="field"><label for="sStart">تاريخ بداية العقد</label><input id="sStart" name="start_date" type="date" value="${esc(s.start_date)}"></div>
+      <div class="field"><label for="sDur">مدة العقد (بالأشهر)</label><input id="sDur" name="duration_months" type="number" min="0" step="1" value="${esc(s.duration_months ?? "")}"></div>
+      <div class="field"><label for="sVat">نسبة الضريبة (%)</label><input id="sVat" name="vat" type="number" min="0" step="0.01" value="${esc(numOr(s.vat, 0.15) * 100)}"></div>
+      <div class="field"><label for="sReview">مهلة المراجعة (أيام عمل)</label><input id="sReview" name="review_days" type="number" min="0" step="1" value="${esc(s.review_days ?? 10)}"><span class="hint">أي يوم زيادة عن المهلة في أي دورة بيتحسب تأخير.</span></div>
+      <div class="field"><label for="sWeek">الإجازة الأسبوعية</label><select id="sWeek" name="weekend">${WEEKENDS.map((w) => `<option value="${w.key}"${w.key === wk ? " selected" : ""}>${w.label}</option>`).join("")}</select></div>
+      <div class="field"><label for="sAsOf">تاريخ احتساب ثابت (اختياري)</label><input id="sAsOf" name="as_of_override" type="date" value="${esc(s.as_of_override)}"><span class="hint">سيبه فاضي عشان الحساب يبقى لحد النهارده.</span></div>
+      <div class="actions wide"><button class="btn primary" type="submit" id="saveSettings">حفظ الإعدادات</button></div>
+    </form>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>الأجازات الرسمية</h2><span class="sub">تُستثنى من حساب أيام المراجعة والتأخير · <span class="num">${hol.length}</span> يوم</span></div>
+    <form id="holForm" class="hol-add" autocomplete="off">
+      <div class="field"><label for="hDate">التاريخ</label><input id="hDate" type="date" required></div>
+      <div class="field"><label for="hName">المناسبة</label><input id="hName" required placeholder="مثال: عيد الفطر 1448"></div>
+      <div class="field"><label for="hNote">ملاحظة</label><input id="hNote" placeholder="مثال: تقديري"></div>
+      <button class="btn primary" type="submit">إضافة</button>
+    </form>
+    ${hol.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>المناسبة</th><th>ملاحظة</th><th></th></tr></thead><tbody>
+      ${hol.map((h) => `<tr><td>${dateHtml(h.date)}</td><td>${esc(h.name)}</td><td class="muted">${esc(h.note)}</td><td class="n"><button class="btn small danger" type="button" data-del-hol="${h.i}">حذف</button></td></tr>`).join("")}
+    </tbody></table></div>` : emptyBlock("مفيش أجازات مسجلة", "ضيف الأجازات الرسمية عشان تتشال من حساب الأيام.")}
+  </section>`;
+}
+
+/* ------------------------------------------------------------ drawer */
+function openDrawer(d) { state.drawer = d; renderDrawer(); }
+function closeDrawer() { state.drawer = null; document.getElementById("drawerRoot").innerHTML = ""; }
+function renderDrawer() {
+  const d = state.drawer; if (!d) return;
+  const body = ({ item: drawerItem, del: drawerDel, delForm: drawerDelForm, ev: drawerEv })[d.kind]();
+  if (body === null) { closeDrawer(); return; }
+  const root = document.getElementById("drawerRoot");
+  const scroll = root.querySelector(".drawer-body")?.scrollTop || 0;
+  root.innerHTML = `<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(body.title)}">
+    <div class="drawer-head"><h3>${body.titleHtml || esc(body.title)}</h3><button class="icon-btn" type="button" data-close aria-label="إغلاق">×</button></div>
+    <div class="drawer-body">${body.html}</div></aside>`;
+  root.querySelector(".drawer-body").scrollTop = scroll;
+}
+const confirmBlock = (text, action) => `<div class="confirm"><span>${esc(text)}</span><div class="actions"><button class="btn danger solid" type="button" data-confirm="${action}">تأكيد الحذف</button><button class="btn" type="button" data-cancel-confirm>إلغاء</button></div></div>`;
+
+function drawerItem() {
+  const d = state.drawer, it = d.id ? state.items.find((x) => x.id === d.id) : null;
+  if (d.id && !it) return null;
+  const linked = it ? state.deliverables.filter((x) => x.item_id === it.id).length : 0;
+  const v = it || {};
+  return { title: it ? `تعديل البند ${itemLabel(it)}` : "بند جديد", html: `
+    <form id="itemForm" class="form-grid" autocomplete="off">
+      <div class="field"><label for="iNo">رقم البند</label><input id="iNo" name="no" required value="${esc(v.no ?? "")}" placeholder="مثال: 5.ج"></div>
+      <div class="field"><label for="iWbs">WBS</label><input id="iWbs" name="wbs" value="${esc(v.wbs ?? "")}"></div>
+      <div class="field wide"><label for="iName">اسم البند</label><input id="iName" name="name" required value="${esc(v.name ?? "")}"></div>
+      <div class="field"><label for="iQty">الكمية التعاقدية</label><input id="iQty" name="qty" type="number" min="0" step="1" required value="${esc(v.qty ?? "")}"></div>
+      <div class="field"><label for="iPrice">سعر الوحدة قبل الضريبة (ر.س)</label><input id="iPrice" name="unit_price" type="number" min="0" step="0.01" required value="${esc(v.unit_price ?? "")}"></div>
+      <div class="field"><label for="iOrder">ترتيب العرض</label><input id="iOrder" name="order" type="number" step="1" value="${esc(v.order ?? state.items.length + 1)}"></div>
+      <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${it ? `<button class="btn danger" type="button" data-ask-delete>حذف البند</button>` : ""}</div>
+    </form>
+    ${d.confirm ? (linked ? `<div class="notice">البند ده مربوط بيه <span class="num">${linked}</span> مخرج. انقل المخرجات لبند تاني أو احذفها الأول.</div>` : confirmBlock("هيتم حذف البند نهائياً.", "item")) : ""}` };
+}
+
+function drawerDel() {
+  const d = state.drawer, del = state.deliverables.find((x) => x.id === d.id);
+  if (!del) return null;
+  const c = state.calc, k = c.del.get(del.id), it = c.itemsById.get(del.item_id);
+  const evs = state.events.filter((e) => e.deliverable === del.id).sort((a, b) => (dn(a.date) || 0) - (dn(b.date) || 0) || ACTIONS.indexOf(a.action) - ACTIONS.indexOf(b.action));
+  const cls = { [ACT.SUB]: "sub", [ACT.REP]: "rep", [ACT.ACC]: "acc" };
+  const tl = evs.map((e) => {
+    const x = c.ev.get(e.id);
+    const info = x.cycle !== null
+      ? `دورة <span class="num">${x.cycle}</span> · ${x.open ? "لسه مفتوحة" : `انتهت <span class="date">${isoOf(x.end)}</span>`} · <span class="num">${x.review}</span> يوم عمل${x.delay ? ` · <span class="red">تأخير <span class="num">${x.delay}</span></span>` : ""}`
+      : "";
+    return `<div class="tl ${cls[e.action] || ""}"><div class="line1"><span class="what">${esc(e.action)}</span>${dateHtml(e.date)}
+      <button class="btn small danger del-ev" type="button" data-del-ev="${esc(e.id)}" aria-label="حذف الحركة">حذف</button></div>
+      ${info ? `<div class="info">${info}</div>` : ""}${x.warn ? `<div class="warn-cell">${esc(x.warn)}</div>` : ""}${e.notes ? `<div class="info">${esc(e.notes)}</div>` : ""}</div>`;
+  }).join("");
+  const delConfirm = d.confirmEv ? confirmBlock("هيتم حذف الحركة دي من السجل.", "ev:" + d.confirmEv) : "";
+  return { title: del.id, titleHtml: `<span class="code">${esc(del.id)}</span> ${pill(k.status)}`, html: `
+    <div class="kv">
+      <div><span class="k">البند</span><span class="v"><span class="code">${esc(itemLabel(it))}</span> ${esc(it?.name || "بند غير موجود")}</span></div>
+      <div><span class="k">القيمة قبل الضريبة</span><span class="v">${money(k.value)}</span></div>
+      <div><span class="k">التسليم المخطط</span><span class="v">${dateHtml(del.planned)}</span></div>
+      <div><span class="k">أول تسليم</span><span class="v">${dateHtml(k.firstSubmit ? isoOf(k.firstSubmit) : "")}</span></div>
+      <div><span class="k">تاريخ القبول</span><span class="v">${dateHtml(k.accepted ? isoOf(k.accepted) : "")}</span></div>
+      <div><span class="k">حالة العمل (يدوي)</span><span class="v">${esc(del.work_status || "—")}</span></div>
+      <div><span class="k">أيام المراجعة</span><span class="v">${int(k.review)}</span></div>
+      <div><span class="k">تأخير القبول</span><span class="v ${k.delay ? "red" : ""}">${int(k.delay)}</span></div>
+      <div><span class="k">تأخير التسليم</span><span class="v ${k.submitDelay ? "red" : ""}">${k.submitDelay === null ? "—" : int(k.submitDelay)}</span></div>
+      ${del.points !== undefined && del.points !== null && del.points !== "" ? `<div><span class="k">النقاط المنجزة</span><span class="v">${int(Number(del.points))}</span></div>` : ""}
+    </div>
+    <div><h4>وصف المخرج</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.description)}</p></div>
+    ${del.notes ? `<div><h4>ملاحظات</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.notes)}</p></div>` : ""}
+    <div class="actions"><button class="btn" type="button" data-edit-del="${esc(del.id)}">تعديل بيانات المخرج</button></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h4>تسجيل حركة</h4>
+      <form id="quickEv" class="form-grid" autocomplete="off">
+        <div class="field"><label for="qAct">نوع الحركة</label><select id="qAct" name="action">${ACTIONS.map((a) => `<option>${esc(a)}</option>`).join("")}</select></div>
+        <div class="field"><label for="qDate">التاريخ</label><input id="qDate" name="date" type="date" required value="${esc(todayIso())}"></div>
+        <div class="field wide"><label for="qNotes">ملاحظات</label><input id="qNotes" name="notes"></div>
+        <div class="actions wide"><button class="btn primary" type="submit">إضافة للسجل</button></div>
+      </form>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <h4>سجل المراجعات (<span class="num">${evs.length}</span>)</h4>
+      ${delConfirm}
+      ${evs.length ? `<div class="timeline">${tl}</div>` : `<span class="muted">لسه مفيش حركات على المخرج ده.</span>`}
+    </div>` };
+}
+
+function nextDeliverableId() {
+  const nums = state.deliverables.map((d) => /^D-(\d+)$/.exec(d.id)).filter(Boolean).map((m) => Number(m[1]));
+  return "D-" + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3, "0");
+}
+function drawerDelForm() {
+  const d = state.drawer, del = d.id ? state.deliverables.find((x) => x.id === d.id) : null;
+  if (d.id && !del) return null;
+  const v = del || { id: nextDeliverableId(), item_id: state.filters.item || "" };
+  const evCount = del ? state.events.filter((e) => e.deliverable === del.id).length : 0;
+  const itemOpts = [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${v.item_id === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(it.name)}</option>`).join("");
+  return { title: del ? `تعديل ${del.id}` : "مخرج جديد", html: state.items.length ? `
+    <form id="delForm" class="form-grid" autocomplete="off">
+      <div class="field"><label for="dId">رقم المخرج</label><input id="dId" name="id" required pattern="[A-Za-z0-9_.~:@+\\-]+" value="${esc(v.id)}" ${del ? "readonly" : ""}><span class="hint">${del ? "الرقم ثابت لأنه مربوط بسجل المراجعات." : "حروف إنجليزي وأرقام وشرطة فقط."}</span></div>
+      <div class="field"><label for="dItem">البند</label><select id="dItem" name="item_id" required><option value="">اختر البند</option>${itemOpts}</select></div>
+      <div class="field wide"><label for="dDesc">وصف المخرج</label><textarea id="dDesc" name="description" required>${esc(v.description ?? "")}</textarea></div>
+      <div class="field"><label for="dPlanned">تاريخ التسليم المخطط</label><input id="dPlanned" name="planned" type="date" value="${esc(v.planned ?? "")}"><span class="hint">لو عدّى من غير تسليم، الحالة تبقى «متأخر».</span></div>
+      <div class="field"><label for="dWork">حالة العمل (يدوي)</label><select id="dWork" name="work_status"><option value="">—</option>${WORK_STATUSES.map((w) => `<option${v.work_status === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">«معلق» تغلب على أي حالة ما عدا «تم القبول».</span></div>
+      <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
+      <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>
+      <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${del ? `<button class="btn" type="button" data-open-del="${esc(del.id)}">رجوع</button><button class="btn danger" type="button" data-ask-delete>حذف المخرج</button>` : ""}</div>
+    </form>
+    ${d.confirm ? confirmBlock(`هيتم حذف المخرج${evCount ? ` و ${evCount} حركة في سجل المراجعات` : ""} نهائياً.`, "del") : ""}`
+    : emptyBlock("لازم يكون في بند الأول", "ضيف بنود العقد من شاشة البنود قبل المخرجات.") };
+}
+
+function drawerEv() {
+  const dels = [...state.deliverables].sort((a, b) => a.id.localeCompare(b.id, "en", { numeric: true }));
+  return { title: "حركة جديدة في سجل المراجعات", html: dels.length ? `
+    <form id="evForm" class="form-grid" autocomplete="off">
+      <div class="field wide"><label for="eDel">المخرج</label><select id="eDel" name="deliverable" required><option value="">اختر المخرج</option>${dels.map((d) => `<option value="${esc(d.id)}">${esc(d.id)} — ${esc((d.description || "").slice(0, 70))}</option>`).join("")}</select></div>
+      <div class="field"><label for="eAct">نوع الحركة</label><select id="eAct" name="action">${ACTIONS.map((a) => `<option>${esc(a)}</option>`).join("")}</select></div>
+      <div class="field"><label for="eDate">التاريخ</label><input id="eDate" name="date" type="date" required value="${esc(todayIso())}"></div>
+      <div class="field wide"><label for="eNotes">ملاحظات</label><input id="eNotes" name="notes"></div>
+      <div class="actions wide"><button class="btn primary" type="submit">إضافة للسجل</button></div>
+    </form>` : emptyBlock("مفيش مخرجات", "ضيف المخرجات الأول عشان تسجّل حركاتها.") };
+}
+
+/* ------------------------------------------------------------ writes */
+function requireDb() { if (!state.db) { toast("التخزين مش متاح — افتح الصفحة من claude.ai وإنت مسجّل دخول.", true); return false; } return true; }
+async function run(btn, fn, okMsg) {
+  if (!requireDb()) return false;
+  if (btn) btn.disabled = true;
+  try { await fn(); if (okMsg) toast(okMsg); return true; }
+  catch (e) { toast(errText(e), true); return false; }
+  finally { if (btn) btn.disabled = false; }
+}
+const formData = (form) => Object.fromEntries(new FormData(form).entries());
+const clean = (o) => { const r = {}; for (const [k, v] of Object.entries(o)) if (v !== "" && v !== null && v !== undefined) r[k] = v; return r; };
+
+async function saveItem(form, btn) {
+  const f = formData(form), id = state.drawer.id || "i" + Date.now().toString(36);
+  const no = /^\d+$/.test(f.no.trim()) ? Number(f.no.trim()) : f.no.trim();
+  if (state.items.some((x) => x.id !== id && String(x.no) === String(no))) { toast("رقم البند ده موجود قبل كده.", true); return; }
+  const body = clean({ no, wbs: f.wbs.trim(), name: f.name.trim(), qty: numOr(f.qty, 0), unit_price: numOr(f.unit_price, 0), order: numOr(f.order, state.items.length + 1) });
+  if (await run(btn, () => state.db.collection("items").doc(id).set(body), "اتحفظ البند")) closeDrawer();
+}
+async function saveDeliverable(form, btn) {
+  const f = formData(form), editing = state.drawer.id;
+  const id = editing || f.id.trim();
+  if (!/^[A-Za-z0-9_.~:@+-]+$/.test(id)) { toast("رقم المخرج لازم يكون حروف إنجليزي وأرقام وشرطة بس.", true); return; }
+  if (!editing && state.deliverables.some((x) => x.id === id)) { toast(`الرقم ${id} مستخدم قبل كده.`, true); return; }
+  const prev = editing ? state.deliverables.find((x) => x.id === id) : {};
+  const body = { ...(prev?.legacy_billing ? { legacy_billing: prev.legacy_billing } : {}),
+    ...clean({ item_id: f.item_id, description: f.description.trim(), planned: f.planned, work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim() }) };
+  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "اتحفظ المخرج")) openDrawer({ kind: "del", id });
+}
+async function addEvent(form, btn, deliverable) {
+  const f = formData(form);
+  const body = clean({ deliverable: deliverable || f.deliverable, action: f.action, date: f.date, notes: (f.notes || "").trim() });
+  if (!body.deliverable || !isIso(body.date)) { toast("اختار المخرج واكتب التاريخ.", true); return; }
+  const ok = await run(btn, () => state.db.collection("events").add(body), `اتسجّل «${body.action}» على ${body.deliverable}`);
+  if (ok) { if (deliverable) render(); else openDrawer({ kind: "del", id: body.deliverable }); }
+}
+async function saveSettings(form, btn) {
+  const f = formData(form);
+  const body = { ...state.settings, ...{
+    project_name: f.project_name.trim(), contract_no: f.contract_no.trim(), client: f.client.trim(), vendor: f.vendor.trim(),
+    start_date: f.start_date, duration_months: f.duration_months === "" ? null : Number(f.duration_months),
+    vat: numOr(f.vat, 15) / 100, review_days: numOr(f.review_days, 10), weekend: f.weekend.split(",").map(Number), as_of_override: f.as_of_override,
+  } };
+  await run(btn, () => state.db.doc("contract/settings").set(body), "اتحفظت الإعدادات");
+}
+async function saveHolidays(list, btn, msg) {
+  await run(btn, () => state.db.doc("contract/settings").set({ ...state.settings, holidays: list }), msg);
+}
+
+/* ------------------------------------------------------------ export to Excel */
+async function exportExcel(btn) {
+  if (!window.ExcelJS) { toast("مكتبة Excel ماتحمّلتش — جرّب تحدّث الصفحة.", true); return; }
+  if (!state.downloads) { toast("التحميل مش متاح في العرض ده.", true); return; }
+  btn.disabled = true;
+  try {
+    compute();
+    const c = state.calc, s = state.settings;
+    const wb = new ExcelJS.Workbook();
+    const toDate = (iso) => isIso(iso) ? new Date(Date.UTC(...iso.split("-").map((x, i) => i === 1 ? Number(x) - 1 : Number(x)))) : null;
+    const numD = (n) => n ? toDate(isoOf(n)) : null;
+    const sheet = (name, cols, rows, opts = {}) => {
+      const ws = wb.addWorksheet(name, { views: [{ rightToLeft: true, state: "frozen", ySplit: 1 }] });
+      ws.columns = cols.map((col) => ({ header: col.h, key: col.k, width: col.w || 14, style: { numFmt: col.f, font: { name: "Arial", size: 10 }, alignment: { vertical: "top", wrapText: !!col.wrap } } }));
+      rows.forEach((r) => ws.addRow(r));
+      const head = ws.getRow(1);
+      head.font = { name: "Arial", bold: true, color: { argb: "FFFFFFFF" } };
+      head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F5C6B" } };
+      head.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      head.height = 32;
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
+      if (opts.total) { const tr = ws.addRow(opts.total); tr.font = { name: "Arial", bold: true }; tr.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9E7EA" } }; }
+      return ws;
+    };
+    const M = "#,##0.00", D = "yyyy-mm-dd", P = "0.0%";
+    sheet("ملخص", [{ h: "البيان", k: "a", w: 34 }, { h: "القيمة", k: "b", w: 30 }], [
+      { a: "اسم المشروع", b: s.project_name }, { a: "رقم العقد", b: s.contract_no }, { a: "الجهة المالكة", b: s.client }, { a: "المورد", b: s.vendor },
+      { a: "تاريخ بداية العقد", b: toDate(s.start_date) }, { a: "مدة العقد (شهر)", b: s.duration_months }, { a: "تاريخ الاحتساب", b: toDate(c.asOfIso) },
+      { a: "مهلة المراجعة (أيام عمل)", b: c.reviewLimit }, { a: "نسبة الضريبة", b: c.vat },
+      { a: "قيمة العقد قبل الضريبة", b: c.tot.total }, { a: "قيمة العقد شامل الضريبة", b: c.tot.totalVat }, { a: "قيمة المقبول", b: c.tot.acceptedValue },
+      { a: "المتبقي", b: c.tot.remaining }, { a: "الإنجاز المالي", b: c.tot.progress },
+      ...STATUS_ORDER.map((st) => ({ a: `عدد المخرجات — ${st}`, b: c.statusCounts[st] || 0 })),
+    ]).eachRow((row, i) => { const v = row.getCell(2).value; if (v instanceof Date) row.getCell(2).numFmt = D; else if (i === 10 || i === 15) row.getCell(2).numFmt = P; else if (typeof v === "number" && v > 1000) row.getCell(2).numFmt = M; });
+
+    const its = [...state.items].sort(byItemOrder);
+    const t = c.tot;
+    sheet("البنود", [
+      { h: "رقم البند", k: "no", w: 10 }, { h: "WBS", k: "wbs", w: 19 }, { h: "اسم البند", k: "name", w: 44, wrap: true }, { h: "الكمية", k: "qty", w: 9 },
+      { h: "سعر الوحدة", k: "price", w: 15, f: M }, { h: "الإجمالي قبل الضريبة", k: "total", w: 17, f: M }, { h: "الضريبة", k: "vat", w: 14, f: M },
+      { h: "الإجمالي شامل الضريبة", k: "totalVat", w: 17, f: M }, { h: "المخرجات المسجلة", k: "registered", w: 10 }, { h: "المسلّمة", k: "delivered", w: 9 },
+      { h: "المقبولة", k: "accepted", w: 9 }, { h: "المتأخرة", k: "late", w: 9 }, { h: "نسبة الإنجاز", k: "progress", w: 10, f: P },
+      { h: "قيمة المقبول", k: "acceptedValue", w: 17, f: M }, { h: "المتبقي", k: "remaining", w: 17, f: M },
+    ], its.map((it) => ({ no: it.no, wbs: it.wbs, name: it.name, ...c.items.get(it.id) })),
+    { total: { name: "الإجمالي", qty: t.qty, total: t.total, vat: t.vat, totalVat: t.totalVat, registered: t.registered, delivered: t.delivered, accepted: t.accepted, late: t.late, progress: t.progress, acceptedValue: t.acceptedValue, remaining: t.remaining } });
+
+    sheet("المخرجات", [
+      { h: "رقم المخرج", k: "id", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "اسم البند", k: "itemName", w: 30, wrap: true }, { h: "وصف المخرج", k: "desc", w: 46, wrap: true },
+      { h: "التسليم المخطط", k: "planned", w: 12, f: D }, { h: "حالة العمل (يدوي)", k: "work", w: 12 }, { h: "النقاط المنجزة", k: "points", w: 9 },
+      { h: "القيمة قبل الضريبة", k: "value", w: 15, f: M }, { h: "القيمة شامل الضريبة", k: "valueVat", w: 15, f: M },
+      { h: "أول تسليم", k: "first", w: 12, f: D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: D },
+      { h: "تاريخ القبول", k: "acc", w: 12, f: D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "الحالة", k: "status", w: 15 },
+      { h: "أيام المراجعة", k: "review", w: 10 }, { h: "أيام التأخير في القبول", k: "delay", w: 11 }, { h: "أيام تأخير التسليم", k: "subDelay", w: 11 }, { h: "ملاحظات", k: "notes", w: 50, wrap: true },
+    ], filteredAll().map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id); return {
+      id: d.id, item: it?.no, itemName: it?.name, desc: d.description, planned: toDate(d.planned), work: d.work_status, points: d.points === "" ? null : d.points,
+      value: k.value, valueVat: k.valueVat, first: numD(k.firstSubmit), lastSub: numD(k.lastSubmit), lastRep: numD(k.lastReply), acc: numD(k.accepted),
+      cycles: k.cycles, status: k.status, review: k.review, delay: k.delay, subDelay: k.submitDelay, notes: d.notes }; }));
+
+    sheet("سجل المراجعات", [
+      { h: "رقم المخرج", k: "del", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "وصف المخرج", k: "desc", w: 40, wrap: true }, { h: "نوع الحركة", k: "act", w: 13 },
+      { h: "التاريخ", k: "date", w: 12, f: D }, { h: "ملاحظات", k: "notes", w: 34, wrap: true }, { h: "رقم الدورة", k: "cycle", w: 8 },
+      { h: "نهاية الدورة", k: "end", w: 12, f: D }, { h: "حالة الدورة", k: "state", w: 9 }, { h: "أيام المراجعة", k: "review", w: 9 }, { h: "أيام التأخير", k: "delay", w: 9 }, { h: "تنبيه", k: "warn", w: 22 },
+    ], [...state.events].sort((a, b) => String(a.deliverable).localeCompare(String(b.deliverable), "en", { numeric: true }) || (dn(a.date) || 0) - (dn(b.date) || 0)).map((e) => {
+      const k = c.ev.get(e.id), d = c.delById.get(e.deliverable), it = d && c.itemsById.get(d.item_id), sub = k.cycle !== null;
+      return { del: e.deliverable, item: it?.no, desc: d?.description, act: e.action, date: toDate(e.date), notes: e.notes, cycle: sub ? k.cycle : null,
+        end: sub ? numD(k.end) : null, state: sub ? (k.open ? "جارية" : "مغلقة") : null, review: sub ? k.review : null, delay: sub ? k.delay : null, warn: k.warn || null }; }));
+
+    sheet("الأجازات", [{ h: "التاريخ", k: "date", w: 14, f: D }, { h: "المناسبة", k: "name", w: 30 }, { h: "ملاحظة", k: "note", w: 20 }],
+      [...(s.holidays || [])].sort((a, b) => String(a.date).localeCompare(String(b.date))).map((h) => ({ date: toDate(h.date), name: h.name, note: h.note })));
+
+    const buf = await wb.xlsx.writeBuffer();
+    await state.downloads.save({ filename: `متابعة_عقد_البوابة_${c.asOfIso}.xlsx`, data: new Blob([buf]) });
+    toast("اتحفظ ملف Excel");
+  } catch (e) {
+    if (e?.code === "declined") toast("اتلغى التحميل.");
+    else toast(e?.code ? errText(e) : "مقدرتش أعمل ملف Excel: " + (e?.message || e), true);
+  } finally { btn.disabled = false; }
+}
+const filteredAll = () => [...state.deliverables].sort((a, b) => a.id.localeCompare(b.id, "en", { numeric: true }));
+
+/* ------------------------------------------------------------ events */
+function setTab(tab) {
+  if (!TABS.includes(tab)) tab = "dashboard";
+  state.tab = tab;
+  try { localStorage.setItem("tab", tab); } catch (_) {}
+  if (location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
+  render();
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener("click", async (ev) => {
+  const t = ev.target.closest("button, tr, [data-close]");
+  if (!t) return;
+  const ds = t.dataset;
+  if (ds.tab) return setTab(ds.tab);
+  if ("close" in ds) return closeDrawer();
+  if (ds.go) return setTab(ds.go);
+  if (ds.filterStatus) { state.filters = { q: "", item: "", status: ds.filterStatus }; return setTab("deliverables"); }
+  if ("newItem" in ds) return openDrawer({ kind: "item" });
+  if (ds.editItem) return openDrawer({ kind: "item", id: ds.editItem });
+  if ("newDel" in ds) return openDrawer({ kind: "delForm" });
+  if (ds.editDel) return openDrawer({ kind: "delForm", id: ds.editDel });
+  if (ds.openDel) return openDrawer({ kind: "del", id: ds.openDel });
+  if ("newEv" in ds) return openDrawer({ kind: "ev" });
+  if ("askDelete" in ds) { state.drawer.confirm = true; return renderDrawer(); }
+  if (ds.delEv) { state.drawer.confirmEv = ds.delEv; return renderDrawer(); }
+  if ("cancelConfirm" in ds) { state.drawer.confirm = false; state.drawer.confirmEv = null; return renderDrawer(); }
+  if (ds.confirm) {
+    const d = state.drawer;
+    if (ds.confirm === "item") { if (await run(t, () => state.db.collection("items").doc(d.id).delete(), "اتحذف البند")) closeDrawer(); }
+    else if (ds.confirm === "del") {
+      const evs = state.events.filter((e) => e.deliverable === d.id);
+      if (await run(t, async () => { for (const e of evs) await state.db.collection("events").doc(e.id).delete(); await state.db.collection("deliverables").doc(d.id).delete(); }, "اتحذف المخرج")) closeDrawer();
+    } else if (ds.confirm.startsWith("ev:")) {
+      const id = ds.confirm.slice(3);
+      if (await run(t, () => state.db.collection("events").doc(id).delete(), "اتحذفت الحركة")) { d.confirmEv = null; renderDrawer(); }
+    }
+    return;
+  }
+  if (ds.delHol !== undefined) {
+    const i = Number(ds.delHol); const list = (state.settings.holidays || []).filter((_, j) => j !== i);
+    return saveHolidays(list, t, "اتحذفت الإجازة");
+  }
+  if (t.id === "exportBtn") return exportExcel(t);
+});
+
+document.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const form = ev.target, btn = form.querySelector('button[type="submit"]');
+  if (form.id === "itemForm") return saveItem(form, btn);
+  if (form.id === "delForm") return saveDeliverable(form, btn);
+  if (form.id === "evForm") return addEvent(form, btn);
+  if (form.id === "quickEv") return addEvent(form, btn, state.drawer.id);
+  if (form.id === "settingsForm") return saveSettings(form, btn);
+  if (form.id === "holForm") {
+    const date = form.querySelector("#hDate").value, name = form.querySelector("#hName").value.trim(), note = form.querySelector("#hNote").value.trim();
+    if (!isIso(date) || !name) return toast("اكتب التاريخ والمناسبة.", true);
+    if ((state.settings.holidays || []).some((h) => h.date === date)) return toast("التاريخ ده متسجل قبل كده.", true);
+    return saveHolidays([...(state.settings.holidays || []), clean({ date, name, note })], btn, "اتضافت الإجازة");
+  }
+});
+
+let inputTimer;
+document.addEventListener("input", (ev) => {
+  const id = ev.target.id;
+  if (id === "fQ" || id === "lQ") {
+    clearTimeout(inputTimer);
+    inputTimer = setTimeout(() => {
+      if (id === "fQ") state.filters.q = ev.target.value; else state.logFilters.q = ev.target.value;
+      const pos = ev.target.selectionStart;
+      render();
+      const el = document.getElementById(id); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (_) {} }
+    }, 200);
+  }
+});
+document.addEventListener("change", (ev) => {
+  const id = ev.target.id;
+  if (id === "fItem") { state.filters.item = ev.target.value; render(); }
+  if (id === "fStatus") { state.filters.status = ev.target.value; render(); }
+  if (id === "lAction") { state.logFilters.action = ev.target.value; render(); }
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && state.drawer) closeDrawer();
+  if (ev.key === "Enter" && ev.target.matches("tr.clickable")) ev.target.click();
+});
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS.includes(h) && h !== state.tab) setTab(h); });
+
+/* ------------------------------------------------------------ boot */
+(function initTab() {
+  let tab = location.hash.slice(1);
+  if (!TABS.includes(tab)) { try { tab = localStorage.getItem("tab") || ""; } catch (_) { tab = ""; } }
+  state.tab = TABS.includes(tab) ? tab : "dashboard";
+})();
+render();
+
+let scheduled = false;
+function scheduleRender() { if (scheduled) return; scheduled = true; requestAnimationFrame(() => { scheduled = false; render(); }); }
+
+async function boot() {
+  const api = window.claude;
+  if (!api || typeof api.use !== "function") { state.offline = true; render(); return; }
+  const [db, downloads] = await Promise.all([api.use("db").catch(() => null), api.use("downloads").catch(() => null)]);
+  state.downloads = downloads;
+  if (!downloads) document.getElementById("exportBtn").hidden = true;
+  if (!db) { state.offline = true; render(); return; }
+  state.db = db;
+  const onErr = (e) => { if (e?.code !== "unavailable") toast(errText(e), true); };
+  db.doc("contract/settings").onSnapshot((snap) => {
+    state.settings = { ...DEFAULT_SETTINGS, ...(snap.exists ? snap.data() : {}) };
+    state.ready.settings = true; scheduleRender();
+  }, onErr);
+  const sub = (name, key) => db.collection(name).onSnapshot((snap) => {
+    state[key] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    state.ready[key] = true; scheduleRender();
+  }, onErr);
+  sub("items", "items"); sub("deliverables", "deliverables"); sub("events", "events");
+}
+boot();
+})();
+</script>
