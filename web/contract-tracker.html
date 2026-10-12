@@ -203,6 +203,8 @@ td .desc { max-width: 420px; display: -webkit-box; -webkit-line-clamp: 2; -webki
 /* drawer */
 .scrim { position: fixed; inset: 0; background: rgba(8, 20, 24, .45); z-index: 40; }
 .drawer { position: fixed; inset-block: 0; inset-inline-start: 0; width: min(600px, 100%); background: var(--surface); z-index: 41; display: flex; flex-direction: column; border-inline-end: 1px solid var(--line); box-shadow: 0 0 40px rgba(0,0,0,.18); }
+.drawer.wide { width: min(900px, 100%); }
+td .code { white-space: nowrap; }
 .drawer-head { display: flex; flex-direction: column; gap: 10px; padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 0; border-bottom: 1px solid var(--line); }
 .drawer-head .row1 { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .drawer-head h3 { margin: 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; min-width: 0; }
@@ -277,9 +279,9 @@ document.documentElement.dir = "rtl";
 document.documentElement.lang = "ar";
 
 /* ------------------------------------------------------------ constants */
-const ST = { ACC: "تم القبول", SUS: "معلق", RET: "مُعاد بملاحظات", WAIT: "في انتظار القبول", LATE: "متأخر", PROG: "جاري العمل", NEW: "لم يبدأ" };
+const ST = { ACC: "تم القبول", SUS: "معلق", RET: "مُعاد بملاحظات", WAIT: "في انتظار القبول", LATE: "متأخر", PROG: "جاري العمل", NEW: "لم يبدأ", CAN: "ملغى" };
 const STATUS_ORDER = [ST.ACC, ST.WAIT, ST.RET, ST.LATE, ST.PROG, ST.SUS, ST.NEW];
-const STATUS_CLASS = { [ST.ACC]: "acc", [ST.WAIT]: "wait", [ST.RET]: "ret", [ST.LATE]: "late", [ST.PROG]: "prog", [ST.SUS]: "sus", [ST.NEW]: "new" };
+const STATUS_CLASS = { [ST.ACC]: "acc", [ST.WAIT]: "wait", [ST.RET]: "ret", [ST.LATE]: "late", [ST.PROG]: "prog", [ST.SUS]: "sus", [ST.NEW]: "new", [ST.CAN]: "sus" };
 const ACT = { SUB: "تسليم", REP: "رد بملاحظات", ACC: "قبول" };
 const ACTIONS = [ACT.SUB, ACT.REP, ACT.ACC];
 const WORK_STATUSES = [ST.NEW, ST.PROG, ST.LATE, ST.SUS];
@@ -384,7 +386,9 @@ function computeModel(data, asOfIso) {
   const delById = new Map(data.deliverables.map((d) => [d.id, d]));
   // a suspended deliverable (manual "معلق", never accepted) is left out of every delivery/acceptance figure
   const acceptedIds = new Set(data.events.filter((e) => e.action === ACT.ACC && isIso(e.date)).map((e) => e.deliverable));
-  const suspendedIds = new Set(data.deliverables.filter((d) => d.work_status === ST.SUS && !acceptedIds.has(d.id)).map((d) => d.id));
+  // a deliverable cancelled by an applied change request is left out of everything except its own record
+  const cancelledIds = new Set(data.deliverables.filter((d) => d.cancelled).map((d) => d.id));
+  const suspendedIds = new Set(data.deliverables.filter((d) => d.work_status === ST.SUS && !acceptedIds.has(d.id) && !d.cancelled).map((d) => d.id));
   const evBy = new Map();
   for (const e of data.events) {
     const t = dn(e.date);
@@ -395,7 +399,7 @@ function computeModel(data, asOfIso) {
 
   const ev = new Map();
   for (const e of data.events) {
-    const c = { cycle: null, end: null, open: false, review: null, delay: null, vendorDays: null, vendorOpen: false, warn: "", excluded: suspendedIds.has(e.deliverable) };
+    const c = { cycle: null, end: null, open: false, review: null, delay: null, vendorDays: null, vendorOpen: false, warn: "", excluded: suspendedIds.has(e.deliverable) || cancelledIds.has(e.deliverable) };
     const t = dn(e.date), list = evBy.get(e.deliverable) || [];
     if (!e.deliverable) c.warn = "رقم المخرج ناقص";
     else if (!delById.has(e.deliverable)) c.warn = "رقم المخرج غير موجود";
@@ -449,11 +453,13 @@ function computeModel(data, asOfIso) {
     else if (lastReply > 0 && lastReply >= lastSubmit) status = ST.RET;
     else if (lastSubmit > 0) status = ST.WAIT;
     else status = WORK_STATUSES.includes(d.work_status) ? d.work_status : ST.NEW;
+    const cancelled = cancelledIds.has(d.id);
+    if (cancelled) status = ST.CAN;
 
     const suspended = suspendedIds.has(d.id);
     let review = 0, delay = 0, vendorDays = 0, openCycle = null;
     for (const e of data.events) {
-      if (e.deliverable !== d.id || suspended) continue;
+      if (e.deliverable !== d.id || suspended || cancelled) continue;
       const c = ev.get(e.id);
       if (c.review !== null) { review += c.review; delay += c.delay; if (c.open) openCycle = { start: dn(e.date), review: c.review, delay: c.delay }; }
       if (c.vendorDays !== null) vendorDays += c.vendorDays;
@@ -468,7 +474,7 @@ function computeModel(data, asOfIso) {
     del.set(d.id, {
       firstSubmit, lastSubmit, lastReply, accepted, cycles: subs.length, status, review, delay, vendorDays, openCycle,
       value, valueVat: value * (1 + vat), openIssues: openIssues.length, blocking: openIssues.filter((i) => i.blocking).length,
-      crs, suspended, suspendCr, suspendMissing: suspended && !String(d.suspend_reason || "").trim(),
+      crs, suspended, cancelled, suspendCr, suspendMissing: suspended && !String(d.suspend_reason || "").trim(),
       waitingSinceReply: status === ST.RET ? span(lastReply, asOf) : null,
     });
   }
@@ -476,7 +482,7 @@ function computeModel(data, asOfIso) {
   const items = new Map();
   const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, waiting: 0, late: 0, suspended: 0, acceptedValue: 0, deliveredValue: 0, waitingValue: 0, suspendedValue: 0, remaining: 0, actualWeighted: 0 };
   for (const it of data.items) {
-    const ds = data.deliverables.filter((d) => d.item_id === it.id);
+    const ds = data.deliverables.filter((d) => d.item_id === it.id && !d.cancelled);
     const qty = numOr(it.qty, 0), price = numOr(it.unit_price, 0), total = qty * price;
     const k = (d) => del.get(d.id);
     const r = {
@@ -507,7 +513,7 @@ function computeModel(data, asOfIso) {
   tot.actual = tot.total > 0 ? tot.actualWeighted / tot.total : null;
 
   const statusCounts = Object.fromEntries(STATUS_ORDER.map((st) => [st, 0]));
-  for (const d of data.deliverables) statusCounts[del.get(d.id).status]++;
+  for (const d of data.deliverables) if (!d.cancelled) statusCounts[del.get(d.id).status]++;
   tot.suspendMissing = data.deliverables.filter((d) => del.get(d.id).suspendMissing).length;
 
   return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, itemsById, delById, span };
@@ -520,7 +526,7 @@ function render() {
   compute();
   const s = state.settings, c = state.calc;
   document.getElementById("projTitle").textContent = s.project_name || "متابعة عقد البوابة الموحدة";
-  document.getElementById("projCode").innerHTML = [s.contract_no && `<span class="code">${esc(s.contract_no)}</span>`, s.client && esc(s.client)].filter(Boolean).join(" · ");
+  document.getElementById("projCode").innerHTML = [s.contract_no && `عقد <span class="code">${esc(s.contract_no)}</span>`, s.project_code && `<span class="code">${esc(s.project_code)}</span>`, s.client && esc(s.client)].filter(Boolean).join(" · ");
   document.getElementById("asOfLabel").innerHTML = `محسوب حتى <span class="date">${esc(c.asOfIso)}</span>${isIso(s.as_of_override) ? " (تاريخ ثابت)" : ""}`;
   const blocking = state.issues.filter((i) => i.status !== CLOSED && i.blocking).length;
   const openCrs = state.crs.filter((x) => CR_OPEN.has(x.status)).length;
@@ -670,28 +676,50 @@ function viewDashboard() {
   </div>`;
 }
 
+/* ---- change request projection: what items would look like if pending requests were approved */
+function crProjection() {
+  const pend = state.crs.filter((x) => CR_OPEN.has(x.status) && !x.applied_at && Array.isArray(x.changes) && x.changes.length);
+  const byItem = new Map(), added = [];
+  for (const cr of pend) for (const ch of cr.changes) { if (ch.item_id) byItem.set(ch.item_id, { ...ch, cr }); else if (ch.new_item) added.push({ ...ch, cr }); }
+  return { pend, byItem, added };
+}
+
 /* ---- items */
 function viewItems() {
-  const c = state.calc, t = c.tot;
+  const c = state.calc, t = c.tot, P = crProjection(), hasP = P.pend.length > 0;
+  let projTotal = 0;
+  const diffCell = (v) => `<td class="n ${v < 0 ? "red" : ""}">${v ? `<span class="num">${v > 0 ? "+" : ""}${nf2.format(v)}</span>` : '<span class="muted">—</span>'}</td>`;
   const rows = [...state.items].sort(byItemOrder).map((it) => {
     const r = c.items.get(it.id);
+    const pr = P.byItem.get(it.id);
+    const qA = pr ? numOr(pr.qty_after, r.qty) : r.qty, pA = pr ? numOr(pr.price_after, r.price) : r.price, totA = qA * pA;
+    projTotal += totA;
+    const projCells = hasP ? `<td class="n ${pr && qA !== r.qty ? "" : "muted"}">${int(qA)}</td><td class="n">${money(totA)}</td>${diffCell(totA - r.total)}` : "";
+    const renamed = pr && pr.name_after && pr.name_after !== it.name ? `<div class="muted" style="font-size:.8rem">الاسم بعد الطلب: ${esc(pr.name_after)}</div>` : "";
     const mismatch = r.registered !== r.qty;
     const crOpen = r.crs.filter((x) => CR_OPEN.has(x.status)).length;
     return `<tr class="clickable" tabindex="0" data-edit-item="${esc(it.id)}">
-      <td><span class="code">${esc(itemLabel(it))}</span></td><td><span class="code muted">${esc(it.wbs)}</span></td><td><div class="desc">${esc(it.name)}</div></td>
+      <td><span class="code">${esc(itemLabel(it))}</span></td><td><span class="code muted">${esc(it.wbs)}</span></td><td><div class="desc">${esc(it.name)}</div>${renamed}</td>
       <td class="n">${int(r.qty)}</td><td class="n">${money(r.price)}</td><td class="n">${money(r.total)}</td><td class="n">${money(r.totalVat)}</td>
       <td class="n ${mismatch ? "red" : ""}" title="${mismatch ? "عدد المخرجات المسجلة يختلف عن الكمية التعاقدية" : ""}">${int(r.registered)}</td>
       <td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td>
       <td class="n">${pct(r.deliveredPct)}</td><td class="n">${pct(r.progress)}</td><td class="n">${r.actual === null ? '<span class="muted">—</span>' : pct(r.actual)}</td>
-      <td class="n">${money(r.acceptedValue)}</td><td class="n">${money(r.remaining)}</td>
+      <td class="n">${money(r.acceptedValue)}</td><td class="n">${money(r.remaining)}</td>${projCells}
       <td class="c">${r.crs.length ? `<span class="${crOpen ? "flag soft" : "muted"}">${r.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""}</td></tr>`;
-  }).join("");
+  }).join("") + (hasP ? P.added.map((a) => {
+    const totA = numOr(a.qty_after, 0) * numOr(a.price_after, 0); projTotal += totA;
+    return `<tr><td><span class="code">${esc(a.new_item.no)}</span></td><td></td><td><div class="desc">${esc(a.new_item.name)}</div><span class="flag soft">بند مقترح في ${esc(a.cr.code)}</span></td>
+      <td colspan="12" class="muted">لا يُحتسب قبل اعتماد الطلب وتطبيقه</td><td class="n">${int(numOr(a.qty_after, 0))}</td><td class="n">${money(totA)}</td>${diffCell(totA)}<td class="c"><span class="flag soft">${esc(a.cr.code)}</span></td></tr>`;
+  }).join("") : "");
+  const projHead = hasP ? `<th class="n">الكمية بعد الطلب</th><th class="n">القيمة بعد الطلب</th><th class="n">فرق القيمة</th>` : "";
+  const projFoot = hasP ? `<td></td><td class="n">${money(projTotal)}</td>${diffCell(projTotal - t.total)}` : "";
   return `<section class="section">
+    ${hasP ? `<div class="notice" style="background:var(--st-prog-bg);color:var(--st-prog-fg)">يوجد ${P.pend.length === 1 ? "طلب تغيير" : `${P.pend.length} طلبات تغيير`} في انتظار الاعتماد (${P.pend.map((x) => esc(x.code)).join("، ")}). الأعمدة «بعد الطلب» للعرض فقط، ولا تتغير أرقام البنود إلا بعد تطبيق الطلب من شاشة طلبات التغيير. المبالغ قبل الضريبة.</div>` : ""}
     <div class="section-head"><h2>بنود العقد</h2><div class="actions"><span class="count">المبالغ بالريال ${SAR} · اضغط على أي بند لتعديله</span><button class="btn primary" data-new-item type="button">+ بند جديد</button></div></div>
     ${state.items.length ? `<div class="table-wrap"><table>
-      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي قبل الضريبة</th><th class="n">الإجمالي شاملًا الضريبة</th><th class="n">المسجلة</th><th class="n">المسلَّمة</th><th class="n">المقبولة</th><th class="n">نسبة المسلَّم</th><th class="n">نسبة الإنجاز</th><th class="n">الإنجاز الفعلي</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th><th class="c">طلبات التغيير</th></tr></thead>
+      <thead><tr><th>رقم البند</th><th>WBS</th><th>اسم البند</th><th class="n">الكمية</th><th class="n">سعر الوحدة</th><th class="n">الإجمالي قبل الضريبة</th><th class="n">الإجمالي شاملًا الضريبة</th><th class="n">المسجلة</th><th class="n">المسلَّمة</th><th class="n">المقبولة</th><th class="n">نسبة المسلَّم</th><th class="n">نسبة الإنجاز</th><th class="n">الإنجاز الفعلي</th><th class="n">قيمة المقبول</th><th class="n">المتبقي</th>${projHead}<th class="c">طلبات التغيير</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${money(t.totalVat)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td><td></td></tr></tfoot>
+      <tfoot><tr><td colspan="3">الإجمالي</td><td class="n">${int(t.qty)}</td><td></td><td class="n">${money(t.total)}</td><td class="n">${money(t.totalVat)}</td><td class="n">${int(t.registered)}</td><td class="n">${int(t.delivered)}</td><td class="n">${int(t.accepted)}</td><td class="n">${pct(t.deliveredPct)}</td><td class="n">${pct(t.progress)}</td><td class="n" title="مرجَّحة بقيمة البنود">${pct(t.actual)}</td><td class="n">${money(t.acceptedValue)}</td><td class="n">${money(t.remaining)}</td>${projFoot}<td></td></tr></tfoot>
     </table></div>` : emptyBlock("لا توجد بنود بعد", "أضف بنود العقد كما وردت في جدول الكميات: رقم البند، والاسم، والكمية، وسعر الوحدة.")}
   </section>`;
 }
@@ -703,6 +731,7 @@ function filteredDeliverables() {
     const k = c.del.get(d.id);
     if (f.item && d.item_id !== f.item) return false;
     if (f.status && k.status !== f.status) return false;
+    if (k.cancelled && f.status !== ST.CAN) return false;
     if (f.issue === "open" && !k.openIssues) return false;
     if (f.issue === "blocking" && !k.blocking) return false;
     if (f.issue === "cr" && !k.crs.length) return false;
@@ -715,7 +744,7 @@ function viewDeliverables() {
   const c = state.calc, f = state.filters, billingView = state.delView === "billing";
   const list = filteredDeliverables();
   const itemOpts = [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${f.item === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(short(it.name, 40))}</option>`).join("");
-  const statusOpts = STATUS_ORDER.map((s) => `<option${f.status === s ? " selected" : ""}>${esc(s)}</option>`).join("");
+  const statusOpts = [...STATUS_ORDER, ST.CAN].map((s) => `<option${f.status === s ? " selected" : ""}>${esc(s)}</option>`).join("");
   const issueOpts = [["", "جميع المخرجات"], ["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"], ["nosusp", "معلَّقة بلا سبب"]]
     .map(([v, l]) => `<option value="${v}"${f.issue === v ? " selected" : ""}>${l}</option>`).join("");
   const flags = (k) => [k.suspendMissing ? `<span class="flag" title="أدخل سبب التعليق من تعديل المخرج">بلا سبب تعليق</span>` : "", k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
@@ -741,7 +770,7 @@ function viewDeliverables() {
       <select id="fItem" aria-label="البند"><option value="">جميع البنود</option>${itemOpts}</select>
       <select id="fStatus" aria-label="الحالة"><option value="">جميع الحالات</option>${statusOpts}</select>
       <select id="fIssue" aria-label="التنبيهات">${issueOpts}</select>
-      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.length}</span></span>
+      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.filter((d) => !d.cancelled).length}</span>${state.deliverables.some((d) => d.cancelled) ? ` · الملغاة مخفية (اختر «${ST.CAN}» لعرضها)` : ""}</span>
     </div>
     ${list.length ? `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
       : state.deliverables.length ? emptyBlock("لا توجد مخرجات مطابقة", "غيّر البحث أو عوامل التصفية.") : emptyBlock("لا توجد مخرجات بعد", state.items.length ? "أضف المخرجات تحت كل بند، ولكل مخرج رقم ثابت مثل D-001." : "أضف بنود العقد أولًا من شاشة البنود.")}
@@ -921,7 +950,8 @@ function viewSettings() {
     <div class="section-head"><h2>بيانات العقد والإعدادات</h2></div>
     <form id="settingsForm" class="form-grid" autocomplete="off">
       <div class="field"><label for="sName">اسم المشروع</label><input id="sName" name="project_name" value="${esc(s.project_name)}"></div>
-      <div class="field"><label for="sCode">رقم العقد / رمز المشروع</label><input id="sCode" name="contract_no" value="${esc(s.contract_no)}"></div>
+      <div class="field"><label for="sCode">رقم العقد</label><input id="sCode" name="contract_no" value="${esc(s.contract_no)}"></div>
+      <div class="field"><label for="sProj">رمز المشروع (WBS)</label><input id="sProj" name="project_code" value="${esc(s.project_code || "")}"></div>
       <div class="field"><label for="sClient">الجهة المالكة</label><input id="sClient" name="client" value="${esc(s.client)}"></div>
       <div class="field"><label for="sVendor">المورّد / المنفّذ</label><input id="sVendor" name="vendor" value="${esc(s.vendor)}"></div>
       <div class="field"><label for="sStart">تاريخ بداية العقد</label><input id="sStart" name="start_date" type="date" value="${esc(s.start_date)}"></div>
@@ -958,7 +988,7 @@ function renderDrawer() {
   const key = d.kind + (d.id || "") + (d.sub || "");
   const scroll = root.dataset.key === key ? (root.querySelector(".drawer-body")?.scrollTop || 0) : 0;
   root.dataset.key = key;
-  root.innerHTML = `<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(body.title)}">
+  root.innerHTML = `<div class="scrim" data-close></div><aside class="drawer${d.kind === "cr" ? " wide" : ""}" role="dialog" aria-modal="true" aria-label="${esc(body.title)}">
     <div class="drawer-head ${body.tabs ? "" : "plain"}"><div class="row1"><h3>${body.titleHtml || esc(body.title)}</h3><button class="icon-btn" type="button" data-close aria-label="إغلاق">×</button></div>${body.tabs || ""}</div>
     <div class="drawer-body">${body.html}</div></aside>`;
   root.querySelector(".drawer-body").scrollTop = scroll;
@@ -1139,7 +1169,7 @@ function drawerCr() {
   const d = state.drawer, cr = d.id ? state.crs.find((x) => x.id === d.id) : null;
   if (d.id && !cr) return null;
   const v = cr || { code: nextCrCode(), status: "قيد الإعداد", date: todayIso(), items: [], deliverables: [] };
-  return { title: cr ? `طلب التغيير ${cr.code}` : "طلب تغيير جديد", html: `
+  return { title: cr ? `طلب التغيير ${cr.code}` : "طلب تغيير جديد", html: `${cr ? crDetails(cr) : ""}
     <form id="crForm" class="form-grid" autocomplete="off">
       <div class="field"><label for="cCode">رقم الطلب</label><input id="cCode" name="code" required value="${esc(v.code)}"></div>
       <div class="field"><label for="cStatus">الحالة</label><select id="cStatus" name="status">${CR_STATUSES.map((s) => `<option${v.status === s ? " selected" : ""}>${s}</option>`).join("")}</select></div>
@@ -1154,6 +1184,84 @@ function drawerCr() {
       <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${cr ? `<button class="btn danger" type="button" data-ask-delete>حذف الطلب</button>` : ""}</div>
     </form>
     ${d.confirm ? confirmBlock("سيُحذف طلب التغيير نهائيًا.", "cr") : ""}` };
+}
+function crDetails(cr) {
+  const c = state.calc, vat = c.vat;
+  if (!Array.isArray(cr.changes) || !cr.changes.length) return "";
+  let net = 0;
+  const rows = cr.changes.map((ch) => {
+    const it = ch.item_id ? c.itemsById.get(ch.item_id) : null;
+    const before = numOr(ch.qty_before, 0) * numOr(ch.price_before, 0), after = numOr(ch.qty_after, 0) * numOr(ch.price_after, 0), diff = (after - before) * (1 + vat);
+    net += diff;
+    const no = it ? itemLabel(it) : ch.new_item?.no;
+    const nameB = ch.name_before || it?.name || "—", nameA = ch.name_after || nameB;
+    return `<tr><td><span class="code">${esc(no)}</span>${ch.new_item ? ` <span class="flag soft">جديد</span>` : ""}</td>
+      <td><div class="desc">${esc(nameA)}</div>${nameA !== nameB ? `<div class="muted" style="font-size:.78rem">قبل: ${esc(nameB)}</div>` : ""}${ch.scope ? `<div class="muted" style="font-size:.78rem">${esc(ch.scope)}</div>` : ""}</td>
+      <td class="n"><span class="num">${ch.new_item ? "—" : nf0.format(numOr(ch.qty_before, 0))} ← ${nf0.format(numOr(ch.qty_after, 0))}</span></td>
+      <td class="n">${numOr(ch.price_before, 0) !== numOr(ch.price_after, 0) ? `<span class="num">${ch.new_item ? "—" : nf2.format(numOr(ch.price_before, 0))} ← ${nf2.format(numOr(ch.price_after, 0))}</span>` : money(numOr(ch.price_after, 0))}</td>
+      <td class="n ${diff < 0 ? "red" : ""}">${diff ? `<span class="num">${diff > 0 ? "+" : ""}${nf2.format(diff)}</span>` : '<span class="muted">—</span>'}</td></tr>`;
+  }).join("");
+  const p = cr.plan || {};
+  const list = (title, ids) => ids && ids.length ? `<li>${title}: <span class="code">${ids.map(esc).join("، ")}</span></li>` : "";
+  const adds = (p.add || []).map((a) => { const it = a.item_id === "new" ? null : c.itemsById.get(a.item_id); return `<li>إضافة <span class="num">${a.count}</span> مخرج${a.count > 1 ? "ات" : ""} إلى البند <span class="code">${esc(it ? itemLabel(it) : (cr.changes.find((x) => x.new_item)?.new_item.no || "الجديد"))}</span></li>`; }).join("");
+  const applied = cr.applied_at;
+  return `<div class="block">
+    <h4>تفاصيل التغيير على البنود</h4>
+    <div class="table-wrap"><table><thead><tr><th>البند</th><th>الاسم والنطاق</th><th class="n">الكمية</th><th class="n">سعر الوحدة ${SAR}</th><th class="n">الأثر شاملًا الضريبة</th></tr></thead>
+    <tbody>${rows}</tbody><tfoot><tr><td colspan="4">صافي الأثر المالي</td><td class="n">${Math.abs(net) < 0.5 ? "0" : `<span class="num">${nf2.format(net)}</span>`}</td></tr></tfoot></table></div>
+    <h4>ما يحدث عند التطبيق</h4>
+    <ul style="margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px">
+      <li>تحديث أسماء البنود وكمياتها وأسعارها حسب الجدول أعلاه${cr.changes.some((x) => x.new_item) ? "، وإضافة البند الجديد" : ""}.</li>
+      ${adds}
+      ${list("إلغاء المخرجات", p.cancel)}
+      ${(p.rename || []).length ? `<li>تعديل وصف المخرجات: <span class="code">${p.rename.map((r) => esc(r.id)).join("، ")}</span></li>` : ""}
+      ${list("رفع التعليق واستئناف العمل على", p.resume)}
+      ${cr.extend_months ? `<li>تمديد مدة العقد <span class="num">${cr.extend_months}</span> شهرًا.</li>` : ""}
+      <li>تغيير حالة الطلب إلى «معتمد».</li>
+    </ul>
+    ${applied ? `<div class="notice" style="background:var(--st-acc-bg);color:var(--st-acc-fg)">طُبِّق هذا الطلب في <span class="date">${esc(applied)}</span>.</div>`
+      : `<div class="actions"><button class="btn primary" type="button" data-ask-apply>تطبيق طلب التغيير</button><span class="hint muted">استخدمه بعد اعتماد الطلب فقط.</span></div>
+         ${state.drawer?.confirmApply ? `<div class="confirm" style="border-color:var(--accent);background:var(--accent-soft);color:var(--ink)"><span>سيُطبَّق الطلب على البنود والمخرجات والإعدادات كما هو موضح أعلاه. لا يمكن التراجع تلقائيًا.</span><div class="actions"><button class="btn primary" type="button" data-confirm="apply">تأكيد التطبيق</button><button class="btn" type="button" data-cancel-confirm>إلغاء</button></div></div>` : ""}`}
+  </div>`;
+}
+async function applyCr(cr, btn) {
+  if (!cr || cr.applied_at) return false;
+  const db = state.db, today = todayIso(), p = cr.plan || {};
+  const strip = (o) => { const { id: _omit, ...rest } = o; return rest; };
+  return run(btn, async () => {
+    let newItemId = null;
+    for (const ch of cr.changes || []) {
+      if (ch.item_id) {
+        const it = state.items.find((x) => x.id === ch.item_id); if (!it) continue;
+        await db.collection("items").doc(it.id).set({ ...strip(it), name: ch.name_after || it.name, qty: numOr(ch.qty_after, it.qty), unit_price: numOr(ch.price_after, it.unit_price) });
+      } else if (ch.new_item) {
+        newItemId = newId("i");
+        await db.collection("items").doc(newItemId).set(clean({ no: ch.new_item.no, wbs: ch.new_item.wbs, name: ch.new_item.name, qty: numOr(ch.qty_after, 0), unit_price: numOr(ch.price_after, 0), order: ch.new_item.order ?? state.items.length + 1 }));
+      }
+    }
+    const patches = new Map(), patch = (id, x) => patches.set(id, { ...(patches.get(id) || {}), ...x });
+    for (const id of p.cancel || []) patch(id, { cancelled: true, cancel_cr: cr.id, cancel_date: today });
+    for (const r of p.rename || []) patch(r.id, { description: r.description });
+    for (const id of p.resume || []) patch(id, { work_status: ST.PROG, resume: true });
+    for (const [id, x] of patches) {
+      const d = state.deliverables.find((y) => y.id === id); if (!d) continue;
+      const body = { ...strip(d), ...x };
+      if (body.resume) { for (const k of ["resume", "suspend_reason", "suspend_date", "suspend_cr", "suspend_cr_linked"]) delete body[k]; }
+      await db.collection("deliverables").doc(id).set(body);
+    }
+    let max = Math.max(0, ...state.deliverables.map((d) => /^D-(\d+)$/.exec(d.id)).filter(Boolean).map((m) => Number(m[1])));
+    const created = [];
+    for (const a of p.add || []) {
+      const itemId = a.item_id === "new" ? newItemId : a.item_id; if (!itemId) continue;
+      for (let n = 0; n < a.count; n++) {
+        const id = "D-" + String(++max).padStart(3, "0");
+        await db.collection("deliverables").doc(id).set({ item_id: itemId, description: String(a.description || "").replace("{n}", String((a.start || 1) + n)), work_status: ST.NEW, cr_origin: cr.id });
+        created.push(id);
+      }
+    }
+    if (cr.extend_months) await db.doc("contract/settings").set({ ...state.settings, duration_months: numOr(state.settings.duration_months, 0) + Number(cr.extend_months) });
+    await db.collection("crs").doc(cr.id).set({ ...strip(cr), status: "معتمد", decision_date: cr.decision_date || today, applied_at: today, applied: { created, new_item: newItemId } });
+  }, "تم تطبيق طلب التغيير");
 }
 
 /* ------------------------------------------------------------ writes */
@@ -1229,12 +1337,14 @@ async function saveCr(form, btn) {
   const body = clean({ code: f.code.trim(), status: f.status, date: f.date, decision_date: f.decision_date, title: f.title.trim(), impact: f.impact.trim(),
     value_change: f.value_change === "" ? "" : Number(f.value_change), notes: f.notes.trim() });
   body.items = items; body.deliverables = dels;
+  const prev = state.crs.find((x) => x.id === id);
+  if (prev) { const { id: _omit, code, status, date, decision_date, title, impact, value_change, notes, items: _i, deliverables: _d, ...keep } = prev; Object.assign(body, { ...keep, ...body }); }
   if (await run(btn, () => state.db.collection("crs").doc(id).set(body), "تم حفظ طلب التغيير")) closeDrawer();
 }
 async function saveSettings(form, btn) {
   const f = formData(form);
   const body = { ...state.settings, ...{
-    project_name: f.project_name.trim(), contract_no: f.contract_no.trim(), client: f.client.trim(), vendor: f.vendor.trim(),
+    project_name: f.project_name.trim(), contract_no: f.contract_no.trim(), project_code: f.project_code.trim(), client: f.client.trim(), vendor: f.vendor.trim(),
     start_date: f.start_date, duration_months: f.duration_months === "" ? null : Number(f.duration_months),
     vat: numOr(f.vat, 15) / 100, review_days: numOr(f.review_days, 10), weekend: f.weekend.split(",").map(Number), as_of_override: f.as_of_override,
   } };
@@ -1297,7 +1407,7 @@ function exportAll(btn) {
     const c = state.calc, s = state.settings, t = c.tot;
     const wb = new ExcelJS.Workbook();
     kvSheet(wb, "ملخص", [
-      ["اسم المشروع", s.project_name], ["رقم العقد", s.contract_no], ["الجهة المالكة", s.client], ["المورّد", s.vendor],
+      ["اسم المشروع", s.project_name], ["رقم العقد", s.contract_no], ["رمز المشروع", s.project_code], ["الجهة المالكة", s.client], ["المورّد", s.vendor],
       ["تاريخ بداية العقد", toDate(s.start_date)], ["مدة العقد (بالأشهر)", s.duration_months], ["تاريخ الاحتساب", toDate(c.asOfIso)],
       ["مهلة المراجعة (أيام عمل)", c.reviewLimit], ["نسبة الضريبة", { v: c.vat, f: FMT.P }],
       ["قيمة العقد قبل الضريبة (ريال)", { v: t.total, f: FMT.M }], ["قيمة العقد شاملةً الضريبة (ريال)", { v: t.totalVat, f: FMT.M }],
@@ -1346,6 +1456,12 @@ function exportAll(btn) {
         end: sub ? numD(k.end) : null, state: sub ? (k.open ? "جارية" : "مغلقة") : null, review: sub ? k.review : null, delay: sub ? k.delay : null, vendor: k.vendorDays, warn: k.warn || null }; }));
     addSheet(wb, "المشكلات والقرارات", ISSUE_COLS, issuesSheetRows([...state.issues].sort((a, b) => String(a.date).localeCompare(String(b.date))), c));
     addSheet(wb, "طلبات التغيير", CR_COLS, crSheetRows([...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })), c));
+    addSheet(wb, "تفاصيل طلبات التغيير", [
+      { h: "رقم الطلب", k: "code", w: 10 }, { h: "حالة الطلب", k: "status", w: 14 }, { h: "رقم البند", k: "no", w: 8 }, { h: "الاسم قبل", k: "nameB", w: 34, wrap: true }, { h: "الاسم بعد", k: "nameA", w: 34, wrap: true },
+      { h: "الكمية قبل", k: "qB", w: 9 }, { h: "الكمية بعد", k: "qA", w: 9 }, { h: "سعر الوحدة قبل", k: "pB", w: 14, f: FMT.M }, { h: "سعر الوحدة بعد", k: "pA", w: 14, f: FMT.M },
+      { h: "الإجمالي قبل", k: "tB", w: 15, f: FMT.M }, { h: "الإجمالي بعد", k: "tA", w: 15, f: FMT.M }, { h: "الفرق شاملًا الضريبة", k: "diff", w: 16, f: FMT.M }, { h: "النطاق", k: "scope", w: 44, wrap: true },
+    ], state.crs.flatMap((x) => (x.changes || []).map((ch) => { const it = ch.item_id ? c.itemsById.get(ch.item_id) : null; const qB = numOr(ch.qty_before, 0), qA = numOr(ch.qty_after, 0), pB = numOr(ch.price_before, 0), pA = numOr(ch.price_after, 0);
+      return { code: x.code, status: x.status, no: it ? it.no : ch.new_item?.no, nameB: ch.name_before || it?.name || null, nameA: ch.name_after || ch.name_before || it?.name || ch.new_item?.name, qB, qA, pB, pA, tB: qB * pB, tA: qA * pA, diff: (qA * pA - qB * pB) * (1 + c.vat), scope: ch.scope }; })));
     addSheet(wb, "الإجازات", [{ h: "التاريخ", k: "date", w: 14, f: FMT.D }, { h: "المناسبة", k: "name", w: 30 }, { h: "ملاحظة", k: "note", w: 20 }],
       [...(s.holidays || [])].sort((a, b) => String(a.date).localeCompare(String(b.date))).map((h) => ({ date: toDate(h.date), name: h.name, note: h.note })));
     return [wb, `متابعة_عقد_البوابة_${c.asOfIso}.xlsx`];
@@ -1421,10 +1537,12 @@ document.addEventListener("click", async (ev) => {
   if ("newCr" in ds) return openDrawer({ kind: "cr" });
   if (ds.editCr) return openDrawer({ kind: "cr", id: ds.editCr });
   if ("askDelete" in ds) { state.drawer.confirm = true; return renderDrawer(); }
+  if ("askApply" in ds) { state.drawer.confirmApply = true; return renderDrawer(); }
   if (ds.delEv) { state.drawer.confirmEv = ds.delEv; return renderDrawer(); }
-  if ("cancelConfirm" in ds) { Object.assign(state.drawer, { confirm: false, confirmEv: null, confirmIssue: null }); return renderDrawer(); }
+  if ("cancelConfirm" in ds) { Object.assign(state.drawer, { confirm: false, confirmEv: null, confirmIssue: null, confirmApply: false }); return renderDrawer(); }
   if (ds.confirm) {
     const d = state.drawer;
+    if (ds.confirm === "apply") { if (await applyCr(state.crs.find((x) => x.id === d.id), t)) closeDrawer(); return; }
     if (ds.confirm === "item") { if (await run(t, () => state.db.collection("items").doc(d.id).delete(), "تم حذف البند")) closeDrawer(); }
     else if (ds.confirm === "cr") { if (await run(t, () => state.db.collection("crs").doc(d.id).delete(), "تم حذف طلب التغيير")) closeDrawer(); }
     else if (ds.confirm === "del") {
