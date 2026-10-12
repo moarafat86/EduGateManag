@@ -1,0 +1,6 @@
+# بيانات العقد الحقيقية — متترفعش على الريبو (الريبو Public)
+data/real*.json
+output/*real*.xlsx
+*.private.*
+__pycache__/
+~$*.xlsx
