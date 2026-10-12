@@ -139,6 +139,7 @@ main { max-width: 1320px; width: 100%; margin: 0 auto; padding: 26px 32px 64px; 
 .btn.danger.solid { background: var(--danger); color: #fff; }
 .btn:disabled { opacity: .5; cursor: progress; transform: none; }
 .btn.small { padding: 4px 12px; font-size: .82rem; }
+[hidden] { display: none !important; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field label, .field .label { font-size: .8rem; color: var(--muted); font-weight: 500; }
 .field input, .field select, .field textarea, .filters input, .filters select {
@@ -917,7 +918,7 @@ function viewDeliverables() {
   const statusOpts = [...STATUS_ORDER, ST.CAN].map((s) => `<option${f.status === s ? " selected" : ""}>${esc(s)}</option>`).join("");
   const issueOpts = [["", "جميع المخرجات"], ["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"], ["nosusp", "معلَّقة بلا سبب"]]
     .map(([v, l]) => `<option value="${v}"${f.issue === v ? " selected" : ""}>${l}</option>`).join("");
-  const flags = (k) => [k.suspendMissing ? `<span class="flag" title="أدخل سبب التعليق من تعديل المخرج">بلا سبب تعليق</span>` : "", k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
+  const flags = (k) => [k.suspendMissing ? `<span class="flag" title="أدخل سبب التعليق من تبويب بيانات المخرج">بلا سبب تعليق</span>` : "", k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
     k.crs.length ? `<span class="flag soft" title="طلب تغيير">${k.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""].join(" ");
   const head = billingView
     ? `<th>رقم المخرج</th><th>البند</th><th>الوصف</th><th>الحالة</th>${BILLING.map((b) => `<th>${b.label}</th>`).join("")}`
@@ -1196,34 +1197,32 @@ function drawerItem() {
 function drawerDel() {
   const d = state.drawer, del = state.deliverables.find((x) => x.id === d.id);
   if (!del) return null;
-  const c = state.calc, k = c.del.get(del.id), it = c.itemsById.get(del.item_id), sub = d.sub || "review";
+  const c = state.calc, k = c.del.get(del.id), sub = d.sub || "info";
   const issues = state.issues.filter((i) => i.deliverable === del.id).sort((a, b) => (a.status === CLOSED ? 1 : 0) - (b.status === CLOSED ? 1 : 0) || String(b.date).localeCompare(String(a.date)));
-  const tabs = `<nav class="tabs" role="tablist">${[["review", "المراجعات"], ["issues", `المشكلات والقرارات${k.openIssues ? ` (${k.openIssues})` : ""}`], ["billing", "الفوترة"]]
+  const tabs = `<nav class="tabs" role="tablist">${[["info", "بيانات المخرج"], ["review", "المراجعات"], ["issues", `المشكلات والقرارات${k.openIssues ? ` (${k.openIssues})` : ""}`], ["billing", "الفوترة"]]
     .map(([v, l]) => `<button type="button" role="tab" data-sub-tab="${v}" aria-selected="${sub === v}">${l}</button>`).join("")}</nav>`;
-  const head = `<div class="kv">
-      <div><span class="k">البند</span><span class="v"><span class="code">${esc(itemLabel(it))}</span> ${esc(short(it?.name, 60) || "بند غير موجود")}</span></div>
-      <div><span class="k">القيمة</span><span class="v">${sar(k.value)}</span></div>
-      <div><span class="k">حالة العمل (يدوية)</span><span class="v">${esc(del.work_status || "—")}</span></div>
-    </div>
-    <div><h4>وصف المخرج</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.description)}</p></div>
-    ${del.notes ? `<div><h4>ملاحظات</h4><p style="margin:4px 0 0;white-space:pre-line">${esc(del.notes)}</p></div>` : ""}
-    ${k.suspended ? `<div class="block card ${k.suspendMissing ? "blocking" : ""}"><h4>التعليق</h4>
-      ${k.suspendMissing ? `<span class="red">لم يُدخل سبب التعليق بعد. أدخله من «تعديل بيانات المخرج».</span>` : `<div class="body">${esc(del.suspend_reason)}</div>`}
-      <div class="meta">${del.suspend_date ? `<span>منذ <span class="date">${esc(del.suspend_date)}</span></span>` : ""}<span>${k.suspendCr ? `مرتبط بطلب التغيير <span class="code">${esc(k.suspendCr.code)}</span>` : del.suspend_cr_linked ? "مرتبط بطلب تغيير (لم يُحدَّد الطلب)" : "غير مرتبط بطلب تغيير"}</span><span>مستبعد من حسابات التسليم والقبول</span></div></div>` : ""}
-    ${k.crs.length ? `<div class="block"><h4>طلبات تغيير مرتبطة</h4><div class="cards">${k.crs.map(crCard).join("")}</div></div>` : ""}
-    <div class="actions"><button class="btn" type="button" data-edit-del="${esc(del.id)}">تعديل بيانات المخرج</button></div>`;
-
   let html;
-  if (sub === "issues") {
+  if (sub === "info") {
+    const counts = [state.events.filter((e) => e.deliverable === del.id).length, issues.length];
+    html = `${k.suspendMissing ? `<div class="notice">المخرج معلَّق ولم يُدخل سبب التعليق بعد. أدخل السبب ثم احفظ.</div>` : ""}
+      <form id="delInfoForm" class="form-grid" autocomplete="off">
+        ${delDataFields(del, false)}
+        <div class="field"><span class="label">القيمة</span><span style="padding:9px 0;font-weight:600">${sar(k.value)}</span></div>
+        <div class="actions wide"><button class="btn primary" type="submit">حفظ بيانات المخرج</button><button class="btn danger" type="button" data-ask-delete>حذف المخرج</button></div>
+      </form>
+      ${d.confirm ? confirmBlock(`سيُحذف المخرج${counts[0] ? ` و${counts[0]} حركة مراجعة` : ""}${counts[1] ? ` و${counts[1]} مشكلة أو قرار` : ""} نهائيًا.`, "del") : ""}
+      ${k.crs.length ? `<div class="block"><h4>طلبات تغيير مرتبطة</h4><div class="cards">${k.crs.map(crCard).join("")}</div></div>` : ""}`;
+  } else if (sub === "issues") {
     const editing = d.editIssue ? state.issues.find((i) => i.id === d.editIssue) : null;
     html = `${issueForm(editing, del.id)}
       ${d.confirmIssue ? confirmBlock("ستُحذف المشكلة أو القرار نهائيًا.", "issue:" + d.confirmIssue) : ""}
       <div class="block"><h4>السجل (<span class="num">${issues.length}</span>)</h4>
       ${issues.length ? `<div class="cards">${issues.map((i) => issueCard(i, { actions: true })).join("")}</div>` : `<span class="muted">لا توجد مشكلات أو قرارات على هذا المخرج.</span>`}</div>`;
   } else if (sub === "billing") {
-    const b = billingOf(del);
-    html = `<div class="kv">${BILLING.map((x) => `<div><span class="k">${x.label}</span><span class="v">${x.yn ? ynHtml(b[x.k]) : b[x.k] ? `<span class="code">${esc(b[x.k])}</span>` : '<span class="muted">—</span>'}</span></div>`).join("")}</div>
-      <div class="actions"><button class="btn" type="button" data-edit-del="${esc(del.id)}">تعديل بيانات الفوترة</button></div>`;
+    html = `<form id="billingForm" class="form-grid" autocomplete="off">
+        ${billingFields(billingOf(del))}
+        <div class="actions wide"><button class="btn primary" type="submit">حفظ بيانات الفوترة</button></div>
+      </form>`;
   } else {
     const evs = state.events.filter((e) => e.deliverable === del.id).sort((a, b) => (dn(a.date) || 0) - (dn(b.date) || 0) || ACTIONS.indexOf(a.action) - ACTIONS.indexOf(b.action));
     const cls = { [ACT.SUB]: "sub", [ACT.REP]: "rep", [ACT.ACC]: "acc" };
@@ -1255,7 +1254,7 @@ function drawerDel() {
         ${d.confirmEv ? confirmBlock("ستُحذف هذه الحركة من السجل.", "ev:" + d.confirmEv) : ""}
         ${evs.length ? `<div class="timeline">${tl}</div>` : `<span class="muted">لا توجد حركات على هذا المخرج بعد.</span>`}</div>`;
   }
-  return { title: del.id, titleHtml: `<span class="code">${esc(del.id)}</span> ${pill(k.status)} ${k.blocking ? `<span class="flag">${BLOCKING}</span>` : ""}`, tabs, html: head + html };
+  return { title: del.id, titleHtml: `<span class="code">${esc(del.id)}</span> ${pill(k.status)} ${k.blocking ? `<span class="flag">${BLOCKING}</span>` : ""}`, tabs, html };
 }
 
 function issueForm(i, deliverable) {
@@ -1284,33 +1283,34 @@ function nextDeliverableId() {
   const nums = state.deliverables.map((d) => /^D-(\d+)$/.exec(d.id)).filter(Boolean).map((m) => Number(m[1]));
   return "D-" + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3, "0");
 }
-function drawerDelForm() {
-  const d = state.drawer, del = d.id ? state.deliverables.find((x) => x.id === d.id) : null;
-  if (d.id && !del) return null;
-  const v = del || { id: nextDeliverableId(), item_id: state.filters.item || "" };
-  const b = del ? billingOf(del) : {};
-  const counts = del ? [state.events.filter((e) => e.deliverable === del.id).length, state.issues.filter((i) => i.deliverable === del.id).length] : [0, 0];
-  return { title: del ? `تعديل ${del.id}` : "مخرج جديد", html: state.items.length ? `
-    <form id="delForm" class="form-grid" autocomplete="off">
-      <div class="field"><label for="dId">رقم المخرج</label><input id="dId" name="did" required pattern="[A-Za-z0-9_.~:@+\\-]+" value="${esc(v.id)}" ${del ? "readonly" : ""}><span class="hint">${del ? "الرقم ثابت لارتباطه بسجل المراجعات." : "حروف إنجليزية وأرقام وشرطة فقط."}</span></div>
+function delDataFields(v, isNew) {
+  return `${isNew ? `<div class="field"><label for="dId">رقم المخرج</label><input id="dId" name="did" required pattern="[A-Za-z0-9_.~:@+\\-]+" value="${esc(v.id)}"><span class="hint">حروف إنجليزية وأرقام وشرطة فقط.</span></div>` : ""}
       <div class="field"><label for="dItem">البند</label><select id="dItem" name="item_id" required><option value="">اختر البند</option>${itemOptions(v.item_id)}</select></div>
       <div class="field wide"><label for="dDesc">وصف المخرج</label><textarea id="dDesc" name="description" required>${esc(v.description ?? "")}</textarea></div>
       <div class="field"><label for="dWork">حالة العمل (يدوية)</label><select id="dWork" name="work_status"><option value="">—</option>${WORK_STATUSES.map((w) => `<option${v.work_status === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">تُستخدم قبل التسليم، وتتقدم حالة «معلق» على أي حالة عدا «تم القبول».</span></div>
+      <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
       <div class="field wide" id="suspFields" ${v.work_status === ST.SUS ? "" : "hidden"}><div class="form-grid">
         <div class="field wide"><label for="dSuspReason">سبب التعليق (إلزامي)</label><textarea id="dSuspReason" name="suspend_reason">${esc(v.suspend_reason ?? "")}</textarea></div>
         <div class="field"><label for="dSuspDate">تاريخ التعليق</label><input id="dSuspDate" name="suspend_date" type="date" value="${esc(v.suspend_date ?? "")}"></div>
         <label class="check"><input type="checkbox" id="dSuspLinked" name="suspend_cr_linked" ${v.suspend_cr_linked || v.suspend_cr ? "checked" : ""}> مرتبط بطلب تغيير</label>
         <div class="field" id="suspCrPick" ${v.suspend_cr_linked || v.suspend_cr ? "" : "hidden"}><label for="dSuspCr">طلب التغيير</label><select id="dSuspCr" name="suspend_cr"><option value="">لم يُحدَّد بعد</option>${[...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })).map((x) => `<option value="${esc(x.id)}"${v.suspend_cr === x.id ? " selected" : ""}>${esc(x.code)} — ${esc(short(x.title, 40))}</option>`).join("")}</select></div>
       </div></div>
-      <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
-      <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>
+      <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>`;
+}
+function billingFields(b) {
+  return BILLING.map((x) => `<div class="field"><label for="b_${x.k}">${x.label}</label>${x.yn
+    ? `<select id="b_${x.k}" name="b_${x.k}"><option value="">—</option>${YESNO.map((o) => `<option${b[x.k] === o ? " selected" : ""}>${o}</option>`).join("")}</select>`
+    : `<input id="b_${x.k}" name="b_${x.k}" value="${esc(b[x.k] ?? "")}">`}${x.k === "ref_no" ? `<span class="hint">رقم المطالبة الأولى التي أُعيدت المطالبة بها برقم جديد.</span>` : ""}</div>`).join("");
+}
+function drawerDelForm() {
+  const v = { id: nextDeliverableId(), item_id: state.filters.item || "" };
+  return { title: "مخرج جديد", html: state.items.length ? `
+    <form id="delForm" class="form-grid" autocomplete="off">
+      ${delDataFields(v, true)}
       <div class="form-group">بيانات الفوترة</div>
-      ${BILLING.map((x) => `<div class="field"><label for="b_${x.k}">${x.label}</label>${x.yn
-        ? `<select id="b_${x.k}" name="b_${x.k}"><option value="">—</option>${YESNO.map((o) => `<option${b[x.k] === o ? " selected" : ""}>${o}</option>`).join("")}</select>`
-        : `<input id="b_${x.k}" name="b_${x.k}" value="${esc(b[x.k] ?? "")}">`}${x.k === "ref_no" ? `<span class="hint">رقم المطالبة الأولى التي أُعيدت المطالبة بها برقم جديد.</span>` : ""}</div>`).join("")}
-      <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${del ? `<button class="btn" type="button" data-open-del="${esc(del.id)}" data-sub="${esc(d.sub || "review")}">رجوع</button><button class="btn danger" type="button" data-ask-delete>حذف المخرج</button>` : ""}</div>
-    </form>
-    ${d.confirm ? confirmBlock(`سيُحذف المخرج${counts[0] ? ` و${counts[0]} حركة مراجعة` : ""}${counts[1] ? ` و${counts[1]} مشكلة أو قرار` : ""} نهائيًا.`, "del") : ""}`
+      ${billingFields({})}
+      <div class="actions wide"><button class="btn primary" type="submit">حفظ</button></div>
+    </form>`
     : emptyBlock("يجب إضافة بند أولًا", "أضف بنود العقد من شاشة البنود قبل المخرجات.") };
 }
 
@@ -1454,24 +1454,43 @@ async function saveItem(form, btn) {
   const body = clean({ no, wbs: f.wbs.trim(), name: f.name.trim(), qty: numOr(f.qty, 0), unit_price: numOr(f.unit_price, 0), actual_progress: actual, order: numOr(f.order, state.items.length + 1) });
   if (await run(btn, () => state.db.collection("items").doc(id).set(body), "تم حفظ البند")) closeDrawer();
 }
-async function saveDeliverable(form, btn) {
-  const f = formData(form), editing = state.drawer.id;
-  const id = editing || f.did.trim();
-  if (!/^[A-Za-z0-9_.~:@+-]+$/.test(id)) { toast("يجب أن يتكون رقم المخرج من حروف إنجليزية وأرقام وشرطة فقط.", true); return; }
-  if (!editing && state.deliverables.some((x) => x.id === id)) { toast(`الرقم ${id} مستخدم من قبل.`, true); return; }
-  const prevB = editing ? billingOf(state.deliverables.find((x) => x.id === id) || {}) : {};
+function readBilling(f, prevB) {
   const billing = {};
   for (const x of BILLING) {
     const v = (f["b_" + x.k] ?? "").trim();
     if (v) billing[x.k] = typeof prevB[x.k] === "number" && String(prevB[x.k]) === v ? prevB[x.k] : v;
   }
+  return billing;
+}
+function readDelData(f) {
   const suspended = f.work_status === ST.SUS;
-  if (suspended && !String(f.suspend_reason || "").trim()) { toast("سبب التعليق إلزامي للمخرج المعلَّق.", true); document.getElementById("dSuspReason")?.focus(); return; }
-  const body = clean({ item_id: f.item_id, description: f.description.trim(), work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim(),
+  if (suspended && !String(f.suspend_reason || "").trim()) { toast("سبب التعليق إلزامي للمخرج المعلَّق.", true); document.getElementById("dSuspReason")?.focus(); return null; }
+  return clean({ item_id: f.item_id, description: f.description.trim(), work_status: f.work_status, points: f.points === "" ? "" : Number(f.points), notes: f.notes.trim(),
     ...(suspended ? { suspend_reason: f.suspend_reason.trim(), suspend_date: f.suspend_date, suspend_cr_linked: !!f.suspend_cr_linked, suspend_cr: f.suspend_cr_linked ? f.suspend_cr : "" } : {}) });
+}
+const DATA_KEYS = ["item_id", "description", "work_status", "points", "notes", "suspend_reason", "suspend_date", "suspend_cr_linked", "suspend_cr"];
+async function saveDeliverable(form, btn) {
+  const f = formData(form), id = f.did.trim();
+  if (!/^[A-Za-z0-9_.~:@+-]+$/.test(id)) { toast("يجب أن يتكون رقم المخرج من حروف إنجليزية وأرقام وشرطة فقط.", true); return; }
+  if (state.deliverables.some((x) => x.id === id)) { toast(`الرقم ${id} مستخدم من قبل.`, true); return; }
+  const body = readDelData(f); if (!body) return;
+  const billing = readBilling(f, {});
   if (Object.keys(billing).length) body.billing = billing;
-  const sub = state.drawer.sub;
-  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ المخرج")) openDrawer({ kind: "del", id, sub: sub || "review" });
+  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ المخرج")) openDrawer({ kind: "del", id, sub: "info" });
+}
+async function saveDelInfo(form, btn) {
+  const id = state.drawer.id, prev = state.deliverables.find((x) => x.id === id); if (!prev) return;
+  const data = readDelData(formData(form)); if (!data) return;
+  const { id: _omit, ...rest } = prev;
+  for (const k of DATA_KEYS) delete rest[k];
+  if (await run(btn, () => state.db.collection("deliverables").doc(id).set({ ...rest, ...data }), "تم حفظ بيانات المخرج")) render();
+}
+async function saveBilling(form, btn) {
+  const id = state.drawer.id, prev = state.deliverables.find((x) => x.id === id); if (!prev) return;
+  const { id: _omit, billing: _b, legacy_billing: _l, ...rest } = prev;
+  const billing = readBilling(formData(form), billingOf(prev));
+  const body = Object.keys(billing).length ? { ...rest, billing } : rest;
+  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ بيانات الفوترة")) render();
 }
 async function addEvent(form, btn, deliverable) {
   const f = formData(form);
@@ -1690,9 +1709,9 @@ document.addEventListener("click", async (ev) => {
   if ("newItem" in ds) return openDrawer({ kind: "item" });
   if (ds.editItem) return openDrawer({ kind: "item", id: ds.editItem });
   if ("newDel" in ds) return openDrawer({ kind: "delForm" });
-  if (ds.editDel) return openDrawer({ kind: "delForm", id: ds.editDel, sub: state.drawer?.sub });
-  if (ds.openDel) return openDrawer({ kind: "del", id: ds.openDel, sub: ds.sub || "review" });
-  if (ds.subTab) { state.drawer.sub = ds.subTab; state.drawer.editIssue = null; return renderDrawer(); }
+  if (ds.editDel) return openDrawer({ kind: "del", id: ds.editDel, sub: "info" });
+  if (ds.openDel) return openDrawer({ kind: "del", id: ds.openDel, sub: ds.sub || "info" });
+  if (ds.subTab) { Object.assign(state.drawer, { sub: ds.subTab, editIssue: null, confirm: false, confirmEv: null, confirmIssue: null }); return renderDrawer(); }
   if ("newEv" in ds) return openDrawer({ kind: "ev" });
   if ("newIssue" in ds) return openDrawer({ kind: "issue" });
   if (ds.editIssue) {
@@ -1753,6 +1772,8 @@ document.addEventListener("submit", (ev) => {
   const fid = form.getAttribute("id"); // not form.id: a field named "id" would shadow it
   if (fid === "itemForm") return saveItem(form, btn);
   if (fid === "delForm") return saveDeliverable(form, btn);
+  if (fid === "delInfoForm") return saveDelInfo(form, btn);
+  if (fid === "billingForm") return saveBilling(form, btn);
   if (fid === "evForm") return addEvent(form, btn);
   if (fid === "quickEv") return addEvent(form, btn, state.drawer.id);
   if (fid === "issueForm") return saveIssue(form, btn);
