@@ -274,6 +274,8 @@ tbody tr:nth-child(even) td { background: var(--row-alt); }
 tbody tr.clickable:hover td { background: var(--surface-2); }
 tbody tr.row-alert td:first-child { box-shadow: inset -3px 0 0 var(--st-late); }
 .table-wrap.tall { max-height: 72vh; overflow: auto; }
+tbody tr.row-flash td { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface) !important; }
+tbody tr td { transition: background .6s; }
 th.act, td.act { width: 1%; white-space: nowrap; text-align: end; position: sticky; inset-inline-end: 0; box-shadow: inset -1px 0 0 var(--line); }
 td.act { background: var(--surface); }
 th.act { z-index: 2; }
@@ -391,8 +393,8 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 @media (prefers-reduced-motion: no-preference) {
   .drawer { animation: sheet .28s cubic-bezier(.2, .8, .2, 1); }
   @keyframes sheet { from { transform: translateX(40px); opacity: .4; } to { transform: none; opacity: 1; } }
-  main > * { animation: fadeUp .35s ease-out both; }
-  main > *:nth-child(2) { animation-delay: .04s; } main > *:nth-child(3) { animation-delay: .08s; } main > *:nth-child(4) { animation-delay: .12s; }
+  main.anim > * { animation: fadeUp .35s ease-out both; }
+  main.anim > *:nth-child(2) { animation-delay: .04s; } main.anim > *:nth-child(3) { animation-delay: .08s; } main.anim > *:nth-child(4) { animation-delay: .12s; }
   @keyframes fadeUp { from { transform: translateY(6px); opacity: .001; } to { transform: none; opacity: 1; } }
 }
 @media (prefers-reduced-motion: reduce) { .rings .arc { transition: none; } .skel { animation: none; } }
@@ -739,9 +741,31 @@ function render() {
   let html = state.offline ? `<div class="notice">تعذّر الوصول إلى تخزين البيانات. افتح الصفحة من claude.ai بعد تسجيل الدخول لعرض بيانات العقد وتعديلها.</div>` : "";
   if (loading) html += `<div class="skel" style="height:280px" aria-label="جارٍ تحميل بيانات العقد"></div><div class="kpis"><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div></div>`;
   else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, settings: viewSettings })[state.tab]();
+  // a data refresh keeps the place in long tables; only a page switch animates
+  const samePage = state.lastTab === state.tab;
+  const keep = samePage ? [...view.querySelectorAll(".table-wrap.tall")].map((w) => [w.scrollTop, w.scrollLeft]) : [];
   view.innerHTML = html;
+  view.classList.toggle("anim", !samePage);
+  state.lastTab = state.tab;
+  view.querySelectorAll(".table-wrap.tall").forEach((w, i) => { if (keep[i]) { w.scrollTop = keep[i][0]; w.scrollLeft = keep[i][1]; } });
+  applyFocusRow();
   chartTip.hidden = true;
   if (state.drawer) renderDrawer();
+}
+// after a save: close the sheet and bring the edited row back into view, highlighted for a moment
+function backToRow(sel) {
+  closeDrawer();
+  state.focusRow = { sel, until: Date.now() + 2500, scrolled: false };
+  render();
+  clearTimeout(backToRow.timer);
+  backToRow.timer = setTimeout(() => { state.focusRow = null; document.querySelectorAll("tr.row-flash").forEach((tr) => tr.classList.remove("row-flash")); }, 2500);
+}
+function applyFocusRow() {
+  const f = state.focusRow; if (!f || Date.now() > f.until) return;
+  const tr = document.getElementById("view").querySelector(f.sel)?.closest("tr");
+  if (!tr) return;
+  tr.classList.add("row-flash");
+  if (!f.scrolled) { f.scrolled = true; tr.scrollIntoView({ block: "center" }); }
 }
 const emptyBlock = (title, text, btn) => `<div class="empty"><strong>${esc(title)}</strong>${text ? `<span>${esc(text)}</span>` : ""}${btn || ""}</div>`;
 const delRow = (d, cells) => `<tr class="clickable" tabindex="0" data-open-del="${esc(d.id)}"><td><span class="code">${esc(d.id)}</span></td><td><div class="desc">${esc(d.description)}</div></td>${cells}</tr>`;
@@ -1421,7 +1445,7 @@ async function saveEventEdit(form, btn) {
   const id = state.drawer.id, f = formData(form);
   const body = clean({ deliverable: f.deliverable, action: f.action, date: f.date, notes: (f.notes || "").trim() });
   if (!body.deliverable || !isIso(body.date)) { toast("اختر المخرج وأدخل التاريخ.", true); return; }
-  if (await run(btn, () => state.db.collection("events").doc(id).set(body), "تم حفظ الحركة")) closeDrawer();
+  if (await run(btn, () => state.db.collection("events").doc(id).set(body), "تم حفظ الحركة")) backToRow(`[data-edit-ev="${CSS.escape(id)}"]`);
 }
 
 function nextCrCode() {
@@ -1551,7 +1575,7 @@ async function saveItem(form, btn) {
   if (state.items.some((x) => x.id !== id && String(x.no) === String(no))) { toast("رقم البند مستخدم من قبل.", true); return; }
   const actual = f.actual_progress === "" ? "" : Math.max(0, Math.min(100, Number(f.actual_progress))) / 100;
   const body = clean({ no, wbs: f.wbs.trim(), name: f.name.trim(), qty: numOr(f.qty, 0), unit_price: numOr(f.unit_price, 0), actual_progress: actual, order: numOr(f.order, state.items.length + 1) });
-  if (await run(btn, () => state.db.collection("items").doc(id).set(body), "تم حفظ البند")) closeDrawer();
+  if (await run(btn, () => state.db.collection("items").doc(id).set(body), "تم حفظ البند")) backToRow(`tr[data-edit-item="${CSS.escape(id)}"]`);
 }
 function readBilling(f, prevB) {
   const billing = {};
@@ -1593,14 +1617,14 @@ async function saveDelInfo(form, btn) {
   const { id: _omit, ...rest } = prev;
   for (const k of DATA_KEYS) delete rest[k];
   const save = async () => { await state.db.collection("deliverables").doc(id).set({ ...rest, ...data }); if (done) await state.db.collection("events").add(done); };
-  if (await run(btn, save, done ? "تم حفظ بيانات المخرج وتسجيل التسليم" : "تم حفظ بيانات المخرج")) render();
+  if (await run(btn, save, done ? "تم حفظ بيانات المخرج وتسجيل التسليم" : "تم حفظ بيانات المخرج")) backToRow(`tr[data-open-del="${CSS.escape(id)}"]`);
 }
 async function saveBilling(form, btn) {
   const id = state.drawer.id, prev = state.deliverables.find((x) => x.id === id); if (!prev) return;
   const { id: _omit, billing: _b, legacy_billing: _l, ...rest } = prev;
   const billing = readBilling(formData(form), billingOf(prev));
   const body = Object.keys(billing).length ? { ...rest, billing } : rest;
-  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ بيانات الفوترة")) render();
+  if (await run(btn, () => state.db.collection("deliverables").doc(id).set(body), "تم حفظ بيانات الفوترة")) backToRow(`tr[data-open-del="${CSS.escape(id)}"]`);
 }
 async function addEvent(form, btn, deliverable) {
   const f = formData(form);
@@ -1618,7 +1642,7 @@ async function saveIssue(form, btn) {
   body.blocking = !!f.blocking;
   const ok = await run(btn, () => state.db.collection("issues").doc(id).set(body), form.dataset.issueId ? "تم حفظ التعديل" : "تم التسجيل");
   if (!ok) return;
-  if (state.drawer?.kind === "del") { state.drawer.editIssue = null; render(); } else closeDrawer();
+  if (state.drawer?.kind === "del") { state.drawer.editIssue = null; render(); } else backToRow(`[data-edit-issue="${CSS.escape(id)}"]`);
 }
 async function setIssueStatus(id, closed, btn) {
   const i = state.issues.find((x) => x.id === id); if (!i) return;
@@ -1637,7 +1661,7 @@ async function saveCr(form, btn) {
   body.items = items; body.deliverables = dels;
   const prev = state.crs.find((x) => x.id === id);
   if (prev) { const { id: _omit, code, status, date, decision_date, title, impact, value_change, notes, items: _i, deliverables: _d, ...keep } = prev; Object.assign(body, { ...keep, ...body }); }
-  if (await run(btn, () => state.db.collection("crs").doc(id).set(body), "تم حفظ طلب التغيير")) closeDrawer();
+  if (await run(btn, () => state.db.collection("crs").doc(id).set(body), "تم حفظ طلب التغيير")) backToRow(`tr[data-edit-cr="${CSS.escape(id)}"]`);
 }
 async function saveSettings(form, btn) {
   const f = formData(form);
