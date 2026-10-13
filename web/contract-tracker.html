@@ -1272,6 +1272,12 @@ function viewCrs() {
 }
 
 /* ---- periodic report */
+// the contract start date, or the earliest dated event when it is not set
+function projectStart(fallback) {
+  if (isIso(state.settings.start_date)) return dn(state.settings.start_date);
+  const ts = state.events.map((e) => dn(e.date)).filter(Number.isFinite);
+  return ts.length ? Math.min(...ts) : fallback;
+}
 function reportRange() {
   const r = state.report, today = dn(todayIso()), wd = (today + 4) % 7; // 0 = Sunday
   const weekStart = today - wd;
@@ -1281,6 +1287,7 @@ function reportRange() {
   const ranges = {
     this_week: [weekStart, today], last_week: [weekStart - 7, weekStart - 1],
     this_month: [monthStart, today], last_month: [prevMonthStart, monthStart - 1],
+    all: [projectStart(today), today],
   };
   if (r.preset !== "custom") { const [a, b] = ranges[r.preset] || ranges.last_week; return [isoOf(a), isoOf(b)]; }
   return [isIso(r.from) ? r.from : isoOf(weekStart - 7), isIso(r.to) ? r.to : isoOf(today)];
@@ -1501,7 +1508,7 @@ function reportSheet(R) {
 
 function viewReport() {
   const r = state.report, R = buildReport();
-  const presets = [["this_week", "الأسبوع الحالي"], ["last_week", "الأسبوع الماضي"], ["this_month", "الشهر الحالي"], ["last_month", "الشهر الماضي"], ["custom", "فترة مخصصة"]];
+  const presets = [["this_week", "الأسبوع الحالي"], ["last_week", "الأسبوع الماضي"], ["this_month", "الشهر الحالي"], ["last_month", "الشهر الماضي"], ["all", "الكل (منذ بداية المشروع)"], ["custom", "فترة مخصصة"]];
   return `<section class="section">
     <div class="section-head"><h2>التقرير الدوري</h2><span class="sub">اختر الفترة ثم صدّر التقرير · يبدأ الأسبوع يوم الأحد</span></div>
     <div class="report-controls">
