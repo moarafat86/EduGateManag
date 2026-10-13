@@ -512,6 +512,30 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .rp-pcontent { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 26px 0 8px; display: flex; flex-direction: column; gap: 26px; }
 .rp-pfoot { flex: none; height: 58px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #DCE3E4; color: #5B6E73; font-size: .78rem; }
 .rp-pno { font-weight: 700; color: #0C3C44; letter-spacing: .02em; }
+.rp-host.wide { width: 1414px; }
+.rp-page.wide { width: 1414px; height: 1000px; padding: 0 40px; }
+.dl-page .rp-phead { height: 78px; }
+.dl-page .rp-phead strong { font-size: 1.2rem; display: block; }
+.dl-page .rp-phead .t span { color: #5B6E73; font-weight: 500; }
+.dl-page .rp-pcontent { padding: 16px 0 6px; }
+.dl-page .rp-pfoot { height: 46px; }
+.dl-t { width: 100%; border: 1px solid #000; border-collapse: collapse; font-size: 11.5px; line-height: 1.45; color: #000; }
+.dl-t th, .dl-t td { border: 1px solid #000; padding: 5px 6px; text-align: center; vertical-align: middle; background: #fff; position: static; min-width: 0; }
+.dl-t th { background: #000; color: #fff; font-weight: 700; font-size: 11.5px; white-space: normal; }
+.dl-t th.why { background: #C9C400; color: #C00000; }
+.dl-t th.it { width: 13%; } .dl-t th.ds { width: 21%; } .dl-t th.why { width: 10%; }
+.dl-t td.it { font-weight: 500; }
+.dl-t td.ds { text-align: right; }
+.dl-t td.pk { background: #FCE4D6; }
+.dl-t td.dd { color: #C00000; font-weight: 700; font-size: 12.5px; }
+.dl-t td.st { white-space: nowrap; }
+.dl-t .dt { direction: ltr; unicode-bidi: isolate; white-space: nowrap; display: inline-block; }
+.dl-t td.why { color: #C00000; text-align: right; }
+.dl-t tbody.grp tr:first-child td { border-top: 2.5px solid #000; }
+.dl-t tbody.grp tr td { white-space: normal; }
+.dl-t tbody.grp tr td { background: #fff; }
+.dl-t tbody.grp tr td.pk { background: #FCE4D6; }
+.dl-t tbody.grp tr td.st { white-space: nowrap; }
 .rp-cpage { padding: 80px 84px 72px; justify-content: space-between; }
 .rp-ctop .rp-logos img { height: 66px; }
 .rp-ctop .rp-logos i { height: 58px; }
@@ -1203,7 +1227,7 @@ function viewLog() {
       ${rowActions(`data-edit-ev="${esc(e.id)}"`, `data-rm-ev="${esc(e.id)}"`)}</tr>`;
   }).join("");
   return `<section class="section">
-    <div class="section-head"><h2>سجل المراجعات</h2><button class="btn primary" data-new-ev type="button">+ حركة جديدة</button></div>
+    <div class="section-head"><h2>سجل المراجعات</h2><div class="actions"><button class="btn" type="button" id="delayPdf">تقرير التأخير في القبول (PDF)</button><button class="btn primary" data-new-ev type="button">+ حركة جديدة</button></div></div>
     <p class="muted" style="margin:0">يفتح كل تسليم دورة مراجعة لدى العميل، وتُغلق الدورة عند أول رد أو قبول (أو عند تسليم جديد). تُحسب الأيام أيامَ عمل بدءًا من اليوم التالي للتسليم، مع استبعاد الإجازة الأسبوعية والإجازات الرسمية. التأخير هو ما يزيد على المهلة في كل دورة على حدة. أما «أيام لدى فريق المشروع» فهي المدة من الرد بملاحظات حتى إعادة التسليم، ولا تُحتسب على العميل.</p>
     <div class="filters">
       <input id="lQ" type="search" placeholder="ابحث برقم المخرج أو الملاحظات" value="${esc(f.q)}" aria-label="بحث">
@@ -1547,31 +1571,93 @@ function pdfPages(host, R) {
   pages.forEach((p, i) => { const n = p.querySelector(".rp-pno"); if (n) n.textContent = `${String(i + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`; });
   return pages;
 }
-async function exportReportPdf(btn) {
+// lays pages out off screen with build(host) → page elements, renders each one and saves an A4 PDF
+async function savePdf(btn, build, filename, landscape = false) {
   if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
   const label = btn.textContent;
   btn.disabled = true; btn.textContent = "جارٍ إنشاء PDF…";
   let host = null;
   try {
     await Promise.all(PDF_LIBS.map(loadScript));
-    const R = buildReport();
     host = document.createElement("div");
-    host.className = "rp-host"; host.setAttribute("aria-hidden", "true");
+    host.className = "rp-host" + (landscape ? " wide" : ""); host.setAttribute("aria-hidden", "true");
     document.body.appendChild(host);
     if (document.fonts?.ready) await document.fonts.ready;
-    const pages = pdfPages(host, R);
-    const pdf = new window.jspdf.jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+    const pages = build(host);
+    const [w, h] = landscape ? [297, 210] : [210, 297];
+    const pdf = new window.jspdf.jsPDF({ orientation: landscape ? "l" : "p", unit: "mm", format: "a4", compress: true });
     for (let i = 0; i < pages.length; i++) {
       const canvas = await window.html2canvas(pages[i], { scale: 2, backgroundColor: "#ffffff", logging: false, useCORS: true });
       if (i) pdf.addPage();
-      pdf.addImage(canvas.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 210, 297, undefined, "FAST");
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, w, h, undefined, "FAST");
     }
-    await state.downloads.save({ filename: `التقرير_الدوري_${R.from}_${R.to}.pdf`, data: pdf.output("blob") });
+    await state.downloads.save({ filename, data: pdf.output("blob") });
     toast("تم حفظ ملف PDF");
   } catch (e) {
     if (e?.code === "declined") toast("أُلغي التنزيل.");
     else toast(e?.code ? errText(e) : "تعذّر إنشاء ملف PDF: " + (e?.message || e), true);
   } finally { host?.remove(); btn.disabled = false; btn.textContent = label; }
+}
+
+function exportReportPdf(btn) {
+  const R = buildReport();
+  return savePdf(btn, (host) => pdfPages(host, R), `التقرير_الدوري_${R.from}_${R.to}.pdf`);
+}
+
+/* ---- client acceptance delay table: deliverables awaiting acceptance, every submission and reply, review and delay days */
+const EN_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const shortDate = (t) => { if (!(t > 0)) return ""; const [y, m, d] = isoOf(t).split("-").map(Number); return `<span class="dt">${d}-${EN_MON[m - 1]}-${String(y).slice(2)}</span>`; };
+function delayRows() {
+  const c = state.calc, groups = [];
+  for (const it of [...state.items].sort(byItemOrder)) {
+    const rows = state.deliverables.filter((d) => d.item_id === it.id && c.del.get(d.id)?.bill === ST.WAIT).sort(byId).map((d) => {
+      const k = c.del.get(d.id), evs = state.events.filter((e) => e.deliverable === d.id && isIso(e.date));
+      const pick = (a) => evs.filter((e) => e.action === a).map((e) => dn(e.date)).sort((x, y) => x - y);
+      const subs = pick(ACT.SUB), reps = pick(ACT.REP);
+      return { d, k, first: subs[0], reps, resubs: subs.slice(1) };
+    });
+    if (rows.length) groups.push({ it, rows });
+  }
+  return groups;
+}
+function delayPages(host) {
+  const s = state.settings, groups = delayRows(), c = state.calc;
+  const pairs = Math.max(3, ...groups.flatMap((g) => g.rows.map((r) => Math.max(r.reps.length, r.resubs.length))));
+  const head = `<tr><th class="it">البنود</th><th class="ds">المخرجات الأساسية</th><th>الحالة التنفيذية للمخرج</th><th>تاريخ التسليم</th>
+    ${Array.from({ length: pairs }, (_, i) => `<th>تاريخ الرد بملاحظة إن وجد ${i + 1}</th><th>تاريخ إعادة التسليم ${i + 1}</th>`).join("")}
+    <th>تاريخ القبول</th><th>عدد أيام المراجعة</th><th>عدد أيام التأخير في القبول</th><th class="why">سبب التأخير في القبول</th></tr>`;
+  const rowHtml = (r, itemCell) => `<tr>${itemCell}<td class="ds">${esc(r.d.description)}</td><td class="pk st">${esc(ST.WAIT)}</td><td>${shortDate(r.first)}</td>
+    ${Array.from({ length: pairs }, (_, i) => `<td>${shortDate(r.reps[i])}</td><td>${shortDate(r.resubs[i])}</td>`).join("")}
+    <td>${shortDate(r.k.accepted)}</td><td class="pk dd">${r.k.review}</td><td class="pk dd">${r.k.delay}</td><td class="why">${esc(r.d.delay_reason || "")}</td></tr>`;
+  const groupHtml = (g, rows) => `<tbody class="grp">${rows.map((r, i) => rowHtml(r, i ? "" : `<td class="it" rowspan="${rows.length}">${esc(g.it.name)}</td>`)).join("")}</tbody>`;
+  const pages = [];
+  let table, content;
+  const make = (html) => { const t = document.createElement("div"); t.innerHTML = html.trim(); return t.firstElementChild; };
+  const newPage = () => {
+    const p = make(`<section class="rp rp-page wide dl-page">
+      <header class="rp-phead"><div class="t"><strong>تقرير متابعة التأخير في قبول المخرجات</strong><span>${esc(s.project_name || "")}${s.contract_no ? ` · عقد رقم ${esc(s.contract_no)}` : ""} · حتى ${esc(arDate(c.asOfIso))} · مهلة المراجعة ${c.reviewLimit} أيام عمل</span></div><img src="${LOGO_TETCO}" alt="تطوير لتقنيات التعليم"></header>
+      <div class="rp-pcontent"><table class="dl-t"><thead>${head}</thead></table></div>
+      <footer class="rp-pfoot"><span>أيام المراجعة والتأخير أيام عمل، دون الإجازة الأسبوعية والإجازات الرسمية</span><span class="rp-pno"></span></footer></section>`);
+    host.appendChild(p); pages.push(p); content = p.querySelector(".rp-pcontent"); table = p.querySelector("table");
+  };
+  const fits = () => content.scrollHeight <= content.clientHeight + 1;
+  newPage();
+  if (!groups.length) content.insertAdjacentHTML("beforeend", `<div class="rp-empty">لا توجد مخرجات في انتظار القبول.</div>`);
+  for (const g of groups) {
+    let rest = g.rows;
+    while (rest.length) {
+      let n = rest.length, body = null;
+      for (; n > 0; n--) { body = make(`<table>${groupHtml(g, rest.slice(0, n))}</table>`).querySelector("tbody"); table.appendChild(body); if (fits()) break; body.remove(); body = null; }
+      if (!n) { if (table.tBodies.length) { newPage(); continue; } n = 1; table.appendChild(make(`<table>${groupHtml(g, rest.slice(0, 1))}</table>`).querySelector("tbody")); }
+      rest = rest.slice(n);
+      if (rest.length) newPage();
+    }
+  }
+  pages.forEach((p, i) => { p.querySelector(".rp-pno").textContent = `${String(i + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`; });
+  return pages;
+}
+function exportDelayPdf(btn) {
+  return savePdf(btn, delayPages, `تقرير_التأخير_في_قبول_المخرجات_${state.calc.asOfIso}.pdf`, true);
 }
 
 /* ---- settings */
@@ -1762,6 +1848,7 @@ function delDataFields(v, isNew) {
         <label class="check"><input type="checkbox" id="dSuspLinked" name="suspend_cr_linked" ${v.suspend_cr_linked || v.suspend_cr ? "checked" : ""}> مرتبط بطلب تغيير</label>
         <div class="field" id="suspCrPick" ${v.suspend_cr_linked || v.suspend_cr ? "" : "hidden"}><label for="dSuspCr">طلب التغيير</label><select id="dSuspCr" name="suspend_cr"><option value="">لم يُحدَّد بعد</option>${[...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })).map((x) => `<option value="${esc(x.id)}"${v.suspend_cr === x.id ? " selected" : ""}>${esc(x.code)} — ${esc(short(x.title, 40))}</option>`).join("")}</select></div>
       </div></div>
+      ${submitted && !k.accepted ? `<div class="field wide"><label for="dDelay">سبب التأخير في القبول</label><textarea id="dDelay" name="delay_reason" placeholder="يُدوَّن كما ورد من العميل">${esc(v.delay_reason ?? "")}</textarea><span class="hint">يظهر في تقرير التأخير في القبول من صفحة سجل المراجعات.</span></div>` : ""}
       <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>`;
 }
 function billingFields(b) {
@@ -1970,6 +2057,7 @@ async function saveDelInfo(form, btn) {
   const done = doneEvent(f, id); if (done === false) return;
   const { id: _omit, ...rest } = prev;
   for (const k of DATA_KEYS) delete rest[k];
+  if (f.delay_reason !== undefined) { delete rest.delay_reason; if (f.delay_reason.trim()) data.delay_reason = f.delay_reason.trim(); }
   const save = async () => { await state.db.collection("deliverables").doc(id).set({ ...rest, ...data }); if (done) await state.db.collection("events").add(done); };
   if (await run(btn, save, done ? "تم حفظ بيانات المخرج وتسجيل التسليم" : "تم حفظ بيانات المخرج")) backToRow(`tr[data-open-del="${CSS.escape(id)}"]`);
 }
@@ -2114,13 +2202,13 @@ function exportAll(btn) {
       { h: "أول تسليم", k: "first", w: 12, f: FMT.D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: FMT.D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: FMT.D },
       { h: "تاريخ القبول", k: "acc", w: 12, f: FMT.D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "أيام المراجعة", k: "review", w: 10 },
       { h: "أيام التأخير على العميل", k: "delay", w: 11 }, { h: "أيام لدى فريق المشروع", k: "vendor", w: 11 }, { h: "مشكلات مفتوحة", k: "issues", w: 9 }, { h: "طلبات التغيير", k: "crs", w: 14 },
-      { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "التعليق مرتبط بطلب تغيير", k: "suspCr", w: 14 },
+      { h: "سبب التأخير في القبول", k: "delayReason", w: 36, wrap: true }, { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "التعليق مرتبط بطلب تغيير", k: "suspCr", w: 14 },
       ...BILLING.map((x) => ({ h: x.label, k: "b_" + x.k, w: x.yn ? 10 : 16 })), { h: "ملاحظات", k: "notes", w: 50, wrap: true },
     ], [...state.deliverables].sort(byId).map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d); return {
       id: d.id, item: it?.no, itemName: it?.name, desc: d.description, exec: k.exec, bill: k.bill || null, points: d.points === "" ? null : d.points,
       value: k.value, first: numD(k.firstSubmit), lastSub: numD(k.lastSubmit), lastRep: numD(k.lastReply), acc: numD(k.accepted),
       cycles: k.cycles, review: k.review, delay: k.delay, vendor: k.vendorDays, issues: k.openIssues, crs: k.crs.map((x) => x.code).join("، "),
-      suspReason: k.suspended ? (d.suspend_reason || null) : null, suspDate: k.suspended ? toDate(d.suspend_date) : null, suspCr: k.suspended ? (k.suspendCr?.code || (d.suspend_cr_linked ? "نعم" : "لا")) : null,
+      delayReason: d.delay_reason || null, suspReason: k.suspended ? (d.suspend_reason || null) : null, suspDate: k.suspended ? toDate(d.suspend_date) : null, suspCr: k.suspended ? (k.suspendCr?.code || (d.suspend_cr_linked ? "نعم" : "لا")) : null,
       ...Object.fromEntries(BILLING.map((x) => ["b_" + x.k, b[x.k] ?? null])), notes: d.notes }; }));
     addSheet(wb, "سجل المراجعات", [
       { h: "رقم المخرج", k: "del", w: 10 }, { h: "رقم البند", k: "item", w: 8 }, { h: "وصف المخرج", k: "desc", w: 40, wrap: true }, { h: "نوع الحركة", k: "act", w: 13 },
@@ -2253,6 +2341,7 @@ document.addEventListener("click", async (ev) => {
   if (t.id === "exportBtn") return exportAll(t);
   if (t.id === "reportExport") return exportReport(t);
   if (t.id === "reportPdf") return exportReportPdf(t);
+  if (t.id === "delayPdf") return exportDelayPdf(t);
   if (t.id === "reportCopy") {
     const text = reportText(buildReport());
     try { await navigator.clipboard.writeText(text); toast("نُسخ التقرير؛ يمكنك لصقه في البريد أو الرسالة"); }
