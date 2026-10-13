@@ -1571,6 +1571,21 @@ function pdfPages(host, R) {
   pages.forEach((p, i) => { const n = p.querySelector(".rp-pno"); if (n) n.textContent = `${String(i + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`; });
   return pages;
 }
+// html2canvas loses the letter joining of an Arabic word that runs straight into digits or Latin letters ("مرحلة3");
+// putting each side in its own span keeps both shaped, and the browser's layout (so the visual order) is unchanged
+const AR_CH = "\u0621-\u065F\u066E-\u06D3\u06D5-\u06EF\u06FA-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF";
+const NL_CH = "0-9A-Za-z\u0660-\u0669\u06F0-\u06F9";
+const MIXED_RE = new RegExp(`[${AR_CH}][${NL_CH}]|[${NL_CH}][${AR_CH}]`);
+const MIXED_SPLIT = new RegExp(`(?<=[${AR_CH}])(?=[${NL_CH}])|(?<=[${NL_CH}])(?=[${AR_CH}])`);
+function isolateMixedWords(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
+  while (walker.nextNode()) if (MIXED_RE.test(walker.currentNode.data)) nodes.push(walker.currentNode);
+  for (const n of nodes) {
+    const frag = document.createDocumentFragment();
+    for (const part of n.data.split(MIXED_SPLIT)) { const sp = document.createElement("span"); sp.textContent = part; frag.appendChild(sp); }
+    n.replaceWith(frag);
+  }
+}
 // lays pages out off screen with build(host) → page elements, renders each one and saves an A4 PDF
 async function savePdf(btn, build, filename, landscape = false) {
   if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
@@ -1584,6 +1599,7 @@ async function savePdf(btn, build, filename, landscape = false) {
     document.body.appendChild(host);
     if (document.fonts?.ready) await document.fonts.ready;
     const pages = build(host);
+    pages.forEach(isolateMixedWords);
     const [w, h] = landscape ? [297, 210] : [210, 297];
     const pdf = new window.jspdf.jsPDF({ orientation: landscape ? "l" : "p", unit: "mm", format: "a4", compress: true });
     for (let i = 0; i < pages.length; i++) {
