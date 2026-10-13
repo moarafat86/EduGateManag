@@ -398,6 +398,135 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
   @keyframes fadeUp { from { transform: translateY(6px); opacity: .001; } to { transform: none; opacity: 1; } }
 }
 @media (prefers-reduced-motion: reduce) { .rings .arc { transition: none; } .skel { animation: none; } }
+/* ---------- periodic report: a light document in the TETCO identity, in every theme */
+/* letter-spacing must stay 0: the PDF renderer draws spaced text letter by letter, which breaks Arabic joining */
+.rp, .rp * { letter-spacing: 0 !important; }
+.rp { color: #0C3C44; background: #fff; font-family: "IBM Plex Sans Arabic", var(--font); line-height: 1.6; }
+.rp .muted, .rp .rp-sub, .rp .m { color: #5B6E73; }
+.rp .red { color: #C63C40; font-weight: 700; }
+.rp b, .rp strong { font-weight: 700; }
+.rp-sheet { border-radius: 22px; padding: 40px 48px 30px; display: flex; flex-direction: column; gap: 34px; position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(12, 60, 68, .06), 0 10px 40px rgba(12, 60, 68, .08);
+  background: radial-gradient(circle at 100% 0, rgba(54, 186, 145, .10), rgba(54, 186, 145, 0) 38%), radial-gradient(circle at 0 100%, rgba(0, 95, 150, .07), rgba(0, 95, 150, 0) 42%), #fff; }
+.rp-cover { display: flex; flex-direction: column; gap: 18px; padding-bottom: 26px; border-bottom: 1px solid #DCE3E4; }
+.rp-logos { display: flex; align-items: center; gap: 20px; }
+.rp-logos img { height: 48px; width: auto; display: block; }
+.rp-logos i { width: 1px; height: 42px; background: #DCE3E4; }
+.rp-eyebrow { color: #1F7A5C; font-weight: 600; font-size: .95rem; }
+.rp-ctitle h1, .rp-cmain h1 { margin: 2px 0 12px; font-size: 2.1rem; line-height: 1.3; font-weight: 700; color: #0C3C44; }
+.rp-grad { display: block; width: 96px; height: 4px; border-radius: 2px; background: linear-gradient(270deg, #005F96, #36BA91); }
+.rp-meta { display: flex; flex-wrap: wrap; gap: 14px 44px; }
+.rp-meta span { display: block; color: #5B6E73; font-size: .8rem; }
+.rp-meta strong { font-size: 1rem; }
+.rp-sh { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.rp-no { color: #36BA91; font-weight: 700; font-size: 1.05rem; }
+.rp h2 { margin: 0; font-size: 1.35rem; font-weight: 700; color: #0C3C44; line-height: 1.35; }
+.rp-sub { margin-inline-start: auto; font-size: .82rem; display: inline-flex; align-items: center; gap: 6px; }
+.rp .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; font-style: normal; }
+.rp-h3, .rp-two h3 { font-size: 1rem; font-weight: 700; margin: 0 0 10px; color: #0C3C44; }
+.rp-two h3 span { color: #5B6E73; font-weight: 400; font-size: .8rem; margin-inline-start: 6px; }
+.rp-unit { min-width: 0; }
+.rp-hero { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: 14px; }
+.rp-big { background: #0C3C44; color: #fff; border-radius: 18px; padding: 22px 24px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.rp-big .k { font-size: .85rem; font-weight: 600; color: #9ED8C3; }
+.rp-big strong { font-size: 3.4rem; line-height: 1.1; }
+.rp-big .s { font-size: .85rem; color: rgba(255, 255, 255, .78); }
+.rp-big .rp-bar { background: rgba(255, 255, 255, .16); }
+.rp-big .d { font-size: .8rem; font-weight: 600; color: #9ED8C3; }
+.rp-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.rp-kpi { border: 1px solid #DCE3E4; border-radius: 16px; padding: 14px 18px; display: flex; flex-direction: column; gap: 3px; background: #fff; }
+.rp-kpi .k { color: #5B6E73; font-size: .8rem; font-weight: 600; }
+.rp-kpi .v { font-size: 1.6rem; font-weight: 700; line-height: 1.25; }
+.rp-kpi .s { color: #5B6E73; font-size: .78rem; }
+.rp-kpi .d { font-size: .78rem; font-weight: 600; color: #1F7A5C; }
+.rp-bar { display: flex; height: 6px; border-radius: 3px; background: #E8EEEF; overflow: hidden; margin: 4px 0; }
+.rp-bar span { display: block; height: 100%; }
+.rp-act { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.rp-act > div { background: #F3F7F7; border-radius: 16px; padding: 12px 18px; display: flex; flex-direction: column; }
+.rp-act .k { color: #5B6E73; font-size: .8rem; font-weight: 600; }
+.rp-act strong { font-size: 1.75rem; line-height: 1.3; }
+.rp-act .s { font-size: .8rem; color: #44696F; }
+.rp-msgs { margin: 14px 0 0; padding: 14px 20px; border-inline-start: 4px solid #36BA91; background: #F2FAF6; border-radius: 12px; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: .92rem; line-height: 1.75; }
+.rp-msgs li::before { content: "•"; color: #36BA91; margin-inline-end: 8px; font-weight: 700; }
+.rp-legend { display: flex; gap: 20px; font-size: .82rem; color: #44696F; margin-bottom: 10px; }
+.rp-legend i { display: inline-block; width: 16px; height: 4px; border-radius: 2px; margin-inline-end: 6px; vertical-align: middle; }
+.rp-plot { position: relative; height: 230px; margin-inline-start: 46px; margin-inline-end: 54px; }
+.rp-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.rp-plot rect:hover { fill: rgba(12, 60, 68, .04); }
+.rp-yt { position: absolute; right: -46px; width: 38px; text-align: left; transform: translateY(-50%); font-size: .72rem; color: #5B6E73; }
+.rp-dot { position: absolute; width: 11px; height: 11px; border-radius: 50%; border: 2px solid #fff; transform: translate(-50%, -50%); box-sizing: border-box; }
+.rp-endl { position: absolute; left: -54px; width: 48px; text-align: right; font-size: .8rem; font-weight: 700; color: #0C3C44; }
+.rp-endl.up { transform: translateY(-115%); }
+.rp-endl.dn { transform: translateY(15%); }
+.rp-xaxis { position: relative; height: 24px; margin-inline-start: 46px; margin-inline-end: 54px; }
+.rp-xt { position: absolute; top: 6px; transform: translateX(-50%); font-size: .72rem; color: #5B6E73; white-space: nowrap; }
+.rp-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 22px 44px; }
+.rp-donut { display: flex; align-items: center; gap: 26px; }
+.rp-ring { position: relative; width: 168px; height: 168px; flex: none; }
+.rp-ring svg { width: 100%; height: 100%; display: block; }
+.rp-ring path { cursor: default; transition: opacity .15s; }
+.rp-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.rp-center strong { font-size: 1.9rem; line-height: 1.1; }
+.rp-center span { font-size: .75rem; color: #5B6E73; }
+.rp-dlegend { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.rp-li { display: grid; grid-template-columns: 10px 1fr auto 54px; gap: 10px; align-items: center; font-size: .86rem; padding: 4px 0; border-bottom: 1px solid #EEF2F3; }
+.rp-li i { width: 10px; height: 10px; border-radius: 50%; }
+.rp-li .p { color: #5B6E73; text-align: left; font-size: .8rem; }
+.rp-t { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.rp-t th { min-width: 0; vertical-align: middle; background: #0C3C44; color: #fff; font-weight: 600; font-size: .78rem; padding: 9px 12px; text-align: start; white-space: nowrap; position: static; }
+.rp-t td { padding: 8px 12px; border-bottom: 1px solid #E3E9EA; vertical-align: middle; background: #fff; }
+.rp-t tbody tr:nth-child(even) td { background: #F6F9F9; }
+.rp-t .n { text-align: left; white-space: nowrap; }
+.rp-code { font-weight: 700; color: #0C3C44; white-space: nowrap; }
+.rp-desc { color: #2E4F55; }
+.rp-alert td:first-child { box-shadow: inset -3px 0 0 #C63C40; }
+.rp-tag { display: inline-block; padding: 1px 9px; border-radius: 999px; background: #E3F5EE; color: #1F7A5C; font-size: .74rem; font-weight: 600; white-space: nowrap; }
+.rp-tag.red { background: #F9DEDB; color: #C63C40; }
+.rp-bcol { width: 30%; }
+.rp-pbar { display: flex; align-items: center; gap: 10px; }
+.rp-pbar .rp-bar { flex: 1; height: 10px; border-radius: 5px; margin: 0; }
+.rp-pbar > span { white-space: nowrap; font-weight: 700; font-size: .8rem; min-width: 104px; }
+.rp-pbar em { font-style: normal; color: #5B6E73; font-weight: 500; }
+.rp-rcol { width: 34%; }
+.rp-rwrap { display: flex; align-items: center; gap: 10px; }
+.rp-rbar { position: relative; flex: 1; display: flex; height: 12px; background: #EEF2F3; border-radius: 6px; }
+.rp-rbar span { display: block; height: 100%; }
+.rp-rbar span:first-child { border-radius: 0 6px 6px 0; }
+.rp-rbar span:nth-child(2) { border-radius: 6px 0 0 6px; }
+.rp-rbar i { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-right: -1px; background: #0C3C44; }
+.rp-rwrap b { min-width: 28px; font-size: .82rem; }
+.rp-empty { color: #5B6E73; padding: 14px 18px; background: #F6F9F9; border-radius: 12px; font-size: .88rem; }
+.rp-sfoot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: #5B6E73; font-size: .78rem; border-top: 1px solid #DCE3E4; padding-top: 14px; }
+@media (max-width: 860px) { .rp-sheet { padding: 24px 18px; } .rp-hero { grid-template-columns: 1fr; } .rp-act { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rp-kpis { grid-template-columns: 1fr; } .rp-donut { flex-direction: column; align-items: stretch; } .rp-ring { align-self: center; } .rp-t { font-size: .78rem; } .rp-unit { overflow-x: auto; } }
+/* A4 pages for the PDF (1000 × 1414 px), rendered off screen */
+.rp-host { position: absolute; top: 0; left: -20000px; width: 1000px; }
+.rp-page { width: 1000px; height: 1414px; box-sizing: border-box; padding: 0 60px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.rp-page > *:not(.rp-glow) { position: relative; z-index: 1; }
+.rp-glow { position: absolute; border-radius: 50%; }
+.rp-glow.a { width: 1000px; height: 1000px; top: -480px; right: -440px; background: radial-gradient(circle, rgba(54, 186, 145, .17) 0%, rgba(54, 186, 145, 0) 70%); }
+.rp-glow.b { width: 1000px; height: 1000px; bottom: -520px; left: -460px; background: radial-gradient(circle, rgba(0, 95, 150, .11) 0%, rgba(0, 95, 150, 0) 70%); }
+.rp-glow.c { width: 760px; height: 760px; top: -440px; left: -360px; background: radial-gradient(circle, rgba(54, 186, 145, .10) 0%, rgba(54, 186, 145, 0) 70%); }
+.rp-phead { flex: none; height: 94px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #DCE3E4; }
+.rp-phead .t span { display: block; color: #1F7A5C; font-size: .8rem; font-weight: 600; }
+.rp-phead strong { font-size: 1.05rem; }
+.rp-phead img { height: 42px; width: auto; }
+.rp-pcontent { flex: 1 1 0; min-height: 0; overflow: hidden; padding: 26px 0 8px; display: flex; flex-direction: column; gap: 26px; }
+.rp-pfoot { flex: none; height: 58px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #DCE3E4; color: #5B6E73; font-size: .78rem; }
+.rp-pno { font-weight: 700; color: #0C3C44; letter-spacing: .02em; }
+.rp-cpage { padding: 80px 84px 72px; justify-content: space-between; }
+.rp-ctop .rp-logos img { height: 66px; }
+.rp-ctop .rp-logos i { height: 58px; }
+.rp-cmain h1 { font-size: 3.2rem; line-height: 1.25; margin: 10px 0 20px; }
+.rp-cmain .rp-eyebrow { font-size: 1.15rem; }
+.rp-cmain .rp-grad { width: 150px; height: 5px; }
+.rp-cmain p { font-size: 1.15rem; color: #44696F; max-width: 640px; line-height: 1.85; margin: 24px 0 0; }
+.rp-cfig { display: flex; gap: 0; margin-top: 46px; }
+.rp-cfig > div { padding: 4px 28px; border-inline-start: 1px solid #DCE3E4; display: flex; flex-direction: column; }
+.rp-cfig > div:first-child { padding-inline-start: 0; border: 0; }
+.rp-cfig strong { font-size: 2.3rem; line-height: 1.2; color: #0C3C44; }
+.rp-cfig > div:first-child strong { color: #1F7A5C; }
+.rp-cfig span { font-size: .85rem; color: #5B6E73; }
+.rp-cpage .rp-meta { gap: 22px 64px; border-top: 1px solid #DCE3E4; padding-top: 26px; }
+.rp-cpage .rp-meta strong { font-size: 1.12rem; }
 </style>
 
 <div class="app">
@@ -1149,7 +1278,8 @@ function buildReport() {
   const blockingOpen = state.issues.filter((i) => i.blocking && dn(i.date) <= b && (i.status !== CLOSED || dn(i.closed_date) > b));
   const crsTouched = state.crs.filter((x) => inRange(x.date) || inRange(x.decision_date));
   const crsOpen = state.crs.filter((x) => CR_OPEN.has(x.status));
-  return { from, to, end, accepted, submitted, returned, acceptedValue, openCycles, overLimit, issuesOpened, issuesClosed, blockingOpen, crsTouched, crsOpen };
+  const start = computeModel({ ...state, events: state.events.filter((e) => dn(e.date) < a) }, isoOf(a - 1));
+  return { from, to, end, start, accepted, submitted, returned, acceptedValue, openCycles, overLimit, issuesOpened, issuesClosed, blockingOpen, crsTouched, crsOpen };
 }
 function reportText(R) {
   const L = [], s = state.settings, t = R.end.tot;
@@ -1174,50 +1304,274 @@ function reportText(R) {
   list("طلبات التغيير المفتوحة:", R.crsOpen, (x) => `${x.code} ${x.title} — ${x.status}`);
   return L.join("\n");
 }
+const LOGO_TETCO = ""; // brand logo kept out of the public repo; the published artifact embeds it
+const LOGO_MOE = ""; // client logo kept out of the public repo; the published artifact embeds it
+/* ---- periodic report: a light "paper" document in the TETCO identity, shown on screen and exported to A4 PDF */
+const RP = { ink: "#0C3C44", muted: "#5B6E73", line: "#DCE3E4", green: "#36BA91", greenD: "#1F7A5C", greenL: "#9ED8C3", blue: "#005F96", red: "#C63C40" };
+const RP_EXEC = { [ST.DONE]: "#36BA91", [ST.PROG]: "#C9B21A", [ST.LATE]: "#C63C40", [ST.NEW]: "#B9C5C7", [ST.SUS]: "#5B6E73" };
+const RP_BILL = { [ST.WAIT]: "#2B83BE", [ST.RET]: "#E5675B", [ST.ACC]: "#9ED8C3", [ST.INV]: "#36BA91", [ST.CERTW]: "#1F7A5C", [ST.CERT]: "#0C3C44" };
+const AR_MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+const arDate = (iso) => { if (!isIso(iso)) return "—"; const [y, m, d] = iso.split("-").map(Number); return `${d} ${AR_MONTHS[m - 1]} ${y}`; };
+const pctTxt = (v, digits = 1) => Number.isFinite(v) ? (v * 100).toFixed(digits) + "%" : "-";
+const deltaPts = (a, b) => { if (!Number.isFinite(a) || !Number.isFinite(b)) return ""; const d = (b - a) * 100; return Math.abs(d) < 0.05 ? "دون تغيير خلال الفترة" : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(1)} نقطة خلال الفترة`; };
+
+/* cumulative accepted / delivered share of the contract value, one point per month (the last point is the report end) */
+function trendSeries(R) {
+  const e = R.end, total = e.tot.total, end = dn(R.to);
+  if (!(total > 0)) return [];
+  const live = state.deliverables.filter((d) => !d.cancelled).map((d) => e.del.get(d.id)).filter((k) => k && !k.suspended);
+  const firsts = live.map((k) => k.firstSubmit).filter((t) => t > 0);
+  const startIso = isIso(state.settings.start_date) ? state.settings.start_date : firsts.length ? isoOf(Math.min(...firsts)) : R.to;
+  let [y, m] = startIso.split("-").map(Number);
+  const [ey, em] = R.to.split("-").map(Number);
+  const pts = [];
+  for (let guard = 0; guard < 240 && (y < ey || (y === ey && m <= em)); guard++) {
+    const next = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    const t = Math.min(dn(next) - 1, end);
+    const acc = live.reduce((s, k) => s + (k.accepted > 0 && k.accepted <= t ? k.value : 0), 0);
+    const dlv = live.reduce((s, k) => s + (k.firstSubmit > 0 && k.firstSubmit <= t ? k.value : 0), 0);
+    pts.push({ label: `${AR_MONTHS[m - 1]} ${y}`, tick: `${String(m).padStart(2, "0")}/${y}`, acc: acc / total, dlv: dlv / total });
+    if (m === 12) { y++; m = 1; } else m++;
+  }
+  return pts;
+}
+function trendChart(pts) {
+  if (pts.length < 2) return `<div class="rp-empty">لا تتوفر بيانات كافية لرسم مسار الإنجاز.</div>`;
+  const W = 1000, H = 230, n = pts.length;
+  const top = Math.max(...pts.map((p) => Math.max(p.acc, p.dlv)));
+  const max = Math.min(1, Math.max(0.2, Math.ceil((top * 1.1) * 10) / 10));
+  const step = max <= 0.6 ? 0.1 : 0.2;
+  const x = (i) => W - (i / (n - 1)) * W; // time runs right to left
+  const y = (v) => H - (v / max) * H;
+  const line = (key) => pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join("");
+  const ticks = Array.from({ length: Math.round(max / step) + 1 }, (_, i) => i * step);
+  const every = Math.max(1, Math.ceil(n / 7));
+  const xl = pts.map((p, i) => (i % every === 0 || i === n - 1) && (i === n - 1 || n - 1 - i >= every / 2) ? `<span class="rp-xt" style="left:${(x(i) / W * 100).toFixed(2)}%">${esc(p.tick)}</span>` : "").join("");
+  const last = pts[n - 1], colW = W / (n - 1);
+  const hits = pts.map((p, i) => `<rect x="${(x(i) - colW / 2).toFixed(1)}" y="0" width="${colW.toFixed(1)}" height="${H}" fill="transparent" data-tip-title="${esc(p.label)}" data-tip-pct="المقبول ${pctTxt(p.acc)}" data-tip-sub="المسلَّم ${pctTxt(p.dlv)}"></rect>`).join("");
+  return `<div class="rp-trend">
+    <div class="rp-legend"><span><i style="background:${RP.green}"></i>المقبول من قيمة العقد</span><span><i style="background:${RP.blue}"></i>المسلَّم من قيمة العقد</span></div>
+    <div class="rp-plot">
+      ${ticks.map((v) => `<span class="rp-yt" style="top:${(y(v) / H * 100).toFixed(2)}%">${Math.round(v * 100)}%</span>`).join("")}
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="مسار الإنجاز التراكمي">
+        ${ticks.map((v) => `<line x1="0" x2="${W}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="#E3E9EA" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join("")}
+        <path d="${line("acc")}L${x(n - 1)},${H}L${x(0)},${H}Z" fill="${RP.green}" fill-opacity=".10"/>
+        <path d="${line("dlv")}" fill="none" stroke="${RP.blue}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        <path d="${line("acc")}" fill="none" stroke="${RP.green}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+        ${hits}
+      </svg>
+      <span class="rp-dot" style="left:0;top:${(y(last.dlv) / H * 100).toFixed(2)}%;background:${RP.blue}"></span>
+      <span class="rp-dot" style="left:0;top:${(y(last.acc) / H * 100).toFixed(2)}%;background:${RP.green}"></span>
+      <span class="rp-endl up" style="top:${(y(last.dlv) / H * 100).toFixed(2)}%">${pctTxt(last.dlv)}</span>
+      <span class="rp-endl dn" style="top:${(y(last.acc) / H * 100).toFixed(2)}%">${pctTxt(last.acc)}</span>
+    </div>
+    <div class="rp-xaxis">${xl}</div>
+  </div>`;
+}
+function rpDonut(counts, order, colors, label) {
+  const R0 = 100, r0 = 64, cx = 110, cy = 110;
+  const total = order.reduce((a, s) => a + (counts[s] || 0), 0), live = order.filter((s) => counts[s]);
+  let a = -Math.PI / 2;
+  const pt = (rad, ang) => `${(cx + rad * Math.cos(ang)).toFixed(2)},${(cy + rad * Math.sin(ang)).toFixed(2)}`;
+  const paths = !total ? `<circle cx="${cx}" cy="${cy}" r="${(R0 + r0) / 2}" fill="none" stroke="${RP.line}" stroke-width="${R0 - r0}"/>` : live.map((s) => {
+    const nn = counts[s], sweep = (nn / total) * Math.PI * 2, a2 = a + sweep, large = sweep > Math.PI ? 1 : 0;
+    const d = live.length === 1 ? `M${pt(R0, -Math.PI / 2)}A${R0},${R0} 0 1 1 ${pt(R0, Math.PI * 1.5 - 0.0001)}L${pt(r0, Math.PI * 1.5 - 0.0001)}A${r0},${r0} 0 1 0 ${pt(r0, -Math.PI / 2)}Z`
+      : `M${pt(R0, a)}A${R0},${R0} 0 ${large} 1 ${pt(R0, a2)}L${pt(r0, a2)}A${r0},${r0} 0 ${large} 0 ${pt(r0, a)}Z`;
+    a = a2;
+    return `<path d="${d}" fill="${colors[s]}" stroke="#fff" stroke-width="2" data-tip-title="${esc(s)}" data-tip-pct="${pctTxt(nn / total)}" data-tip-sub="${nn} مخرج"></path>`;
+  }).join("");
+  const legend = order.map((s) => `<div class="rp-li"><i style="background:${colors[s]}"></i><span class="l">${esc(s)}</span><strong>${counts[s] || 0}</strong><span class="p">${total ? pctTxt((counts[s] || 0) / total) : "-"}</span></div>`).join("");
+  return `<div class="rp-donut"><div class="rp-ring"><svg viewBox="0 0 220 220" role="img" aria-label="${esc(label)}">${paths}</svg><div class="rp-center"><strong>${total}</strong><span>مخرجًا</span></div></div><div class="rp-dlegend">${legend}</div></div>`;
+}
+const rpBar = (parts) => `<div class="rp-bar">${parts.map(([v, c]) => `<span style="width:${Math.max(0, Math.min(100, (v || 0) * 100)).toFixed(2)}%;background:${c}"></span>`).join("")}</div>`;
+const rpSec = (no, title, sub) => `<div class="rp-sh"><span class="rp-no">${no}</span><h2>${esc(title)}</h2>${sub ? `<span class="rp-sub">${sub}</span>` : ""}</div>`;
+const rpTable = (head, rows, empty) => rows.length ? `<table class="rp-t"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="rp-empty">${esc(empty)}</div>`;
+const rpDel = (d) => `<td><span class="rp-code">${esc(d?.id)}</span></td><td class="rp-desc">${esc(short(d?.description, 90))}</td>`;
+
+function reportModel(R) {
+  const s = state.settings, e = R.end, t = e.tot, st = R.start.tot;
+  const pending = R.openCycles.filter((x) => x.k.openCycle.delay > 0);
+  const delaySum = pending.reduce((a, x) => a + x.k.openCycle.delay, 0);
+  const msgs = [
+    `خلال الفترة: <b>${R.submitted.length}</b> تسليمًا، و<b>${R.returned.length}</b> ردًّا بملاحظات، و<b>${R.accepted.length}</b> قبولًا بقيمة <b>${nf2.format(R.acceptedValue)}</b> ريال.`,
+    `نسبة المقبول من قيمة العقد <b>${pctTxt(t.acceptedShare)}</b> (${deltaPts(st.acceptedShare, t.acceptedShare)})، والمسلَّم <b>${pctTxt(t.deliveredPct)}</b> من المخرجات.`,
+    R.openCycles.length ? `<b>${R.openCycles.length}</b> مخرجًا لدى العميل للمراجعة، منها <b>${pending.length}</b> تجاوزت مهلة <b>${e.reviewLimit}</b> أيام عمل بإجمالي <b>${delaySum}</b> يوم تأخير.` : "لا توجد مخرجات لدى العميل للمراجعة.",
+    R.blockingOpen.length ? `<b>${R.blockingOpen.length}</b> من المشكلات أو القرارات ${BLOCKING} ما زالت مفتوحة.` : "",
+    t.suspended ? `<b>${t.suspended}</b> مخرجًا معلَّقًا بقيمة <b>${nf2.format(t.suspendedValue)}</b> ريال مستبعدة من حسابات التسليم والقبول.` : "",
+    R.crsOpen.length ? `طلبات التغيير المفتوحة: ${R.crsOpen.map((x) => `<b>${esc(x.code)}</b> (${esc(x.status)})`).join("، ")}.` : "",
+  ].filter(Boolean);
+  const kpi = (label, v, sub, bar, delta) => `<div class="rp-kpi"><span class="k">${label}</span><span class="v">${v}</span>${bar !== undefined ? rpBar([[bar, RP.green]]) : ""}<span class="s">${sub}</span>${delta ? `<span class="d">${delta}</span>` : ""}</div>`;
+  const items = [...state.items].sort(byItemOrder).map((it) => ({ it, r: e.items.get(it.id) })).filter((x) => x.r);
+  const units = [];
+  units.push(`<div class="rp-unit">${rpSec("01", "الملخص التنفيذي", `الوضع في ${arDate(R.to)}`)}
+    <div class="rp-hero">
+      <div class="rp-big"><span class="k">المقبول من قيمة العقد</span><strong>${pctTxt(t.acceptedShare)}</strong><span class="s">${sar(t.acceptedValue)} من ${sar(t.total)}</span>${rpBar([[t.acceptedShare, RP.green]])}<span class="d">${deltaPts(st.acceptedShare, t.acceptedShare)}</span></div>
+      <div class="rp-kpis">
+        ${kpi("نسبة الإنجاز المسلَّم", pctTxt(t.deliveredPct), `${t.delivered} من ${t.qty} مخرجًا · ${sar(t.deliveredValue)}`, t.deliveredPct, deltaPts(st.deliveredPct, t.deliveredPct))}
+        ${kpi("في انتظار القبول", pctTxt(t.waitingShare), `${t.waiting} مخرجًا · ${sar(t.waitingValue)}`, t.waitingShare)}
+        ${kpi("نسبة الإنجاز الفعلي", pctTxt(t.actual), "مرجَّحة بقيمة البنود", t.actual)}
+        ${kpi("المتبقي (غير المقبول)", sar(t.remaining), "قيمة العقد مطروحًا منها المقبول")}
+      </div>
+    </div></div>`);
+  units.push(`<div class="rp-unit">
+    <div class="rp-act">
+      <div><span class="k">تسليم</span><strong>${R.submitted.length}</strong></div>
+      <div><span class="k">رد بملاحظات</span><strong>${R.returned.length}</strong></div>
+      <div><span class="k">قبول</span><strong>${R.accepted.length}</strong><span class="s">${sar(R.acceptedValue)}</span></div>
+      <div><span class="k">تجاوزت مهلة المراجعة</span><strong class="${pending.length ? "red" : ""}">${pending.length}</strong></div>
+    </div>
+    <ul class="rp-msgs">${msgs.map((m) => `<li>${m}</li>`).join("")}</ul></div>`);
+  units.push(`<div class="rp-unit">${rpSec("02", "مسار الإنجاز", "النسبة التراكمية من قيمة العقد شهرًا بشهر")}${trendChart(trendSeries(R))}</div>`);
+  units.push(`<div class="rp-unit">${rpSec("03", "حالة المخرجات", `في ${arDate(R.to)} · دون الملغاة`)}
+    <div class="rp-two"><div><h3>الحالة التنفيذية</h3>${rpDonut(e.execCounts, EXEC_ORDER, RP_EXEC, "توزيع المخرجات حسب الحالة التنفيذية")}</div>
+    <div><h3>حالة الفوترة <span>للمخرجات المسلَّمة</span></h3>${rpDonut(e.billCounts, BILL_ORDER, RP_BILL, "توزيع المخرجات المسلَّمة حسب حالة الفوترة")}</div></div></div>`);
+  units.push(`<div class="rp-unit" data-split>${rpSec("04", "إنجاز البنود", `<i class="sw" style="background:${RP.green}"></i> المقبول <i class="sw" style="background:${RP.greenL}"></i> المسلَّم`)}
+    ${rpTable(`<th>البند</th><th class="n">الكمية</th><th class="n">المسلَّم</th><th class="n">المقبول</th><th class="rp-bcol">الإنجاز</th><th class="n">قيمة المقبول ${SAR}</th>`,
+      items.map(({ it, r }) => `<tr><td><span class="rp-code">${esc(itemLabel(it))}</span> <span class="rp-desc">${esc(short(it.name, 60))}</span></td><td class="n">${int(r.qty)}</td><td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td>
+        <td class="rp-bcol"><div class="rp-pbar">${rpBar([[r.progress, RP.green], [Math.max(0, (r.deliveredPct || 0) - (r.progress || 0)), RP.greenL]])}<span>${pctTxt(r.progress)} <em>· ${pctTxt(r.deliveredPct)}</em></span></div></td><td class="n">${money(r.acceptedValue)}</td></tr>`), "لا توجد بنود.")}</div>`);
+  const maxRev = Math.max(e.reviewLimit * 1.5, ...R.openCycles.map((x) => x.k.openCycle.review), 1);
+  const lim = (e.reviewLimit / maxRev) * 100;
+  units.push(`<div class="rp-unit" data-split>${rpSec("05", "المراجعة لدى العميل", `دورات مفتوحة في ${arDate(R.to)} · المهلة ${e.reviewLimit} أيام عمل`)}
+    ${rpTable(`<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class="rp-rcol">أيام المراجعة</th><th class="n">التأخير</th>`,
+      R.openCycles.map((x) => { const oc = x.k.openCycle, w = (oc.review / maxRev) * 100, wl = Math.min(w, lim);
+        return `<tr>${rpDel(x.d)}<td>${dateHtml(isoOf(oc.start))}</td><td class="rp-rcol"><div class="rp-rwrap"><div class="rp-rbar"><span style="width:${wl.toFixed(2)}%;background:${RP.blue}"></span>${w > lim ? `<span style="width:${(w - lim).toFixed(2)}%;background:${RP.red}"></span>` : ""}<i style="right:${lim.toFixed(2)}%"></i></div><b>${oc.review}</b></div></td><td class="n ${oc.delay ? "red" : ""}">${int(oc.delay)}</td></tr>`; }),
+      "لا توجد مخرجات لدى العميل للمراجعة.")}</div>`);
+  units.push(`<div class="rp-unit" data-split>${rpSec("06", "حركة الفترة", `من ${arDate(R.from)} إلى ${arDate(R.to)}`)}<h3 class="rp-h3">المخرجات المقبولة</h3>
+    ${rpTable(`<th>المخرج</th><th>الوصف</th><th>تاريخ القبول</th><th class="n">أيام المراجعة</th><th class="n">أيام التأخير</th><th class="n">القيمة ${SAR}</th>`,
+      R.accepted.map((x) => `<tr>${rpDel(x.d)}<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.k.review)}</td><td class="n ${x.k.delay ? "red" : ""}">${int(x.k.delay)}</td><td class="n">${money(x.k.value)}</td></tr>`), "لا يوجد قبول في هذه الفترة.")}</div>`);
+  units.push(`<div class="rp-unit" data-split><h3 class="rp-h3">المخرجات المسلَّمة</h3>
+    ${rpTable(`<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class="n">رقم الدورة</th>`,
+      R.submitted.map((x) => `<tr>${rpDel(x.d)}<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.x?.cycle)}</td></tr>`), "لا توجد تسليمات في هذه الفترة.")}</div>`);
+  units.push(`<div class="rp-unit" data-split><h3 class="rp-h3">المُعادة بملاحظات</h3>
+    ${rpTable(`<th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th>`, R.returned.map((x) => `<tr>${rpDel(x.d)}<td>${dateHtml(x.e.date)}</td></tr>`), "لا توجد ردود بملاحظات في هذه الفترة.")}</div>`);
+  const issues = [...new Set([...R.blockingOpen, ...R.issuesOpened, ...R.issuesClosed])];
+  units.push(`<div class="rp-unit" data-split>${rpSec("07", "المشكلات والقرارات", `فُتح ${R.issuesOpened.length} · أُغلق ${R.issuesClosed.length} · ${BLOCKING} ${R.blockingOpen.length}`)}
+    ${rpTable(`<th>المخرج</th><th>النوع</th><th>العنوان</th><th>المسؤول</th><th>الحالة</th>`,
+      issues.map((i) => `<tr class="${i.blocking && i.status !== CLOSED ? "rp-alert" : ""}"><td><span class="rp-code">${esc(i.deliverable)}</span></td><td>${esc(i.type || "مشكلة")}</td><td class="rp-desc"><b>${esc(i.title)}</b>${i.resolution ? `<br><span class="m">${esc(short(i.resolution, 120))}</span>` : ""}</td><td>${esc(i.owner || "—")}</td><td>${i.status === CLOSED ? "مغلقة" : i.blocking ? `<span class="rp-tag red">${BLOCKING}</span>` : "مفتوحة"}</td></tr>`),
+      "لا جديد في هذه الفترة.")}</div>`);
+  const crs = [...new Set([...R.crsOpen, ...R.crsTouched])];
+  units.push(`<div class="rp-unit" data-split>${rpSec("08", "طلبات التغيير", `المفتوحة ${R.crsOpen.length}`)}
+    ${rpTable(`<th>رقم الطلب</th><th>العنوان</th><th>الحالة</th><th>تاريخ الطلب</th><th class="n">الأثر المالي ${SAR}</th>`,
+      crs.map((x) => `<tr><td><span class="rp-code">${esc(x.code)}</span></td><td class="rp-desc">${esc(short(x.title, 110))}</td><td><span class="rp-tag">${esc(x.status || "")}</span></td><td>${dateHtml(x.date || "")}</td><td class="n">${Number.isFinite(x.value_change) && x.value_change ? money(x.value_change) : "—"}</td></tr>`),
+      "لا توجد طلبات تغيير.")}</div>`);
+  return { units, s };
+}
+const rpLogos = () => `<div class="rp-logos"><img src="${LOGO_MOE}" alt="وزارة التعليم"><i></i><img src="${LOGO_TETCO}" alt="تطوير لتقنيات التعليم"></div>`;
+function rpMeta(R) {
+  const s = state.settings;
+  return [["الفترة", `${arDate(R.from)} – ${arDate(R.to)}`], ["تاريخ الإصدار", arDate(todayIso())], ["رقم العقد", s.contract_no], ["الجهة المالكة", s.client]]
+    .filter(([, v]) => v).map(([k, v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join("");
+}
+function reportSheet(R) {
+  const s = state.settings, { units } = reportModel(R);
+  return `<article class="rp rp-sheet">
+    <header class="rp-cover">
+      ${rpLogos()}
+      <div class="rp-ctitle"><span class="rp-eyebrow">التقرير الدوري لمتابعة العقد</span><h1>${esc(s.project_name || "متابعة عقد البوابة الموحدة")}</h1><i class="rp-grad"></i></div>
+      <div class="rp-meta">${rpMeta(R)}</div>
+    </header>
+    ${units.join("")}
+    <footer class="rp-sfoot"><span>${esc(s.project_name || "")}</span><span>المبالغ بالريال السعودي ودون ضريبة القيمة المضافة</span></footer>
+  </article>`;
+}
+
 function viewReport() {
-  const r = state.report, R = buildReport(), e = R.end;
+  const r = state.report, R = buildReport();
   const presets = [["this_week", "الأسبوع الحالي"], ["last_week", "الأسبوع الماضي"], ["this_month", "الشهر الحالي"], ["last_month", "الشهر الماضي"], ["custom", "فترة مخصصة"]];
-  const tbl = (rows, head, empty) => rows.length ? `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table></div>` : `<span class="muted">${empty}</span>`;
-  const issuesAll = [...new Set([...R.blockingOpen, ...R.issuesOpened, ...R.issuesClosed])];
-  const crsAll = [...new Set([...R.crsOpen, ...R.crsTouched])];
   return `<section class="section">
-    <div class="section-head"><h2>التقرير الدوري</h2><span class="sub">يبدأ الأسبوع يوم الأحد</span></div>
+    <div class="section-head"><h2>التقرير الدوري</h2><span class="sub">اختر الفترة ثم صدّر التقرير · يبدأ الأسبوع يوم الأحد</span></div>
     <div class="report-controls">
       <div class="field"><label for="rPreset">الفترة</label><select id="rPreset">${presets.map(([v, l]) => `<option value="${v}"${r.preset === v ? " selected" : ""}>${l}</option>`).join("")}</select></div>
       <div class="field"><label for="rFrom">من</label><input id="rFrom" type="date" value="${esc(R.from)}"></div>
       <div class="field"><label for="rTo">إلى</label><input id="rTo" type="date" value="${esc(R.to)}"></div>
-      <div class="actions"><button class="btn primary" type="button" id="reportExport">تصدير التقرير إلى Excel</button><button class="btn" type="button" id="reportCopy">نسخ نصًّا</button></div>
+      <div class="actions"><button class="btn primary" type="button" id="reportPdf">تصدير PDF</button><button class="btn" type="button" id="reportExport">تصدير Excel</button><button class="btn" type="button" id="reportCopy">نسخ نصًّا</button></div>
     </div>
     <div id="copyFallback"></div>
   </section>
-  <section class="section">
-    <div class="section-head"><h2>الوضع في <span class="date">${esc(R.to)}</span></h2></div>
-    <div class="stat-row">
-      <div class="stat"><span class="k">إجمالي المقبول</span><span class="v">${pct(e.tot.acceptedShare)}</span></div>
-      <div class="stat"><span class="k">إجمالي في انتظار القبول</span><span class="v">${pct(e.tot.waitingShare)}</span></div>
-      <div class="stat"><span class="k">نسبة الإنجاز</span><span class="v">${pct(e.tot.progress)}</span></div>
-      <div class="stat"><span class="k">نسبة الإنجاز المسلَّم</span><span class="v">${pct(e.tot.deliveredPct)}</span></div>
-      <div class="stat"><span class="k">في انتظار رد العميل</span><span class="v num">${R.openCycles.length}</span></div>
-      <div class="stat"><span class="k">تجاوزت المهلة</span><span class="v num ${R.overLimit.length ? "red" : ""}">${R.overLimit.length}</span></div>
-      <div class="stat"><span class="k">مُعادة بملاحظات</span><span class="v num">${e.statusCounts[ST.RET]}</span></div>
-      <div class="stat"><span class="k">${BLOCKING}</span><span class="v num ${R.blockingOpen.length ? "red" : ""}">${R.blockingOpen.length}</span></div>
-    </div>
-  </section>
-  <section class="section">
-    <div class="section-head"><h2>حركة الفترة</h2><span class="sub"><span class="num">${R.submitted.length}</span> تسليم · <span class="num">${R.returned.length}</span> رد بملاحظات · <span class="num">${R.accepted.length}</span> قبول بقيمة ${sar(R.acceptedValue)}</span></div>
-    <div class="stack">
-      <div class="block"><h4>المقبولة</h4>${tbl(R.accepted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.k.review)}</td><td class="n ${x.k.delay ? "red" : ""}">${int(x.k.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ القبول</th><th class='n'>أيام المراجعة</th><th class='n'>أيام التأخير</th>", "لا يوجد قبول في هذه الفترة.")}</div>
-      <div class="block"><h4>المسلَّمة</h4>${tbl(R.submitted.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td><td class="n">${int(x.x?.cycle)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>الدورة</th>", "لا توجد تسليمات في هذه الفترة.")}</div>
-      <div class="block"><h4>المُعادة بملاحظات</h4>${tbl(R.returned.map((x) => delRow(x.d, `<td>${dateHtml(x.e.date)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ الرد</th>", "لا توجد ردود بملاحظات في هذه الفترة.")}</div>
-      <div class="block"><h4>تجاوزت مهلة الرد</h4>${tbl(R.overLimit.map((x) => delRow(x.d, `<td>${dateHtml(isoOf(x.k.openCycle.start))}</td><td class="n">${int(x.k.openCycle.review)}</td><td class="n red">${int(x.k.openCycle.delay)}</td>`)), "<th>المخرج</th><th>الوصف</th><th>تاريخ التسليم</th><th class='n'>أيام المراجعة</th><th class='n'>أيام التأخير</th>", "لا توجد دورات تجاوزت المهلة.")}</div>
-    </div>
-  </section>
-  <section class="section"><div class="section-head"><h2>المشكلات والقرارات</h2><span class="sub">فُتح <span class="num">${R.issuesOpened.length}</span> · أُغلق <span class="num">${R.issuesClosed.length}</span> · ${BLOCKING} <span class="num">${R.blockingOpen.length}</span></span></div>
-      ${issuesAll.length ? issueTable(issuesAll, { openDel: true }) : emptyBlock("لا جديد", "")}
-  </section>
-  <section class="section"><div class="section-head"><h2>طلبات التغيير</h2><span class="sub">المفتوحة <span class="num">${R.crsOpen.length}</span></span></div>
-      ${crsAll.length ? crTable(crsAll) : emptyBlock("لا توجد طلبات تغيير", "")}
-  </section>`;
+  ${reportSheet(R)}`;
+}
+
+/* ---- PDF: lay the same content out on A4 pages (1000 × 1414 px), render each page and place it on a PDF page */
+const PDF_LIBS = ["https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js", "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"];
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const had = document.querySelector(`script[src="${src}"]`);
+    if (had && had.dataset.loaded) return res();
+    const el = had || document.createElement("script");
+    el.addEventListener("load", () => { el.dataset.loaded = "1"; res(); }, { once: true });
+    el.addEventListener("error", () => rej(new Error("تعذّر تحميل مكتبة إنشاء PDF")), { once: true });
+    if (!had) { el.src = src; document.head.appendChild(el); }
+  });
+}
+function pdfPages(host, R) {
+  const s = state.settings, { units } = reportModel(R), pages = [];
+  const make = (html) => { const t = document.createElement("div"); t.innerHTML = html.trim(); return t.firstElementChild; };
+  const cover = make(`<section class="rp rp-page rp-cpage"><i class="rp-glow a"></i><i class="rp-glow b"></i>
+    <div class="rp-ctop">${rpLogos()}</div>
+    <div class="rp-cmain"><span class="rp-eyebrow">التقرير الدوري لمتابعة العقد</span><h1>${esc(s.project_name || "متابعة عقد البوابة الموحدة")}</h1><i class="rp-grad"></i>
+      <p>متابعة تنفيذ بنود العقد ومخرجاته، والمراجعة لدى العميل، والفوترة، والمشكلات وطلبات التغيير</p>
+      <div class="rp-cfig"><div><strong>${pctTxt(R.end.tot.acceptedShare)}</strong><span>المقبول من قيمة العقد</span></div><div><strong>${pctTxt(R.end.tot.deliveredPct)}</strong><span>نسبة الإنجاز المسلَّم</span></div><div><strong>${R.openCycles.length}</strong><span>مخرجًا لدى العميل للمراجعة</span></div></div></div>
+    <div class="rp-meta">${rpMeta(R)}</div></section>`);
+  host.appendChild(cover); pages.push(cover);
+  let content;
+  const newPage = () => {
+    const p = make(`<section class="rp rp-page"><i class="rp-glow c"></i>
+      <header class="rp-phead"><div class="t"><span>التقرير الدوري · ${esc(arDate(R.from))} – ${esc(arDate(R.to))}</span><strong>${esc(s.project_name || "")}</strong></div><img src="${LOGO_TETCO}" alt="تطوير لتقنيات التعليم"></header>
+      <div class="rp-pcontent"></div>
+      <footer class="rp-pfoot"><span>${esc(s.project_name || "")}${s.contract_no ? ` · عقد رقم ${esc(s.contract_no)}` : ""}</span><span class="rp-pno"></span></footer></section>`);
+    host.appendChild(p); pages.push(p); content = p.querySelector(".rp-pcontent");
+  };
+  const fits = () => content.scrollHeight <= content.clientHeight + 1;
+  newPage();
+  for (const html of units) {
+    const unit = make(html);
+    content.appendChild(unit);
+    if (fits()) continue;
+    const tb = unit.querySelector("tbody");
+    if (unit.hasAttribute("data-split") && tb && tb.children.length > 1) {
+      const rows = [...tb.children]; tb.innerHTML = "";
+      const tpl = unit.cloneNode(true);
+      const sh = tpl.querySelector(".rp-sh"), h3 = tpl.querySelector(".rp-h3");
+      if (h3) { h3.textContent += " (تابع)"; sh?.remove(); }
+      else if (sh) sh.outerHTML = `<h3 class="rp-h3">${esc(sh.querySelector("h2")?.textContent || "")} (تابع)</h3>`;
+      let cur = unit, curTb = tb;
+      for (const r of rows) {
+        curTb.appendChild(r);
+        if (fits()) continue;
+        curTb.removeChild(r);
+        if (!curTb.children.length) { cur.remove(); newPage(); content.appendChild(cur); curTb.appendChild(r); continue; }
+        newPage(); cur = tpl.cloneNode(true); curTb = cur.querySelector("tbody"); content.appendChild(cur); curTb.appendChild(r);
+      }
+    } else if (content.children.length > 1) { unit.remove(); newPage(); content.appendChild(unit); }
+  }
+  pages.forEach((p, i) => { const n = p.querySelector(".rp-pno"); if (n) n.textContent = `${String(i + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`; });
+  return pages;
+}
+async function exportReportPdf(btn) {
+  if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = "جارٍ إنشاء PDF…";
+  let host = null;
+  try {
+    await Promise.all(PDF_LIBS.map(loadScript));
+    const R = buildReport();
+    host = document.createElement("div");
+    host.className = "rp-host"; host.setAttribute("aria-hidden", "true");
+    document.body.appendChild(host);
+    if (document.fonts?.ready) await document.fonts.ready;
+    const pages = pdfPages(host, R);
+    const pdf = new window.jspdf.jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await window.html2canvas(pages[i], { scale: 2, backgroundColor: "#ffffff", logging: false, useCORS: true });
+      if (i) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, 210, 297, undefined, "FAST");
+    }
+    await state.downloads.save({ filename: `التقرير_الدوري_${R.from}_${R.to}.pdf`, data: pdf.output("blob") });
+    toast("تم حفظ ملف PDF");
+  } catch (e) {
+    if (e?.code === "declined") toast("أُلغي التنزيل.");
+    else toast(e?.code ? errText(e) : "تعذّر إنشاء ملف PDF: " + (e?.message || e), true);
+  } finally { host?.remove(); btn.disabled = false; btn.textContent = label; }
 }
 
 /* ---- settings */
@@ -1898,6 +2252,7 @@ document.addEventListener("click", async (ev) => {
   if (t.id === "themeToggle" || t.id === "themeToggleM") return applyTheme(currentTheme() === "dark" ? "light" : "dark", true);
   if (t.id === "exportBtn") return exportAll(t);
   if (t.id === "reportExport") return exportReport(t);
+  if (t.id === "reportPdf") return exportReportPdf(t);
   if (t.id === "reportCopy") {
     const text = reportText(buildReport());
     try { await navigator.clipboard.writeText(text); toast("نُسخ التقرير؛ يمكنك لصقه في البريد أو الرسالة"); }
@@ -1945,7 +2300,7 @@ document.addEventListener("mouseover", (ev) => {
   const el = ev.target.closest && ev.target.closest("[data-tip-title]");
   if (!el) return;
   const svg = el.closest("svg");
-  svg.querySelectorAll(".on").forEach((x) => x.classList.remove("on"));
+  svg?.querySelectorAll(".on").forEach((x) => x.classList.remove("on"));
   el.classList.add("on");
   setCenter(svg, el.dataset.centerV, el.dataset.centerL);
   const amt = el.dataset.tipAmt !== undefined && el.dataset.tipAmt !== "" ? Number(el.dataset.tipAmt) : null;
