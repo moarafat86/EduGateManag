@@ -1641,7 +1641,7 @@ function delayPages(host) {
   const pairs = Math.max(3, ...groups.flatMap((g) => g.rows.map((r) => Math.max(r.reps.length, r.resubs.length))));
   const head = `<tr><th class="it">البنود</th><th class="ds">المخرجات الأساسية</th><th>الحالة التنفيذية للمخرج</th><th>تاريخ التسليم</th>
     ${Array.from({ length: pairs }, (_, i) => `<th>تاريخ الرد بملاحظة إن وجد ${i + 1}</th><th>تاريخ إعادة التسليم ${i + 1}</th>`).join("")}
-    <th>تاريخ القبول</th><th>عدد أيام المراجعة</th><th>عدد أيام التأخير في القبول</th><th class="why">سبب التأخير في القبول</th></tr>`;
+    <th>تاريخ القبول</th><th>عدد أيام المراجعة</th><th>عدد أيام التأخير في القبول</th><th class="why">ملاحظات / مرئيات / سبب تأخير القبول</th></tr>`;
   const rowHtml = (r, itemCell) => `<tr>${itemCell}<td class="ds">${esc(r.d.description)}</td><td class="pk st">${esc(ST.WAIT)}</td><td>${shortDate(r.first)}</td>
     ${Array.from({ length: pairs }, (_, i) => `<td>${shortDate(r.reps[i])}</td><td>${shortDate(r.resubs[i])}</td>`).join("")}
     <td>${shortDate(r.k.accepted)}</td><td class="pk dd">${r.k.review}</td><td class="pk dd">${r.k.delay}</td><td class="why">${esc(r.d.delay_reason || "")}</td></tr>`;
@@ -1864,7 +1864,7 @@ function delDataFields(v, isNew) {
         <label class="check"><input type="checkbox" id="dSuspLinked" name="suspend_cr_linked" ${v.suspend_cr_linked || v.suspend_cr ? "checked" : ""}> مرتبط بطلب تغيير</label>
         <div class="field" id="suspCrPick" ${v.suspend_cr_linked || v.suspend_cr ? "" : "hidden"}><label for="dSuspCr">طلب التغيير</label><select id="dSuspCr" name="suspend_cr"><option value="">لم يُحدَّد بعد</option>${[...state.crs].sort((a, b) => String(a.code).localeCompare(String(b.code), "en", { numeric: true })).map((x) => `<option value="${esc(x.id)}"${v.suspend_cr === x.id ? " selected" : ""}>${esc(x.code)} — ${esc(short(x.title, 40))}</option>`).join("")}</select></div>
       </div></div>
-      ${submitted && !k.accepted ? `<div class="field wide"><label for="dDelay">سبب التأخير في القبول</label><textarea id="dDelay" name="delay_reason" placeholder="يُدوَّن كما ورد من العميل">${esc(v.delay_reason ?? "")}</textarea><span class="hint">يظهر في تقرير التأخير في القبول من صفحة سجل المراجعات.</span></div>` : ""}
+      ${submitted && !k.accepted ? `<div class="field wide"><label for="dDelay">ملاحظات / مرئيات / سبب تأخير القبول</label><textarea id="dDelay" name="delay_reason" placeholder="يُدوَّن كما ورد من العميل">${esc(v.delay_reason ?? "")}</textarea><span class="hint">يظهر في تقرير التأخير في القبول من صفحة سجل المراجعات.</span></div>` : ""}
       <div class="field wide"><label for="dNotes">ملاحظات</label><textarea id="dNotes" name="notes">${esc(v.notes ?? "")}</textarea></div>`;
 }
 function billingFields(b) {
@@ -2218,7 +2218,7 @@ function exportAll(btn) {
       { h: "أول تسليم", k: "first", w: 12, f: FMT.D }, { h: "آخر تسليم", k: "lastSub", w: 12, f: FMT.D }, { h: "آخر رد بملاحظات", k: "lastRep", w: 12, f: FMT.D },
       { h: "تاريخ القبول", k: "acc", w: 12, f: FMT.D }, { h: "مرات التسليم", k: "cycles", w: 9 }, { h: "أيام المراجعة", k: "review", w: 10 },
       { h: "أيام التأخير على العميل", k: "delay", w: 11 }, { h: "أيام لدى فريق المشروع", k: "vendor", w: 11 }, { h: "مشكلات مفتوحة", k: "issues", w: 9 }, { h: "طلبات التغيير", k: "crs", w: 14 },
-      { h: "سبب التأخير في القبول", k: "delayReason", w: 36, wrap: true }, { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "التعليق مرتبط بطلب تغيير", k: "suspCr", w: 14 },
+      { h: "ملاحظات / مرئيات / سبب تأخير القبول", k: "delayReason", w: 36, wrap: true }, { h: "سبب التعليق", k: "suspReason", w: 36, wrap: true }, { h: "تاريخ التعليق", k: "suspDate", w: 12, f: FMT.D }, { h: "التعليق مرتبط بطلب تغيير", k: "suspCr", w: 14 },
       ...BILLING.map((x) => ({ h: x.label, k: "b_" + x.k, w: x.yn ? 10 : 16 })), { h: "ملاحظات", k: "notes", w: 50, wrap: true },
     ], [...state.deliverables].sort(byId).map((d) => { const k = c.del.get(d.id), it = c.itemsById.get(d.item_id), b = billingOf(d); return {
       id: d.id, item: it?.no, itemName: it?.name, desc: d.description, exec: k.exec, bill: k.bill || null, points: d.points === "" ? null : d.points,
