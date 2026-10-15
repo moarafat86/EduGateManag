@@ -486,6 +486,20 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .rp-t td { padding: 8px 12px; border-bottom: 1px solid #E3E9EA; vertical-align: middle; background: #fff; }
 .rp-t tbody tr:nth-child(even) td { background: #F6F9F9; }
 .rp-t .n { text-align: left; white-space: nowrap; }
+.rp-t.fixed { table-layout: fixed; }
+.rp-t.fixed td { overflow-wrap: break-word; }
+.rp .nw { white-space: nowrap; }
+.rp-t th.br-no { text-align: center; }
+.rp-t thead th { border-inline-start: 1px solid rgba(255, 255, 255, .14); }
+.rp-t thead th:first-child { border-inline-start: 0; }
+.rp-t td + td { border-inline-start: 1px solid #EEF2F3; }
+/* PDF pages: a larger, airier table */
+.rp-page .rp-t { font-size: 14px; line-height: 1.65; }
+.rp-page .rp-t th { font-size: 13px; padding: 12px 16px; }
+.rp-page .rp-t td { padding: 11px 16px; }
+.rp-page .rp-t tbody tr:last-child td { border-bottom: 2px solid #0C3C44; }
+.rp-page .br-notes { font-size: 13px; }
+.rp-page .rp-sh h2 { font-size: 1.5rem; }
 .rp-code { font-weight: 700; color: #0C3C44; white-space: nowrap; }
 .rp-desc { color: #2E4F55; }
 .rp-alert td:first-child { box-shadow: inset -3px 0 0 #C63C40; }
@@ -523,7 +537,7 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .rp-pfoot { flex: none; height: 58px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #DCE3E4; color: #5B6E73; font-size: .78rem; }
 .rp-pno { font-weight: 700; color: #0C3C44; letter-spacing: .02em; }
 .rp-host.wide { width: 1414px; }
-.rp-page.wide { width: 1414px; height: 1000px; padding: 0 40px; }
+.rp-page.wide { width: 1414px; height: 1000px; padding: 0 56px; }
 .dl-page .rp-phead { height: 78px; }
 .dl-page .rp-phead strong { font-size: 1.2rem; display: block; }
 .dl-page .rp-phead .t span { color: #5B6E73; font-weight: 500; }
@@ -554,10 +568,9 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .br-st i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .br-sh { align-items: center; padding-bottom: 10px; border-bottom: 2px solid #0C3C44; }
 .br-sw { width: 14px; height: 14px; border-radius: 4px; flex: none; }
-.rp .br-no { width: 90px; white-space: nowrap; }
-.rp .br-stc { width: 190px; }
-.rp .br-notes { width: 28%; color: #44696F; font-size: .8rem; }
-.rp .br-sum { max-width: 720px; }
+.rp .br-no { text-align: center; white-space: nowrap; }
+.rp .br-notes { color: #44696F; font-size: .82rem; }
+.rp .br-sum td:first-child { font-weight: 600; }
 .rp .br-sum tfoot td { font-weight: 700; background: #E8EEEF; padding: 9px 12px; border-top: 2px solid #0C3C44; }
 .rp .br-off td { color: #9AA9AC; }
 .br-title h1 { margin: 4px 0 12px; font-size: 2rem; line-height: 1.3; color: #0C3C44; }
@@ -579,6 +592,9 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .rp-cfig span { font-size: .85rem; color: #5B6E73; }
 .rp-cpage .rp-meta { gap: 22px 64px; border-top: 1px solid #DCE3E4; padding-top: 26px; }
 .rp-cpage .rp-meta strong { font-size: 1.12rem; }
+.rp-page.wide.rp-cpage { padding: 64px 100px 56px; }
+.rp-page.wide.rp-cpage .rp-cmain p { max-width: 820px; }
+.rp-page.wide .rp-pcontent { padding-top: 24px; gap: 24px; }
 </style>
 
 <div class="app">
@@ -1447,7 +1463,9 @@ function rpDonut(counts, order, colors, label) {
 }
 const rpBar = (parts) => `<div class="rp-bar">${parts.map(([v, c]) => `<span style="width:${Math.max(0, Math.min(100, (v || 0) * 100)).toFixed(2)}%;background:${c}"></span>`).join("")}</div>`;
 const rpSec = (no, title, sub) => `<div class="rp-sh"><span class="rp-no">${no}</span><h2>${esc(title)}</h2>${sub ? `<span class="rp-sub">${sub}</span>` : ""}</div>`;
-const rpTable = (head, rows, empty) => rows.length ? `<table class="rp-t"><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="rp-empty">${esc(empty)}</div>`;
+// a date inside free text (15-03-2026, 2026-07-20) must not wrap at its hyphens
+const keepDates = (t) => esc(t || "").replace(/\d{1,4}[-/]\d{1,2}[-/]\d{1,4}/g, (m) => `<span class="nw">${m}</span>`);
+const rpTable = (head, rows, empty, cols) => rows.length ? `<table class="rp-t${cols ? " fixed" : ""}">${cols ? `<colgroup>${cols.map((w) => `<col style="width:${w}">`).join("")}</colgroup>` : ""}<thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="rp-empty">${esc(empty)}</div>`;
 const rpDel = (d) => `<td><span class="rp-code">${esc(d?.id)}</span></td><td class="rp-desc">${esc(short(d?.description, 90))}</td>`;
 
 function reportModel(R) {
@@ -1578,7 +1596,16 @@ function layoutUnits(host, units, pageHtml, pages = []) {
     content.appendChild(unit);
     if (fits()) continue;
     const tb = unit.querySelector("tbody");
-    if (unit.hasAttribute("data-split") && tb && tb.children.length > 1) {
+    const splittable = unit.hasAttribute("data-split") && tb && tb.children.length > 1;
+    // keep a block whole when it fits on a page of its own; otherwise split it, but never leave a table's first rows stranded
+    const h = unit.getBoundingClientRect().height, cap = content.clientHeight;
+    if (content.children.length > 1 && (h <= cap || !splittable)) { unit.remove(); newPage(); content.appendChild(unit); continue; }
+    if (splittable && content.children.length > 1) {
+      const rowsH = [...tb.children].slice(0, 3).reduce((a, r) => a + r.getBoundingClientRect().height, 0);
+      const free = cap - (content.scrollHeight - h), headH = h - [...tb.children].reduce((a, r) => a + r.getBoundingClientRect().height, 0);
+      if (free < headH + rowsH) { unit.remove(); newPage(); content.appendChild(unit); if (fits()) continue; }
+    }
+    if (splittable) {
       const rows = [...tb.children]; tb.innerHTML = "";
       const tpl = unit.cloneNode(true);
       const sh = tpl.querySelector(".rp-sh"), h3 = tpl.querySelector(".rp-h3");
@@ -1592,18 +1619,18 @@ function layoutUnits(host, units, pageHtml, pages = []) {
         if (!curTb.children.length) { cur.remove(); newPage(); content.appendChild(cur); curTb.appendChild(r); continue; }
         newPage(); cur = tpl.cloneNode(true); curTb = cur.querySelector("tbody"); content.appendChild(cur); curTb.appendChild(r);
       }
-    } else if (content.children.length > 1) { unit.remove(); newPage(); content.appendChild(unit); }
+    }
   }
   pages.forEach((p, n) => { const el = p.querySelector(".rp-pno"); if (el) el.textContent = `${String(n + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`; });
   return pages;
 }
-const rpPageHtml = (eyebrow, title) => () => { const s = state.settings; return `<section class="rp rp-page"><i class="rp-glow c"></i>
+const rpPageHtml = (eyebrow, title) => () => { const s = state.settings; return `<section class="rp rp-page wide"><i class="rp-glow c"></i>
   <header class="rp-phead"><div class="t"><span>${eyebrow}</span><strong>${esc(title)}</strong></div>${rpLogos()}</header>
   <div class="rp-pcontent"></div>
   <footer class="rp-pfoot"><span>${esc(s.project_name || "")}${s.contract_no ? ` · عقد رقم ${esc(s.contract_no)}` : ""}</span><span class="rp-pno"></span></footer></section>`; };
 function pdfPages(host, R) {
   const s = state.settings, { units } = reportModel(R), pages = [];
-  const cover = makeEl(`<section class="rp rp-page rp-cpage"><i class="rp-glow a"></i><i class="rp-glow b"></i>
+  const cover = makeEl(`<section class="rp rp-page wide rp-cpage"><i class="rp-glow a"></i><i class="rp-glow b"></i>
     <div class="rp-ctop">${rpLogos()}</div>
     <div class="rp-cmain"><span class="rp-eyebrow">التقرير الدوري لمتابعة العقد</span><h1>${esc(s.project_name || "متابعة عقد البوابة الموحدة")}</h1><i class="rp-grad"></i>
       <p>متابعة تنفيذ بنود العقد ومخرجاته، والمراجعة لدى العميل، والفوترة، والمشكلات وطلبات التغيير</p>
@@ -1658,7 +1685,7 @@ async function savePdf(btn, build, filename, landscape = false) {
 
 function exportReportPdf(btn) {
   const R = buildReport();
-  return savePdf(btn, (host) => pdfPages(host, R), `التقرير_الدوري_${R.from}_${R.to}.pdf`);
+  return savePdf(btn, (host) => pdfPages(host, R), `التقرير_الدوري_${R.from}_${R.to}.pdf`, true);
 }
 
 /* ---- client acceptance delay table: deliverables awaiting acceptance, every submission and reply, review and delay days */
@@ -1732,14 +1759,14 @@ function billingReport() {
   const shown = groups.filter((g) => picked.includes(g.st) && g.list.length); // an empty status stays in the summary only
   const dot = (st) => `<span class="br-st"><i style="background:${RP_BILL[st]}"></i>${esc(st)}</span>`;
   const summary = `<div class="rp-unit">${rpSec("", "ملخص المخرجات المسلَّمة بحسب حالة الفوترة", `في ${arDate(c.asOfIso)} · دون المعلَّقة والملغاة`)}
-    <table class="rp-t br-sum"><thead><tr><th>حالة الفوترة</th><th class="n">عدد المخرجات</th><th class="n">النسبة</th><th class="n">القيمة ${SAR}</th></tr></thead>
+    <table class="rp-t fixed br-sum"><colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>حالة الفوترة</th><th class="n">عدد المخرجات</th><th class="n">النسبة</th><th class="n">القيمة ${SAR}</th></tr></thead>
     <tbody>${groups.map((g) => `<tr class="${picked.includes(g.st) ? "" : "br-off"}"><td>${dot(g.st)}</td><td class="n">${g.list.length}</td><td class="n">${total ? pctTxt(g.list.length / total) : "-"}</td><td class="n">${money(g.value)}</td></tr>`).join("")}</tbody>
     <tfoot><tr><td>الإجمالي</td><td class="n">${total}</td><td class="n">${total ? "100.0%" : "-"}</td><td class="n">${money(totalValue)}</td></tr></tfoot></table></div>`;
   const sections = shown.map((g) => `<div class="rp-unit" data-split data-newpage>
     <div class="rp-sh br-sh"><span class="br-sw" style="background:${RP_BILL[g.st]}"></span><h2>${esc(g.st)}</h2><span class="rp-sub">${g.list.length} مخرجًا · ${sar(g.value)}</span></div>
     ${rpTable(`<th class="br-no">رقم البند</th><th>وصف المخرج</th><th class="br-stc">حالة الفوترة</th><th>ملاحظات</th>`,
-      g.list.map((d) => { const it = c.itemsById.get(d.item_id); return `<tr><td class="br-no"><span class="rp-code">${esc(itemLabel(it))}</span></td><td class="rp-desc">${esc(d.description)}</td><td class="br-stc">${dot(g.st)}</td><td class="br-notes">${esc(d.notes || "")}</td></tr>`; }),
-      "لا توجد مخرجات بهذه الحالة.")}</div>`);
+      g.list.map((d) => { const it = c.itemsById.get(d.item_id); return `<tr><td class="br-no"><span class="rp-code">${esc(itemLabel(it))}</span></td><td class="rp-desc">${esc(d.description)}</td><td class="br-stc">${dot(g.st)}</td><td class="br-notes">${keepDates(d.notes)}</td></tr>`; }),
+      "لا توجد مخرجات بهذه الحالة.", ["8%", "41%", "16%", "35%"])}</div>`);
   return { summary, sections, shown, total };
 }
 function billingPages(host) {
@@ -1750,7 +1777,7 @@ function billingPages(host) {
 }
 function exportBillingPdf(btn) {
   if (!billingReport().shown.length) { toast("لا توجد مخرجات في الحالات المختارة.", true); return; }
-  return savePdf(btn, billingPages, `المخرجات_بحسب_حالة_الفوترة_${state.calc.asOfIso}.pdf`);
+  return savePdf(btn, billingPages, `المخرجات_بحسب_حالة_الفوترة_${state.calc.asOfIso}.pdf`, true);
 }
 function viewReports() {
   const pick = state.reports.pick, c = state.calc;
