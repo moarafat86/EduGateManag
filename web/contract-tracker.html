@@ -536,6 +536,23 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .dl-t tbody.grp tr td { background: #fff; }
 .dl-t tbody.grp tr td.pk { background: #FCE4D6; }
 .dl-t tbody.grp tr td.st { white-space: nowrap; }
+.rep-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; }
+.rep-card { text-align: start; display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.rep-card span { color: var(--muted); font-size: .84rem; line-height: 1.6; }
+.rep-card[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.br-st { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.br-st i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.br-sh { align-items: center; padding-bottom: 10px; border-bottom: 2px solid #0C3C44; }
+.br-sw { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+.rp .br-no { width: 90px; white-space: nowrap; }
+.rp .br-stc { width: 190px; }
+.rp .br-notes { width: 28%; color: #44696F; font-size: .8rem; }
+.rp .br-sum { max-width: 720px; }
+.rp .br-sum tfoot td { font-weight: 700; background: #E8EEEF; padding: 9px 12px; border-top: 2px solid #0C3C44; }
+.rp .br-off td { color: #9AA9AC; }
+.br-title h1 { margin: 4px 0 12px; font-size: 2rem; line-height: 1.3; color: #0C3C44; }
+.br-title .rp-grad { margin-bottom: 18px; }
+.rp-sheet .br-title { display: none; }
 .rp-cpage { padding: 80px 84px 72px; justify-content: space-between; }
 .rp-ctop .rp-logos img { height: 66px; }
 .rp-ctop .rp-logos i { height: 58px; }
@@ -637,7 +654,7 @@ const DEFAULT_SETTINGS = {
 };
 const TABS = [
   ["dashboard", "لوحة المتابعة"], ["items", "البنود"], ["deliverables", "المخرجات"], ["log", "سجل المراجعات"],
-  ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["settings", "الإعدادات"],
+  ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["reports", "التقارير"], ["settings", "الإعدادات"],
 ];
 const TAB_KEYS = TABS.map((t) => t[0]);
 const ICON_PATHS = {
@@ -648,6 +665,7 @@ const ICON_PATHS = {
   issues: '<path d="M12 3.5 2.8 19.5h18.4L12 3.5z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r=".6"/>',
   crs: '<path d="M4 8h13l-3.5-3.5"/><path d="M20 16H7l3.5 3.5"/>',
   report: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  reports: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 15.5h7M9 19h4"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
 };
 const navIcon = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[k] || ""}</svg>`;
@@ -665,6 +683,7 @@ const state = {
   filters: { q: "", item: "", exec: "", bill: "", issue: "" }, delView: "review",
   logFilters: { q: "", action: "" }, issueFilters: { state: OPEN, type: "", q: "" },
   report: { preset: "last_week", from: "", to: "" },
+  reports: { pick: "billing", bill: null },
   calc: null, drawer: null, offline: false,
 };
 
@@ -893,7 +912,7 @@ function render() {
   const loading = !Object.values(state.ready).every(Boolean) && !state.offline;
   let html = state.offline ? `<div class="notice">تعذّر الوصول إلى تخزين البيانات. افتح الصفحة من claude.ai بعد تسجيل الدخول لعرض بيانات العقد وتعديلها.</div>` : "";
   if (loading) html += `<div class="skel" style="height:280px" aria-label="جارٍ تحميل بيانات العقد"></div><div class="kpis"><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div></div>`;
-  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, settings: viewSettings })[state.tab]();
+  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, reports: viewReports, settings: viewSettings })[state.tab]();
   // a data refresh keeps the place in long tables; only a page switch animates
   const samePage = state.lastTab === state.tab;
   const keep = samePage ? [...view.querySelectorAll(".table-wrap.tall")].map((w) => [w.scrollTop, w.scrollLeft]) : [];
@@ -1534,28 +1553,15 @@ function loadScript(src) {
     if (!had) { el.src = src; document.head.appendChild(el); }
   });
 }
-function pdfPages(host, R) {
-  const s = state.settings, { units } = reportModel(R), pages = [];
-  const make = (html) => { const t = document.createElement("div"); t.innerHTML = html.trim(); return t.firstElementChild; };
-  const cover = make(`<section class="rp rp-page rp-cpage"><i class="rp-glow a"></i><i class="rp-glow b"></i>
-    <div class="rp-ctop">${rpLogos()}</div>
-    <div class="rp-cmain"><span class="rp-eyebrow">التقرير الدوري لمتابعة العقد</span><h1>${esc(s.project_name || "متابعة عقد البوابة الموحدة")}</h1><i class="rp-grad"></i>
-      <p>متابعة تنفيذ بنود العقد ومخرجاته، والمراجعة لدى العميل، والفوترة، والمشكلات وطلبات التغيير</p>
-      <div class="rp-cfig"><div><strong>${pctTxt(R.end.tot.acceptedShare)}</strong><span>المقبول من قيمة العقد</span></div><div><strong>${pctTxt(R.end.tot.deliveredPct)}</strong><span>نسبة الإنجاز المسلَّم</span></div><div><strong>${R.openCycles.length}</strong><span>مخرجًا لدى العميل للمراجعة</span></div></div></div>
-    <div class="rp-meta">${rpMeta(R)}</div></section>`);
-  host.appendChild(cover); pages.push(cover);
+const makeEl = (html) => { const t = document.createElement("div"); t.innerHTML = html.trim(); return t.firstElementChild; };
+function layoutUnits(host, units, pageHtml, pages = []) {
   let content;
-  const newPage = () => {
-    const p = make(`<section class="rp rp-page"><i class="rp-glow c"></i>
-      <header class="rp-phead"><div class="t"><span>التقرير الدوري · ${esc(arDate(R.from))} – ${esc(arDate(R.to))}</span><strong>${esc(s.project_name || "")}</strong></div><img src="${LOGO_TETCO}" alt="تطوير لتقنيات التعليم"></header>
-      <div class="rp-pcontent"></div>
-      <footer class="rp-pfoot"><span>${esc(s.project_name || "")}${s.contract_no ? ` · عقد رقم ${esc(s.contract_no)}` : ""}</span><span class="rp-pno"></span></footer></section>`);
-    host.appendChild(p); pages.push(p); content = p.querySelector(".rp-pcontent");
-  };
+  const newPage = () => { const p = makeEl(pageHtml()); host.appendChild(p); pages.push(p); content = p.querySelector(".rp-pcontent"); };
   const fits = () => content.scrollHeight <= content.clientHeight + 1;
   newPage();
   for (const html of units) {
-    const unit = make(html);
+    const unit = makeEl(html);
+    if (unit.hasAttribute("data-newpage") && content.children.length) newPage();
     content.appendChild(unit);
     if (fits()) continue;
     const tb = unit.querySelector("tbody");
@@ -1575,8 +1581,23 @@ function pdfPages(host, R) {
       }
     } else if (content.children.length > 1) { unit.remove(); newPage(); content.appendChild(unit); }
   }
-  pages.forEach((p, i) => { const n = p.querySelector(".rp-pno"); if (n) n.textContent = `${String(i + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`; });
+  pages.forEach((p, n) => { const el = p.querySelector(".rp-pno"); if (el) el.textContent = `${String(n + 1).padStart(2, "0")} / ${String(pages.length).padStart(2, "0")}`; });
   return pages;
+}
+const rpPageHtml = (eyebrow, title) => () => { const s = state.settings; return `<section class="rp rp-page"><i class="rp-glow c"></i>
+  <header class="rp-phead"><div class="t"><span>${eyebrow}</span><strong>${esc(title)}</strong></div><img src="${LOGO_TETCO}" alt="تطوير لتقنيات التعليم"></header>
+  <div class="rp-pcontent"></div>
+  <footer class="rp-pfoot"><span>${esc(s.project_name || "")}${s.contract_no ? ` · عقد رقم ${esc(s.contract_no)}` : ""}</span><span class="rp-pno"></span></footer></section>`; };
+function pdfPages(host, R) {
+  const s = state.settings, { units } = reportModel(R), pages = [];
+  const cover = makeEl(`<section class="rp rp-page rp-cpage"><i class="rp-glow a"></i><i class="rp-glow b"></i>
+    <div class="rp-ctop">${rpLogos()}</div>
+    <div class="rp-cmain"><span class="rp-eyebrow">التقرير الدوري لمتابعة العقد</span><h1>${esc(s.project_name || "متابعة عقد البوابة الموحدة")}</h1><i class="rp-grad"></i>
+      <p>متابعة تنفيذ بنود العقد ومخرجاته، والمراجعة لدى العميل، والفوترة، والمشكلات وطلبات التغيير</p>
+      <div class="rp-cfig"><div><strong>${pctTxt(R.end.tot.acceptedShare)}</strong><span>المقبول من قيمة العقد</span></div><div><strong>${pctTxt(R.end.tot.deliveredPct)}</strong><span>نسبة الإنجاز المسلَّم</span></div><div><strong>${R.openCycles.length}</strong><span>مخرجًا لدى العميل للمراجعة</span></div></div></div>
+    <div class="rp-meta">${rpMeta(R)}</div></section>`);
+  host.appendChild(cover); pages.push(cover);
+  return layoutUnits(host, units, rpPageHtml(`التقرير الدوري · ${esc(arDate(R.from))} – ${esc(arDate(R.to))}`, s.project_name || ""), pages);
 }
 // html2canvas loses the letter joining of an Arabic word that runs straight into digits or Latin letters ("مرحلة3");
 // putting each side in its own span keeps both shaped, and the browser's layout (so the visual order) is unchanged
@@ -1681,6 +1702,63 @@ function delayPages(host) {
 }
 function exportDelayPdf(btn) {
   return savePdf(btn, delayPages, `تقرير_التأخير_في_قبول_المخرجات_${state.calc.asOfIso}.pdf`, true);
+}
+
+/* ---- reports for submission on request */
+const REPORTS = [
+  ["billing", "المخرجات بحسب حالة الفوترة", "جدول بالمخرجات المسلَّمة مصنَّفة حسب حالة الفوترة، لكل حالة قسم مستقل يبدأ بصفحة جديدة."],
+  ["delay", "التأخير في قبول المخرجات", "المخرجات في انتظار القبول مع تواريخ التسليم والردود وأيام المراجعة والتأخير (A4 أفقي)."],
+];
+const billPicked = () => state.reports.bill || [...BILL_ORDER];
+function billingReport() {
+  const c = state.calc, picked = billPicked(), itemOrder = new Map([...state.items].sort(byItemOrder).map((it, i) => [it.id, i]));
+  const rows = state.deliverables.filter((d) => !d.cancelled && c.del.get(d.id)?.bill)
+    .sort((a, b) => (itemOrder.get(a.item_id) ?? 1e9) - (itemOrder.get(b.item_id) ?? 1e9) || byId(a, b));
+  const groups = BILL_ORDER.map((st) => { const list = rows.filter((d) => c.del.get(d.id).bill === st); return { st, list, value: list.reduce((a, d) => a + c.del.get(d.id).value, 0) }; });
+  const total = rows.length, totalValue = groups.reduce((a, g) => a + g.value, 0);
+  const shown = groups.filter((g) => picked.includes(g.st) && g.list.length); // an empty status stays in the summary only
+  const dot = (st) => `<span class="br-st"><i style="background:${RP_BILL[st]}"></i>${esc(st)}</span>`;
+  const summary = `<div class="rp-unit">${rpSec("", "ملخص المخرجات المسلَّمة بحسب حالة الفوترة", `في ${arDate(c.asOfIso)} · دون المعلَّقة والملغاة`)}
+    <table class="rp-t br-sum"><thead><tr><th>حالة الفوترة</th><th class="n">عدد المخرجات</th><th class="n">النسبة</th><th class="n">القيمة ${SAR}</th></tr></thead>
+    <tbody>${groups.map((g) => `<tr class="${picked.includes(g.st) ? "" : "br-off"}"><td>${dot(g.st)}</td><td class="n">${g.list.length}</td><td class="n">${total ? pctTxt(g.list.length / total) : "-"}</td><td class="n">${money(g.value)}</td></tr>`).join("")}</tbody>
+    <tfoot><tr><td>الإجمالي</td><td class="n">${total}</td><td class="n">${total ? "100.0%" : "-"}</td><td class="n">${money(totalValue)}</td></tr></tfoot></table></div>`;
+  const sections = shown.map((g) => `<div class="rp-unit" data-split data-newpage>
+    <div class="rp-sh br-sh"><span class="br-sw" style="background:${RP_BILL[g.st]}"></span><h2>${esc(g.st)}</h2><span class="rp-sub">${g.list.length} مخرجًا · ${sar(g.value)}</span></div>
+    ${rpTable(`<th class="br-no">رقم البند</th><th>وصف المخرج</th><th class="br-stc">حالة الفوترة</th><th>ملاحظات</th>`,
+      g.list.map((d) => { const it = c.itemsById.get(d.item_id); return `<tr><td class="br-no"><span class="rp-code">${esc(itemLabel(it))}</span></td><td class="rp-desc">${esc(d.description)}</td><td class="br-stc">${dot(g.st)}</td><td class="br-notes">${esc(d.notes || "")}</td></tr>`; }),
+      "لا توجد مخرجات بهذه الحالة.")}</div>`);
+  return { summary, sections, shown, total };
+}
+function billingPages(host) {
+  const s = state.settings, c = state.calc, { summary, sections } = billingReport();
+  const head = `<div class="rp-unit br-title"><span class="rp-eyebrow">تقرير المخرجات</span><h1>المخرجات بحسب حالة الفوترة</h1><i class="rp-grad"></i>
+    <div class="rp-meta"><div><span>المشروع</span><strong>${esc(s.project_name || "—")}</strong></div>${s.contract_no ? `<div><span>رقم العقد</span><strong>${esc(s.contract_no)}</strong></div>` : ""}<div><span>تاريخ التقرير</span><strong>${esc(arDate(c.asOfIso))}</strong></div></div></div>`;
+  return layoutUnits(host, [head, summary, ...sections], rpPageHtml("تقرير المخرجات بحسب حالة الفوترة", s.project_name || ""));
+}
+function exportBillingPdf(btn) {
+  if (!billingReport().shown.length) { toast("لا توجد مخرجات في الحالات المختارة.", true); return; }
+  return savePdf(btn, billingPages, `المخرجات_بحسب_حالة_الفوترة_${state.calc.asOfIso}.pdf`);
+}
+function viewReports() {
+  const pick = state.reports.pick, c = state.calc;
+  const cards = REPORTS.map(([k, t, d]) => `<button type="button" class="rep-card" data-rep="${k}" aria-pressed="${pick === k}"><strong>${t}</strong><span>${d}</span></button>`).join("");
+  let body = "";
+  if (pick === "billing") {
+    const B = billingReport(), picked = billPicked();
+    const counts = Object.fromEntries(BILL_ORDER.map((st) => [st, state.deliverables.filter((d) => !d.cancelled && c.del.get(d.id)?.bill === st).length]));
+    body = `<section class="section">
+      <div class="section-head"><h2>المخرجات بحسب حالة الفوترة</h2><div class="actions"><button class="btn primary" type="button" data-pdf="billing">تصدير PDF</button></div></div>
+      <div class="field"><span class="label">الحالات المشمولة في التقرير</span><div class="checks">${BILL_ORDER.map((st) => `<label class="check"><input type="checkbox" name="billst" value="${esc(st)}" ${picked.includes(st) ? "checked" : ""}><span class="br-st"><i style="background:${RP_BILL[st]}"></i>${esc(st)}</span> <span class="muted num">(${counts[st]})</span></label>`).join("")}</div></div>
+    </section>
+    <article class="rp rp-sheet">${B.summary}${B.sections.join("") || `<div class="rp-empty">لا توجد مخرجات في الحالات المختارة.</div>`}</article>`;
+  } else {
+    const n = delayRows().reduce((a, g) => a + g.rows.length, 0);
+    body = `<section class="section">
+      <div class="section-head"><h2>التأخير في قبول المخرجات</h2><div class="actions"><button class="btn primary" type="button" data-pdf="delay">تصدير PDF</button></div></div>
+      <p class="muted" style="margin:0">يشمل <span class="num">${n}</span> مخرجًا في انتظار القبول، محسوبة حتى <span class="date">${esc(c.asOfIso)}</span>. يُتاح التقرير نفسه أيضًا من صفحة سجل المراجعات.</p>
+    </section>`;
+  }
+  return `<section class="section"><div class="section-head"><h2>التقارير</h2><span class="sub">تقارير جاهزة للتقديم عند الطلب</span></div><div class="rep-cards">${cards}</div></section>${body}`;
 }
 
 /* ---- settings */
@@ -2364,7 +2442,9 @@ document.addEventListener("click", async (ev) => {
   if (t.id === "exportBtn") return exportAll(t);
   if (t.id === "reportExport") return exportReport(t);
   if (t.id === "reportPdf") return exportReportPdf(t);
-  if (t.id === "delayPdf") return exportDelayPdf(t);
+  if (t.id === "delayPdf" || ds.pdf === "delay") return exportDelayPdf(t);
+  if (ds.pdf === "billing") return exportBillingPdf(t);
+  if (ds.rep) { state.reports.pick = ds.rep; return render(); }
   if (t.id === "reportCopy") {
     const text = reportText(buildReport());
     try { await navigator.clipboard.writeText(text); toast("نُسخ التقرير؛ يمكنك لصقه في البريد أو الرسالة"); }
@@ -2449,6 +2529,7 @@ document.addEventListener("change", (ev) => {
     rFrom: () => { const [, b] = reportRange(); state.report = { preset: "custom", from: el.value, to: b }; },
     rTo: () => { const [a] = reportRange(); state.report = { preset: "custom", from: a, to: el.value }; } };
   if (set[id]) { set[id](); return render(); }
+  if (el.name === "billst") { state.reports.bill = [...document.querySelectorAll('input[name="billst"]:checked')].map((x) => x.value); return render(); }
   if (id === "dSuspLinked") { const box = document.getElementById("suspCrPick"); if (box) box.hidden = !el.checked; return; }
   if (id === "dWork") { const box = document.getElementById("suspFields"); if (box) box.hidden = el.value !== ST.SUS; const done = document.getElementById("doneFields"); if (done) done.hidden = el.value !== ST.DONE; return; }
   if (el.name === "critem") {
