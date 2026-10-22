@@ -1980,8 +1980,8 @@ function delDataFields(v, isNew) {
   return `${isNew ? `<div class="field"><label for="dId">رقم المخرج</label><input id="dId" name="did" required pattern="[A-Za-z0-9_.~:@+\\-]+" value="${esc(v.id)}"><span class="hint">حروف إنجليزية وأرقام وشرطة فقط.</span></div>` : ""}
       <div class="field"><label for="dItem">البند</label><select id="dItem" name="item_id" required><option value="">اختر البند</option>${itemOptions(v.item_id)}</select></div>
       <div class="field wide"><label for="dDesc">وصف المخرج</label><textarea id="dDesc" name="description" required>${esc(v.description ?? "")}</textarea></div>
-      <div class="field"><label for="dWork">الحالة التنفيذية</label><select id="dWork" name="work_status">${(submitted ? [ST.DONE, ST.SUS] : WORK_STATUSES).map((w) => `<option${ws === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">${submitted ? "«تم» تلقائيًا لوجود تسليم في سجل المراجعات." : "عند اختيار «تم» يُسجَّل تسليم بالتاريخ المحدد في سجل المراجعات."}</span></div>
-      ${submitted ? "" : `<div class="field" id="doneFields" ${ws === ST.DONE ? "" : "hidden"}><label for="dDoneDate">تاريخ التسليم</label><input id="dDoneDate" name="done_date" type="date" value="${esc(todayIso())}"></div>`}
+      <div class="field"><label for="dWork">الحالة التنفيذية</label><select id="dWork" name="work_status">${(submitted ? [ST.DONE, ST.SUS] : WORK_STATUSES).map((w) => `<option${ws === w ? " selected" : ""}>${esc(w)}</option>`).join("")}</select><span class="hint">${submitted ? "«تم» تلقائيًا لوجود تسليم في سجل المراجعات." : "عند اختيار «تم» يمكن إدخال تاريخ التسليم ليُسجَّل في سجل المراجعات."}</span></div>
+      ${submitted ? "" : `<div class="field" id="doneFields" ${ws === ST.DONE ? "" : "hidden"}><label for="dDoneDate">تاريخ التسليم (اختياري)</label><input id="dDoneDate" name="done_date" type="date"><span class="hint">إن أُدخل يُسجَّل تسليم بهذا التاريخ ويبدأ حساب المراجعة لدى العميل.</span></div>`}
       <div class="field"><label for="dPoints">النقاط المنجزة (اختياري)</label><input id="dPoints" name="points" type="number" min="0" step="0.1" value="${esc(v.points ?? "")}"></div>
       <div class="field wide" id="suspFields" ${v.work_status === ST.SUS ? "" : "hidden"}><div class="form-grid">
         <div class="field wide"><label for="dSuspReason">سبب التعليق (إلزامي)</label><textarea id="dSuspReason" name="suspend_reason">${esc(v.suspend_reason ?? "")}</textarea></div>
@@ -2177,7 +2177,8 @@ function readDelData(f) {
 function doneEvent(f, id) {
   if (f.work_status !== ST.DONE || f.done_date === undefined) return null;
   if (state.events.some((e) => e.deliverable === id && e.action === ACT.SUB)) return null;
-  if (!isIso(f.done_date)) { toast("أدخل تاريخ التسليم.", true); document.getElementById("dDoneDate")?.focus(); return false; }
+  if (!f.done_date) return null; // optional: «تم» can be saved without a submission
+  if (!isIso(f.done_date)) { toast("تاريخ التسليم غير صحيح.", true); document.getElementById("dDoneDate")?.focus(); return false; }
   return { deliverable: id, action: ACT.SUB, date: f.done_date };
 }
 const DATA_KEYS = ["item_id", "description", "work_status", "points", "notes", "suspend_reason", "suspend_date", "suspend_cr_linked", "suspend_cr"];
