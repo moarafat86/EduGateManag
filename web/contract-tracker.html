@@ -1104,8 +1104,8 @@ function viewDashboard() {
   return `
   <section class="hero" aria-label="ملخص إنجاز العقد">
     ${rings([
-      { v: t.progress, color: "--st-acc", label: "نسبة الإنجاز (المقبول)", amt: t.acceptedValue },
-      { v: t.deliveredPct, color: "--st-wait", label: "نسبة الإنجاز المسلَّم", amt: t.deliveredValue },
+      { v: t.progress, color: "--st-acc", label: "نسبة الإنجاز بعدد المخرجات (المقبول)", amt: t.acceptedValue },
+      { v: t.deliveredPct, color: "--st-wait", label: "نسبة الإنجاز المسلَّم بعدد المخرجات", amt: t.deliveredValue },
       { v: t.actual, color: "--actual", label: "نسبة الإنجاز الفعلي", amt: t.actualWeighted },
     ])}
     <div class="hero-body">
@@ -1113,15 +1113,15 @@ function viewDashboard() {
       <h2 class="hero-title">${pct(t.acceptedShare)} من قيمة العقد مقبول</h2>
       <div class="hero-sub"><span>قيمة العقد ${sar(t.total)}</span><span>جميع المبالغ بدون ضريبة</span></div>
       <div class="ring-legend">
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>نسبة الإنجاز (المقبول ÷ الإجمالي)</span><span class="v">${pct(t.progress)}<span class="amt">${sar(t.acceptedValue)}</span></span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>نسبة الإنجاز المسلَّم</span><span class="v">${pct(t.deliveredPct)}<span class="amt">${sar(t.deliveredValue)}</span></span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>نسبة الإنجاز بعدد المخرجات (المقبول ÷ الإجمالي)</span><span class="v">${pct(t.progress)}<span class="amt">${sar(t.acceptedValue)}</span></span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>نسبة الإنجاز المسلَّم بعدد المخرجات</span><span class="v">${pct(t.deliveredPct)}<span class="amt">${sar(t.deliveredValue)}</span></span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
         <div class="ring-item"><span class="k"><span class="dot" style="background:var(--actual)"></span>نسبة الإنجاز الفعلي</span><span class="v">${pct(t.actual)}<span class="amt">${sar(t.actualWeighted)}</span></span><span class="f">المخرجات المنجزة («تم») ÷ الكمية، مرجَّحة بالقيمة</span></div>
       </div>
     </div>
   </section>
   <div class="kpis">
-    <div class="kpi wait"><span class="label">إجمالي في انتظار القبول</span><span class="value">${pct(t.waitingShare)}<span class="amt">${sar(t.waitingValue)}</span></span>${meter(t.waitingShare, "--st-wait")}<span class="foot"><span class="num">${t.waiting}</span> مخرجًا مسلَّمًا ينتظر قبول العميل</span></div>
-    <div class="kpi acc"><span class="label">إجمالي المقبول</span><span class="value">${pct(t.acceptedShare)}<span class="amt">${sar(t.acceptedValue)}</span></span>${meter(t.acceptedShare, "--st-acc")}<span class="foot"><span class="num">${t.accepted}</span> مخرجًا مقبولًا من <span class="num">${t.qty}</span></span></div>
+    <div class="kpi wait"><span class="label">إجمالي في انتظار القبول من قيمة العقد</span><span class="value">${pct(t.waitingShare)}<span class="amt">${sar(t.waitingValue)}</span></span>${meter(t.waitingShare, "--st-wait")}<span class="foot"><span class="num">${t.waiting}</span> مخرجًا مسلَّمًا ينتظر قبول العميل</span></div>
+    <div class="kpi acc"><span class="label">إجمالي المقبول من قيمة العقد</span><span class="value">${pct(t.acceptedShare)}<span class="amt">${sar(t.acceptedValue)}</span></span>${meter(t.acceptedShare, "--st-acc")}<span class="foot"><span class="num">${t.accepted}</span> مخرجًا مقبولًا من <span class="num">${t.qty}</span></span></div>
     <div class="kpi"><span class="label">المعلَّق</span><span class="value">${pct(t.total ? t.suspendedValue / t.total : null)}<span class="amt">${sar(t.suspendedValue)}</span></span>${meter(t.total ? t.suspendedValue / t.total : 0, "--st-sus")}<span class="foot"><span class="num">${t.suspended}</span> مخرجًا مستبعدًا من حسابات التسليم والقبول${t.suspendMissing ? ` · <span class="red"><span class="num">${t.suspendMissing}</span> بلا سبب تعليق</span>` : ""}</span></div>
     <div class="kpi"><span class="label">المتبقي (غير المقبول)</span><span class="value">${sar(t.remaining)}</span><span class="foot">قيمة العقد مطروحًا منها المقبول</span></div>
   </div>
@@ -1368,9 +1368,9 @@ function reportText(R) {
   L.push(`الفترة: من ${R.from} إلى ${R.to}`);
   L.push("");
   L.push(`الوضع في ${R.to}:`);
-  L.push(`- إجمالي المقبول: ${p(t.acceptedShare)} (${nf2.format(t.acceptedValue)} ريال)`);
+  L.push(`- إجمالي المقبول من قيمة العقد: ${p(t.acceptedShare)} (${nf2.format(t.acceptedValue)} ريال)`);
   L.push(`- إجمالي في انتظار القبول: ${p(t.waitingShare)} (${nf2.format(t.waitingValue)} ريال)`);
-  L.push(`- نسبة الإنجاز: ${p(t.progress)} — نسبة الإنجاز المسلَّم: ${p(t.deliveredPct)} — نسبة الإنجاز الفعلي: ${p(t.actual)}`);
+  L.push(`- نسبة الإنجاز بعدد المخرجات: ${p(t.progress)} — نسبة الإنجاز المسلَّم بعدد المخرجات: ${p(t.deliveredPct)} — نسبة الإنجاز الفعلي: ${p(t.actual)}`);
   L.push(`- في انتظار رد العميل: ${R.openCycles.length} مخرجًا، منها ${R.overLimit.length} تجاوزت المهلة — المُعادة بملاحظات: ${R.end.statusCounts[ST.RET]}`);
   L.push("");
   L.push(`خلال الفترة: ${R.submitted.length} تسليمًا، و${R.returned.length} ردًّا بملاحظات، و${R.accepted.length} قبولًا بقيمة ${nf2.format(R.acceptedValue)} ريال`);
@@ -1490,7 +1490,7 @@ function reportModel(R) {
     <div class="rp-hero">
       <div class="rp-big"><span class="k">المقبول من قيمة العقد</span><strong>${pctTxt(t.acceptedShare)}</strong><span class="s">${sar(t.acceptedValue)} من ${sar(t.total)}</span>${rpBar([[t.acceptedShare, RP.green]])}<span class="d">${deltaPts(st.acceptedShare, t.acceptedShare)}</span></div>
       <div class="rp-kpis">
-        ${kpi("نسبة الإنجاز المسلَّم", pctTxt(t.deliveredPct), `${t.delivered} من ${t.qty} مخرجًا · ${sar(t.deliveredValue)}`, t.deliveredPct, deltaPts(st.deliveredPct, t.deliveredPct))}
+        ${kpi("نسبة الإنجاز المسلَّم بعدد المخرجات", pctTxt(t.deliveredPct), `${t.delivered} من ${t.qty} مخرجًا · ${sar(t.deliveredValue)}`, t.deliveredPct, deltaPts(st.deliveredPct, t.deliveredPct))}
         ${kpi("في انتظار القبول", pctTxt(t.waitingShare), `${t.waiting} مخرجًا · ${sar(t.waitingValue)}`, t.waitingShare)}
         ${kpi("نسبة الإنجاز الفعلي", pctTxt(t.actual), t.done + " مخرجًا منجزًا («تم») · مرجَّحة بالقيمة", t.actual)}
         ${kpi("المتبقي (غير المقبول)", sar(t.remaining), "قيمة العقد مطروحًا منها المقبول")}
@@ -2320,10 +2320,10 @@ function exportAll(btn) {
       ["مهلة المراجعة (أيام عمل)", c.reviewLimit], ["ملاحظة", "جميع المبالغ بدون ضريبة"],
       ["قيمة العقد (ريال)", { v: t.total, f: FMT.M }],
       ["إجمالي في انتظار القبول (ريال)", { v: t.waitingValue, f: FMT.M }], ["إجمالي في انتظار القبول (%)", { v: t.waitingShare, f: FMT.P }],
-      ["إجمالي المقبول (ريال)", { v: t.acceptedValue, f: FMT.M }], ["إجمالي المقبول (%)", { v: t.acceptedShare, f: FMT.P }],
+      ["إجمالي المقبول من قيمة العقد (ريال)", { v: t.acceptedValue, f: FMT.M }], ["إجمالي المقبول من قيمة العقد (%)", { v: t.acceptedShare, f: FMT.P }],
       ["المعلَّق (ريال)", { v: t.suspendedValue, f: FMT.M }], ["عدد المخرجات المعلَّقة", t.suspended],
       ["المتبقي غير المقبول (ريال)", { v: t.remaining, f: FMT.M }],
-      ["نسبة الإنجاز (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم (المسلَّم ÷ الإجمالي)", { v: t.deliveredPct, f: FMT.P }],
+      ["نسبة الإنجاز بعدد المخرجات (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم بعدد المخرجات (المسلَّم ÷ الإجمالي)", { v: t.deliveredPct, f: FMT.P }],
       ["نسبة الإنجاز الفعلي (مرجَّحة بقيمة البنود)", { v: t.actual, f: FMT.P }],
       ...EXEC_ORDER.map((st) => [`عدد المخرجات — الحالة التنفيذية: ${st}`, c.execCounts[st] || 0]),
       ...BILL_ORDER.map((st) => [`عدد المخرجات — حالة الفوترة: ${st}`, c.billCounts[st] || 0]),
@@ -2383,9 +2383,9 @@ function exportReport(btn) {
     const wb = new ExcelJS.Workbook();
     kvSheet(wb, "ملخص التقرير", [
       ["المشروع", s.project_name], ["رقم العقد", s.contract_no], ["من", toDate(R.from)], ["إلى", toDate(R.to)],
-      ["إجمالي المقبول (%)", { v: t.acceptedShare, f: FMT.P }], ["إجمالي المقبول (ريال)", { v: t.acceptedValue, f: FMT.M }],
+      ["إجمالي المقبول من قيمة العقد (%)", { v: t.acceptedShare, f: FMT.P }], ["إجمالي المقبول من قيمة العقد (ريال)", { v: t.acceptedValue, f: FMT.M }],
       ["إجمالي في انتظار القبول (%)", { v: t.waitingShare, f: FMT.P }], ["إجمالي في انتظار القبول (ريال)", { v: t.waitingValue, f: FMT.M }],
-      ["نسبة الإنجاز (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم", { v: t.deliveredPct, f: FMT.P }], ["نسبة الإنجاز الفعلي", { v: t.actual, f: FMT.P }],
+      ["نسبة الإنجاز بعدد المخرجات (المقبول ÷ الإجمالي)", { v: t.progress, f: FMT.P }], ["نسبة الإنجاز المسلَّم بعدد المخرجات", { v: t.deliveredPct, f: FMT.P }], ["نسبة الإنجاز الفعلي", { v: t.actual, f: FMT.P }],
       ["في انتظار رد العميل", R.openCycles.length], ["منها تجاوزت المهلة", R.overLimit.length], ["مُعادة بملاحظات", e.statusCounts[ST.RET]],
       ["تسليمات خلال الفترة", R.submitted.length], ["ردود بملاحظات خلال الفترة", R.returned.length], ["قبول خلال الفترة", R.accepted.length],
       ["قيمة المقبول خلال الفترة (ريال)", { v: R.acceptedValue, f: FMT.M }], ["مشكلات فُتحت", R.issuesOpened.length], ["مشكلات أُغلقت", R.issuesClosed.length],
