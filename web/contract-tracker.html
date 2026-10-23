@@ -644,13 +644,13 @@ function applyTheme(theme, remember) {
 
 /* ------------------------------------------------------------ constants */
 const ST = { ACC: "تم القبول", SUS: "معلق", RET: "مُعاد بملاحظات", WAIT: "في انتظار القبول", LATE: "متأخر", PROG: "جاري العمل", NEW: "لم يبدأ", CAN: "ملغى",
-  DONE: "تم", INV: "تم الفوترة", CERTW: "في انتظار شهادة الإنجاز", CERT: "تم إصدار شهادة الإنجاز" };
+  DONE: "تم", WSUB: "في انتظار التسليم", INV: "تم الفوترة", CERTW: "في انتظار شهادة الإنجاز", CERT: "تم إصدار شهادة الإنجاز" };
 const STATUS_ORDER = [ST.ACC, ST.WAIT, ST.RET, ST.LATE, ST.PROG, ST.SUS, ST.NEW];
 const STATUS_CLASS = { [ST.ACC]: "acc", [ST.WAIT]: "wait", [ST.RET]: "ret", [ST.LATE]: "late", [ST.PROG]: "prog", [ST.SUS]: "sus", [ST.NEW]: "new", [ST.CAN]: "sus",
-  [ST.DONE]: "acc", [ST.INV]: "inv", [ST.CERTW]: "certw", [ST.CERT]: "cert" };
+  [ST.DONE]: "acc", [ST.WSUB]: "new", [ST.INV]: "inv", [ST.CERTW]: "certw", [ST.CERT]: "cert" };
 // two statuses per deliverable: execution (manual, «تم» follows the review log) and billing (follows the review log and billing data)
 const EXEC_ORDER = [ST.DONE, ST.PROG, ST.LATE, ST.NEW, ST.SUS];
-const BILL_ORDER = [ST.WAIT, ST.RET, ST.ACC, ST.INV, ST.CERTW, ST.CERT];
+const BILL_ORDER = [ST.WSUB, ST.WAIT, ST.RET, ST.ACC, ST.INV, ST.CERTW, ST.CERT];
 const ACT = { SUB: "تسليم", REP: "رد بملاحظات", ACC: "قبول" };
 const ACTIONS = [ACT.SUB, ACT.REP, ACT.ACC];
 const WORK_STATUSES = [ST.NEW, ST.PROG, ST.LATE, ST.SUS, ST.DONE];
@@ -847,6 +847,7 @@ function computeModel(data, asOfIso) {
     if (exec === ST.DONE) {
       const b = billingOf(d);
       if (accepted > 0) bill = b.certificate === "نعم" ? ST.CERT : filled(b.claim_no) || filled(b.ref_no) ? ST.CERTW : filled(b.invoice_no) || b.invoiced === "نعم" ? ST.INV : ST.ACC;
+      else if (!(lastSubmit > 0)) bill = ST.WSUB; // done, but no submission recorded yet
       else if (lastReply > 0 && lastReply >= lastSubmit) bill = ST.RET;
       else bill = ST.WAIT;
     }
@@ -1127,8 +1128,8 @@ function viewDashboard() {
     <div class="split">
       <div class="split-col"><h3 class="split-title">الحالة التنفيذية</h3>
         <div class="donut-wrap">${donut(c.execCounts, EXEC_ORDER, "exec", "توزيع المخرجات حسب الحالة التنفيذية")}<div class="legend">${legend(c.execCounts, EXEC_ORDER, "exec")}</div></div></div>
-      <div class="split-col"><h3 class="split-title">حالة الفوترة<span class="sub">للمخرجات المسلَّمة</span></h3>
-        <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المسلَّمة حسب حالة الفوترة")}<div class="legend">${legend(c.billCounts, BILL_ORDER, "bill")}</div></div></div>
+      <div class="split-col"><h3 class="split-title">حالة الفوترة<span class="sub">للمخرجات المنجزة</span></h3>
+        <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المنجزة حسب حالة الفوترة")}<div class="legend">${legend(c.billCounts, BILL_ORDER, "bill")}</div></div></div>
     </div>
   </section>
   <section class="section">
@@ -1387,7 +1388,7 @@ const LOGO_MOE = ""; // client logo kept out of the public repo; the published a
 /* ---- periodic report: a light "paper" document in the TETCO identity, shown on screen and exported to A4 PDF */
 const RP = { ink: "#0C3C44", muted: "#5B6E73", line: "#DCE3E4", green: "#36BA91", greenD: "#1F7A5C", greenL: "#9ED8C3", blue: "#005F96", red: "#C63C40" };
 const RP_EXEC = { [ST.DONE]: "#36BA91", [ST.PROG]: "#C9B21A", [ST.LATE]: "#C63C40", [ST.NEW]: "#B9C5C7", [ST.SUS]: "#5B6E73" };
-const RP_BILL = { [ST.WAIT]: "#2B83BE", [ST.RET]: "#E5675B", [ST.ACC]: "#9ED8C3", [ST.INV]: "#36BA91", [ST.CERTW]: "#1F7A5C", [ST.CERT]: "#0C3C44" };
+const RP_BILL = { [ST.WSUB]: "#A9B8BB", [ST.WAIT]: "#2B83BE", [ST.RET]: "#E5675B", [ST.ACC]: "#9ED8C3", [ST.INV]: "#36BA91", [ST.CERTW]: "#1F7A5C", [ST.CERT]: "#0C3C44" };
 const AR_MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
 const arDate = (iso) => { if (!isIso(iso)) return "—"; const [y, m, d] = iso.split("-").map(Number); return `${d} ${AR_MONTHS[m - 1]} ${y}`; };
 const pctTxt = (v, digits = 1) => Number.isFinite(v) ? (v * 100).toFixed(digits) + "%" : "-";
@@ -1504,7 +1505,7 @@ function reportModel(R) {
   units.push(`<div class="rp-unit">${rpSec("02", "مسار الإنجاز", "النسبة التراكمية من قيمة العقد شهرًا بشهر")}${trendChart(trendSeries(R))}</div>`);
   units.push(`<div class="rp-unit">${rpSec("03", "حالة المخرجات", `في ${arDate(R.to)} · دون الملغاة`)}
     <div class="rp-two"><div><h3>الحالة التنفيذية</h3>${rpDonut(e.execCounts, EXEC_ORDER, RP_EXEC, "توزيع المخرجات حسب الحالة التنفيذية")}</div>
-    <div><h3>حالة الفوترة <span>للمخرجات المسلَّمة</span></h3>${rpDonut(e.billCounts, BILL_ORDER, RP_BILL, "توزيع المخرجات المسلَّمة حسب حالة الفوترة")}</div></div></div>`);
+    <div><h3>حالة الفوترة <span>للمخرجات المنجزة</span></h3>${rpDonut(e.billCounts, BILL_ORDER, RP_BILL, "توزيع المخرجات المنجزة حسب حالة الفوترة")}</div></div></div>`);
   units.push(`<div class="rp-unit" data-split>${rpSec("04", "إنجاز البنود", `<i class="sw" style="background:${RP.green}"></i> المقبول <i class="sw" style="background:${RP.greenL}"></i> المسلَّم`)}
     ${rpTable(`<th>البند</th><th class="n">الكمية</th><th class="n">المسلَّم</th><th class="n">المقبول</th><th class="rp-bcol">الإنجاز</th><th class="n">قيمة المقبول ${SAR}</th>`,
       items.map(({ it, r }) => `<tr><td><span class="rp-code">${esc(itemLabel(it))}</span> <span class="rp-desc">${esc(short(it.name, 60))}</span></td><td class="n">${int(r.qty)}</td><td class="n">${int(r.delivered)}</td><td class="n">${int(r.accepted)}</td>
@@ -1746,7 +1747,7 @@ function exportDelayPdf(btn) {
 
 /* ---- reports for submission on request */
 const REPORTS = [
-  ["billing", "المخرجات بحسب حالة الفوترة", "جدول بالمخرجات المسلَّمة مصنَّفة حسب حالة الفوترة، لكل حالة قسم مستقل يبدأ بصفحة جديدة."],
+  ["billing", "المخرجات بحسب حالة الفوترة", "جدول بالمخرجات المنجزة مصنَّفة حسب حالة الفوترة، لكل حالة قسم مستقل يبدأ بصفحة جديدة."],
   ["delay", "التأخير في قبول المخرجات", "المخرجات في انتظار القبول مع تواريخ التسليم والردود وأيام المراجعة والتأخير (A4 أفقي)."],
 ];
 const billPicked = () => state.reports.bill || [...BILL_ORDER];
@@ -1758,7 +1759,7 @@ function billingReport() {
   const total = rows.length, totalValue = groups.reduce((a, g) => a + g.value, 0);
   const shown = groups.filter((g) => picked.includes(g.st) && g.list.length); // an empty status stays in the summary only
   const dot = (st) => `<span class="br-st"><i style="background:${RP_BILL[st]}"></i>${esc(st)}</span>`;
-  const summary = `<div class="rp-unit">${rpSec("", "ملخص المخرجات المسلَّمة بحسب حالة الفوترة", `في ${arDate(c.asOfIso)} · دون المعلَّقة والملغاة`)}
+  const summary = `<div class="rp-unit">${rpSec("", "ملخص المخرجات المنجزة بحسب حالة الفوترة", `في ${arDate(c.asOfIso)} · دون المعلَّقة والملغاة`)}
     <table class="rp-t fixed br-sum"><colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>حالة الفوترة</th><th class="n">عدد المخرجات</th><th class="n">النسبة</th><th class="n">القيمة ${SAR}</th></tr></thead>
     <tbody>${groups.map((g) => `<tr class="${picked.includes(g.st) ? "" : "br-off"}"><td>${dot(g.st)}</td><td class="n">${g.list.length}</td><td class="n">${total ? pctTxt(g.list.length / total) : "-"}</td><td class="n">${money(g.value)}</td></tr>`).join("")}</tbody>
     <tfoot><tr><td>الإجمالي</td><td class="n">${total}</td><td class="n">${total ? "100.0%" : "-"}</td><td class="n">${money(totalValue)}</td></tr></tfoot></table></div>`;
