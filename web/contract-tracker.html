@@ -876,7 +876,7 @@ function computeModel(data, asOfIso) {
   }
 
   const items = new Map();
-  const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, waiting: 0, late: 0, suspended: 0, acceptedValue: 0, deliveredValue: 0, waitingValue: 0, suspendedValue: 0, remaining: 0, actualWeighted: 0 };
+  const tot = { qty: 0, total: 0, vat: 0, totalVat: 0, registered: 0, delivered: 0, accepted: 0, waiting: 0, late: 0, suspended: 0, acceptedValue: 0, deliveredValue: 0, waitingValue: 0, suspendedValue: 0, remaining: 0, actualWeighted: 0, done: 0 };
   for (const it of data.items) {
     const ds = data.deliverables.filter((d) => d.item_id === it.id && !d.cancelled);
     const qty = numOr(it.qty, 0), price = numOr(it.unit_price, 0), total = qty * price;
@@ -888,7 +888,7 @@ function computeModel(data, asOfIso) {
       accepted: ds.filter((d) => k(d).status === ST.ACC).length,
       waiting: ds.filter((d) => k(d).status === ST.WAIT).length,
       late: ds.filter((d) => k(d).status === ST.LATE).length,
-      actual: it.actual_progress === undefined || it.actual_progress === null || it.actual_progress === "" ? null : numOr(it.actual_progress, null),
+      done: ds.filter((d) => k(d).exec === ST.DONE).length,
       crs: crsByItem.get(it.id) || [],
     };
     r.progress = qty > 0 ? r.accepted / qty : null;
@@ -898,6 +898,8 @@ function computeModel(data, asOfIso) {
     r.waitingValue = r.waiting * price;
     r.suspendedValue = r.suspended * price;
     r.remaining = total - r.acceptedValue;
+    // actual progress follows the execution status: deliverables marked «تم» over the contract quantity
+    r.actual = qty > 0 ? r.done / qty : null;
     r.actualWeighted = (r.actual || 0) * total;
     items.set(it.id, r);
     for (const key of Object.keys(tot)) tot[key] += r[key] || 0;
@@ -1113,7 +1115,7 @@ function viewDashboard() {
       <div class="ring-legend">
         <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>نسبة الإنجاز (المقبول ÷ الإجمالي)</span><span class="v">${pct(t.progress)}<span class="amt">${sar(t.acceptedValue)}</span></span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
         <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>نسبة الإنجاز المسلَّم</span><span class="v">${pct(t.deliveredPct)}<span class="amt">${sar(t.deliveredValue)}</span></span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--actual)"></span>نسبة الإنجاز الفعلي</span><span class="v">${pct(t.actual)}<span class="amt">${sar(t.actualWeighted)}</span></span><span class="f">مُدخلة لكل بند ومرجَّحة بالقيمة</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--actual)"></span>نسبة الإنجاز الفعلي</span><span class="v">${pct(t.actual)}<span class="amt">${sar(t.actualWeighted)}</span></span><span class="f">المخرجات المنجزة («تم») ÷ الكمية، مرجَّحة بالقيمة</span></div>
       </div>
     </div>
   </section>
@@ -1146,7 +1148,7 @@ function viewDashboard() {
       : emptyBlock("لا توجد مخرجات تنتظر الرد", "تم الرد على جميع التسليمات.")}
   </section>
   <section class="section">
-    <div class="section-head"><h2>إنجاز البنود</h2><span class="sub">اضغط على البند لتعديل نسبة الإنجاز الفعلي</span></div>
+    <div class="section-head"><h2>إنجاز البنود</h2><span class="sub">الإنجاز الفعلي = المخرجات المنجزة («تم») ÷ الكمية</span></div>
     <div class="table-wrap"><table>
       <thead><tr><th>رقم البند</th><th>البند</th><th class="n">الكمية</th><th class="n">المسلَّم</th><th class="n">المقبول</th><th class="n">نسبة الإنجاز المسلَّم</th><th class="n">نسبة الإنجاز (المقبول)</th><th class="n">نسبة الإنجاز الفعلي</th></tr></thead>
       <tbody>${itemRows}</tbody>
@@ -1490,7 +1492,7 @@ function reportModel(R) {
       <div class="rp-kpis">
         ${kpi("نسبة الإنجاز المسلَّم", pctTxt(t.deliveredPct), `${t.delivered} من ${t.qty} مخرجًا · ${sar(t.deliveredValue)}`, t.deliveredPct, deltaPts(st.deliveredPct, t.deliveredPct))}
         ${kpi("في انتظار القبول", pctTxt(t.waitingShare), `${t.waiting} مخرجًا · ${sar(t.waitingValue)}`, t.waitingShare)}
-        ${kpi("نسبة الإنجاز الفعلي", pctTxt(t.actual), "مرجَّحة بقيمة البنود", t.actual)}
+        ${kpi("نسبة الإنجاز الفعلي", pctTxt(t.actual), t.done + " مخرجًا منجزًا («تم») · مرجَّحة بالقيمة", t.actual)}
         ${kpi("المتبقي (غير المقبول)", sar(t.remaining), "قيمة العقد مطروحًا منها المقبول")}
       </div>
     </div></div>`);
@@ -1865,12 +1867,12 @@ function drawerItem() {
   const linked = it ? state.deliverables.filter((x) => x.item_id === it.id).length : 0;
   const r = it ? state.calc.items.get(it.id) : null;
   const v = it || {};
-  const actualPct = v.actual_progress === undefined || v.actual_progress === null || v.actual_progress === "" ? "" : Math.round(Number(v.actual_progress) * 1000) / 10;
   return { title: it ? `تعديل البند ${itemLabel(it)}` : "بند جديد", html: `
     ${r ? `<div class="kv">
       <div><span class="k">نسبة الإنجاز المسلَّم</span><span class="v">${pct(r.deliveredPct)}</span></div>
       <div><span class="k">نسبة الإنجاز (المقبول)</span><span class="v">${pct(r.progress)}</span></div>
       <div><span class="k">نسبة الإنجاز الفعلي</span><span class="v">${r.actual === null ? "—" : pct(r.actual)}</span></div>
+      <div><span class="k">المخرجات المنجزة («تم»)</span><span class="v">${int(r.done)} من ${int(r.qty)}</span></div>
     </div>` : ""}
     <form id="itemForm" class="form-grid" autocomplete="off">
       <div class="field"><label for="iNo">رقم البند</label><input id="iNo" name="no" required value="${esc(v.no ?? "")}" placeholder="مثال: 5.ج"></div>
@@ -1878,7 +1880,7 @@ function drawerItem() {
       <div class="field wide"><label for="iName">اسم البند</label><input id="iName" name="name" required value="${esc(v.name ?? "")}"></div>
       <div class="field"><label for="iQty">الكمية التعاقدية</label><input id="iQty" name="qty" type="number" min="0" step="1" required value="${esc(v.qty ?? "")}"></div>
       <div class="field"><label for="iPrice">سعر الوحدة (ريال)</label><input id="iPrice" name="unit_price" type="number" min="0" step="0.01" required value="${esc(v.unit_price ?? "")}"></div>
-      <div class="field"><label for="iActual">نسبة الإنجاز الفعلي (%)</label><input id="iActual" name="actual_progress" type="number" min="0" max="100" step="0.1" value="${esc(actualPct)}"><span class="hint">تقدير يدوي لحجم العمل المنجز فعليًا في البند.</span></div>
+      
       <div class="field"><label for="iOrder">ترتيب العرض</label><input id="iOrder" name="order" type="number" step="1" value="${esc(v.order ?? state.items.length + 1)}"></div>
       <div class="actions wide"><button class="btn primary" type="submit">حفظ</button>${it ? `<button class="btn danger" type="button" data-ask-delete>حذف البند</button>` : ""}</div>
     </form>
@@ -2156,8 +2158,7 @@ async function saveItem(form, btn) {
   const f = formData(form), id = state.drawer.id || newId("i");
   const no = /^\d+$/.test(f.no.trim()) ? Number(f.no.trim()) : f.no.trim();
   if (state.items.some((x) => x.id !== id && String(x.no) === String(no))) { toast("رقم البند مستخدم من قبل.", true); return; }
-  const actual = f.actual_progress === "" ? "" : Math.max(0, Math.min(100, Number(f.actual_progress))) / 100;
-  const body = clean({ no, wbs: f.wbs.trim(), name: f.name.trim(), qty: numOr(f.qty, 0), unit_price: numOr(f.unit_price, 0), actual_progress: actual, order: numOr(f.order, state.items.length + 1) });
+  const body = clean({ no, wbs: f.wbs.trim(), name: f.name.trim(), qty: numOr(f.qty, 0), unit_price: numOr(f.unit_price, 0), order: numOr(f.order, state.items.length + 1) });
   if (await run(btn, () => state.db.collection("items").doc(id).set(body), "تم حفظ البند")) backToRow(`tr[data-edit-item="${CSS.escape(id)}"]`);
 }
 function readBilling(f, prevB) {
