@@ -194,6 +194,7 @@ main { max-width: none; width: 100%; margin: 0 auto; padding: 26px 32px 64px; di
 .eyebrow { font-size: .78rem; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
 .hero-title { margin: 0; font-family: var(--font-display); font-size: clamp(1.6rem, 2.6vw, 2.25rem); font-weight: 700; letter-spacing: -.025em; line-height: 1.2; text-wrap: balance; }
 .hero-title .num { color: var(--st-acc-fg); }
+.hero.exec .hero-title .num { color: var(--actual); }
 .hero-sub { color: var(--muted); font-size: .92rem; display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .ring-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
 .ring-item { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); }
@@ -216,6 +217,8 @@ main { max-width: none; width: 100%; margin: 0 auto; padding: 26px 32px 64px; di
 .chart-tip .big { font-size: 1.05rem; font-weight: 700; }
 
 /* ---------- KPI tiles */
+.kpi-btn { font: inherit; color: inherit; text-align: start; border: 0; cursor: pointer; }
+.kpi-btn:hover { box-shadow: var(--shadow), inset 0 0 0 1px var(--line-strong); }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 16px; }
 .kpi { background: var(--surface); border-radius: var(--r-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; min-width: 0; box-shadow: var(--shadow); }
 .kpi .label { color: var(--muted); font-size: .8rem; font-weight: 500; }
@@ -914,6 +917,13 @@ function computeModel(data, asOfIso) {
   for (const d of data.deliverables) if (!d.cancelled) statusCounts[del.get(d.id).status]++;
   const execCounts = Object.fromEntries(EXEC_ORDER.map((st) => [st, 0])), billCounts = Object.fromEntries(BILL_ORDER.map((st) => [st, 0]));
   for (const d of data.deliverables) { if (d.cancelled) continue; const k = del.get(d.id); execCounts[k.exec]++; if (k.bill) billCounts[k.bill]++; }
+  // invoiced = accepted and at or past the invoice stage
+  const INVOICED = new Set([ST.INV, ST.CERTW, ST.CERT]);
+  tot.invoiced = 0; tot.invoicedValue = 0;
+  for (const d of data.deliverables) { if (d.cancelled) continue; const k = del.get(d.id); if (INVOICED.has(k.bill)) { tot.invoiced++; tot.invoicedValue += k.value; } }
+  tot.invoicedShare = tot.total > 0 ? tot.invoicedValue / tot.total : null;
+  tot.deliveredValueShare = tot.total > 0 ? tot.deliveredValue / tot.total : null;
+  tot.donePct = tot.qty > 0 ? tot.done / tot.qty : null;
   tot.suspendMissing = data.deliverables.filter((d) => del.get(d.id).suspendMissing).length;
 
   return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, execCounts, billCounts, itemsById, delById, span };
@@ -1102,28 +1112,49 @@ function viewDashboard() {
   }).join("");
 
   return `
-  <section class="hero" aria-label="ملخص إنجاز العقد">
+  <section class="hero" aria-label="الموقف المالي">
     ${rings([
-      { v: t.progress, color: "--st-acc", label: "نسبة الإنجاز بعدد المخرجات (المقبول)", amt: t.acceptedValue },
-      { v: t.deliveredPct, color: "--st-wait", label: "نسبة الإنجاز المسلَّم بعدد المخرجات", amt: t.deliveredValue },
-      { v: t.actual, color: "--actual", label: "نسبة الإنجاز الفعلي", amt: t.actualWeighted },
+      { v: t.acceptedShare, color: "--st-acc", label: "المقبول من قيمة العقد", amt: t.acceptedValue },
+      { v: t.deliveredValueShare, color: "--st-wait", label: "المسلَّم من قيمة العقد", amt: t.deliveredValue },
+      { v: t.invoicedShare, color: "--st-inv", label: "المفوتر من قيمة العقد", amt: t.invoicedValue },
     ])}
     <div class="hero-body">
-      <span class="eyebrow">إنجاز العقد</span>
+      <span class="eyebrow">الموقف المالي · بقيمة العقد</span>
       <h2 class="hero-title">${pct(t.acceptedShare)} من قيمة العقد مقبول</h2>
       <div class="hero-sub"><span>قيمة العقد ${sar(t.total)}</span><span>جميع المبالغ بدون ضريبة</span></div>
       <div class="ring-legend">
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>نسبة الإنجاز بعدد المخرجات (المقبول ÷ الإجمالي)</span><span class="v">${pct(t.progress)}<span class="amt">${sar(t.acceptedValue)}</span></span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>نسبة الإنجاز المسلَّم بعدد المخرجات</span><span class="v">${pct(t.deliveredPct)}<span class="amt">${sar(t.deliveredValue)}</span></span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
-        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--actual)"></span>نسبة الإنجاز الفعلي</span><span class="v">${pct(t.actual)}<span class="amt">${sar(t.actualWeighted)}</span></span><span class="f">المخرجات المنجزة («تم») ÷ الكمية، مرجَّحة بالقيمة</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>المقبول من قيمة العقد</span><span class="v">${pct(t.acceptedShare)}<span class="amt">${sar(t.acceptedValue)}</span></span><span class="f"><span class="num">${t.accepted}</span> مخرجًا مقبولًا</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>المسلَّم من قيمة العقد</span><span class="v">${pct(t.deliveredValueShare)}<span class="amt">${sar(t.deliveredValue)}</span></span><span class="f"><span class="num">${t.delivered}</span> مخرجًا مسلَّمًا (دون المعلَّقة)</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-inv)"></span>المفوتر من قيمة العقد</span><span class="v">${pct(t.invoicedShare)}<span class="amt">${sar(t.invoicedValue)}</span></span><span class="f"><span class="num">${t.invoiced}</span> مخرجًا من «تم الفوترة» فما بعدها</span></div>
       </div>
     </div>
   </section>
   <div class="kpis">
-    <div class="kpi wait"><span class="label">إجمالي في انتظار القبول من قيمة العقد</span><span class="value">${pct(t.waitingShare)}<span class="amt">${sar(t.waitingValue)}</span></span>${meter(t.waitingShare, "--st-wait")}<span class="foot"><span class="num">${t.waiting}</span> مخرجًا مسلَّمًا ينتظر قبول العميل</span></div>
-    <div class="kpi acc"><span class="label">إجمالي المقبول من قيمة العقد</span><span class="value">${pct(t.acceptedShare)}<span class="amt">${sar(t.acceptedValue)}</span></span>${meter(t.acceptedShare, "--st-acc")}<span class="foot"><span class="num">${t.accepted}</span> مخرجًا مقبولًا من <span class="num">${t.qty}</span></span></div>
+    <div class="kpi wait"><span class="label">في انتظار القبول</span><span class="value">${pct(t.waitingShare)}<span class="amt">${sar(t.waitingValue)}</span></span>${meter(t.waitingShare, "--st-wait")}<span class="foot"><span class="num">${t.waiting}</span> مخرجًا مسلَّمًا ينتظر قبول العميل</span></div>
+    <div class="kpi"><span class="label">مقبول ولم يُفوتر بعد</span><span class="value">${pct(t.total ? (t.acceptedValue - t.invoicedValue) / t.total : null)}<span class="amt">${sar(t.acceptedValue - t.invoicedValue)}</span></span>${meter(t.total ? (t.acceptedValue - t.invoicedValue) / t.total : 0, "--st-acc")}<span class="foot"><span class="num">${t.accepted - t.invoiced}</span> مخرجًا مقبولًا بلا فاتورة</span></div>
     <div class="kpi"><span class="label">المعلَّق</span><span class="value">${pct(t.total ? t.suspendedValue / t.total : null)}<span class="amt">${sar(t.suspendedValue)}</span></span>${meter(t.total ? t.suspendedValue / t.total : 0, "--st-sus")}<span class="foot"><span class="num">${t.suspended}</span> مخرجًا مستبعدًا من حسابات التسليم والقبول${t.suspendMissing ? ` · <span class="red"><span class="num">${t.suspendMissing}</span> بلا سبب تعليق</span>` : ""}</span></div>
     <div class="kpi"><span class="label">المتبقي (غير المقبول)</span><span class="value">${sar(t.remaining)}</span><span class="foot">قيمة العقد مطروحًا منها المقبول</span></div>
+  </div>
+  <section class="hero exec" aria-label="الإنجاز التنفيذي">
+    ${rings([
+      { v: t.donePct, color: "--actual", label: "المنجز («تم») من المخرجات", amt: t.done },
+      { v: t.deliveredPct, color: "--st-wait", label: "المسلَّم من المخرجات", amt: t.delivered },
+      { v: t.progress, color: "--st-acc", label: "المقبول من المخرجات", amt: t.accepted },
+    ].map((x) => ({ ...x, amt: undefined })))}
+    <div class="hero-body">
+      <span class="eyebrow">الإنجاز التنفيذي · بعدد المخرجات</span>
+      <h2 class="hero-title">${pct(t.donePct)} من المخرجات منجزة</h2>
+      <div class="hero-sub"><span><span class="num">${t.done}</span> مخرجًا حالتها التنفيذية «تم» من <span class="num">${t.qty}</span> (الكمية التعاقدية)</span></div>
+      <div class="ring-legend">
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--actual)"></span>المنجز («تم») ÷ الإجمالي</span><span class="v">${pct(t.donePct)}</span><span class="f"><span class="num">${t.done}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-wait)"></span>المسلَّم ÷ الإجمالي</span><span class="v">${pct(t.deliveredPct)}</span><span class="f"><span class="num">${t.delivered}</span> من <span class="num">${t.qty}</span> مخرجًا (دون المعلَّقة)</span></div>
+        <div class="ring-item"><span class="k"><span class="dot" style="background:var(--st-acc)"></span>المقبول ÷ الإجمالي</span><span class="v">${pct(t.progress)}</span><span class="f"><span class="num">${t.accepted}</span> من <span class="num">${t.qty}</span> مخرجًا</span></div>
+      </div>
+    </div>
+  </section>
+  <div class="kpis">
+    ${[[ST.PROG, "--st-prog"], [ST.LATE, "--st-late"], [ST.NEW, "--st-new"], [ST.SUS, "--st-sus"]].map(([st, col]) => { const n = c.execCounts[st] || 0, sh = t.qty ? n / t.qty : null;
+      return `<button type="button" class="kpi kpi-btn" data-filter-exec="${esc(st)}"><span class="label">${esc(st)}</span><span class="value">${pct(sh)}<span class="amt"><span class="num">${n}</span> مخرجًا</span></span>${meter(sh, col)}<span class="foot">من <span class="num">${t.qty}</span> مخرجًا · اضغط لعرضها</span></button>`; }).join("")}
   </div>
   <section class="section">
     <div class="section-head"><h2>حالة المخرجات</h2><span class="sub">اضغط على أي حالة لعرض مخرجاتها</span></div>
