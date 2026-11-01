@@ -1167,7 +1167,7 @@ function viewDashboard() {
       <div class="split-col"><h3 class="split-title">الحالة التنفيذية</h3>
         <div class="donut-wrap">${donut(c.execCounts, EXEC_ORDER, "exec", "توزيع المخرجات حسب الحالة التنفيذية", c.execValues)}<div class="legend vals">${legend(c.execCounts, EXEC_ORDER, "exec", c.execValues)}</div></div></div>
       <div class="split-col"><h3 class="split-title">حالة الفوترة<span class="sub">للمخرجات المنجزة</span></h3>
-        <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المنجزة حسب حالة الفوترة")}<div class="legend">${legend(c.billCounts, BILL_ORDER, "bill")}</div></div></div>
+        <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المنجزة حسب حالة الفوترة", c.billValues)}<div class="legend vals">${legend(c.billCounts, BILL_ORDER, "bill", c.billValues)}</div></div></div>
     </div>
   </section>
   <section class="section">
