@@ -310,6 +310,18 @@ td .desc { min-width: 200px; max-width: 680px; display: -webkit-box; -webkit-lin
 .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .filters input { width: auto; flex: 1 1 220px; }
 .filters select { width: auto; flex: 0 1 200px; }
+.msel { position: relative; flex: 0 1 210px; min-width: 0; }
+.msel summary { list-style: none; cursor: pointer; background: var(--surface-2); border: 1px solid transparent; border-radius: var(--r-sm); padding: 9px 12px; padding-inline-end: 30px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; }
+.msel summary::-webkit-details-marker { display: none; }
+.msel summary::after { content: ""; position: absolute; inset-inline-end: 12px; top: 50%; width: 7px; height: 7px; border: solid var(--muted); border-width: 0 0 1.6px 1.6px; transform: translateY(-70%) rotate(-45deg); }
+.msel[open] summary, .msel summary:focus-visible { outline: none; background: var(--surface); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.msel.on summary { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+.msel-pop { position: absolute; z-index: 20; top: calc(100% + 6px); inset-inline-start: 0; min-width: 100%; width: max-content; max-width: min(360px, 90vw); max-height: 320px; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-lg); padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.msel-pop .check { padding: 7px 8px; border-radius: 8px; font-weight: 500; font-size: .9rem; }
+.msel-pop .check:hover { background: var(--surface-2); }
+.filters .msel-pop input[type="checkbox"] { flex: none; width: 16px; height: 16px; padding: 0; margin: 0; border: 0; box-shadow: none; background: none; }
+.msel-pop .check span { white-space: nowrap; }
+.msel-pop .btn { align-self: flex-start; margin-top: 4px; }
 .count { color: var(--muted); font-size: .84rem; }
 
 /* ---------- cards (issues, change requests) */
@@ -714,7 +726,7 @@ const state = {
   ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
-  filters: { q: "", item: "", exec: "", bill: "", issue: "" }, delView: "review",
+  filters: { q: "", item: [], exec: [], bill: [], issue: [] }, delView: "review", openMsel: null,
   logFilters: { q: "", action: "" }, issueFilters: { state: OPEN, type: "", q: "" },
   report: { preset: "last_week", from: "", to: "" },
   reports: { pick: "billing", bill: null },
@@ -1239,18 +1251,27 @@ function viewItems() {
 }
 
 /* ---- deliverables */
+// a dropdown of check boxes; it stays open while boxes are ticked, and closes on a click elsewhere
+function multiSelect(key, label, allText, opts) {
+  const sel = state.filters[key], picked = opts.filter(([v]) => sel.includes(v));
+  const text = !picked.length ? allText : picked.length === 1 ? short(picked[0][1], 34) : `${label}: ${picked.length} مختارة`;
+  return `<details class="msel${picked.length ? " on" : ""}" data-msel="${key}"${state.openMsel === key ? " open" : ""}>
+    <summary aria-label="${esc(label)}">${esc(text)}</summary>
+    <div class="msel-pop">
+      ${opts.map(([v, l]) => `<label class="check"><input type="checkbox" name="msel-${key}" value="${esc(v)}" ${sel.includes(v) ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}
+      ${picked.length ? `<button class="btn small" type="button" data-msel-clear="${key}">إلغاء الاختيار</button>` : ""}
+    </div></details>`;
+}
 function filteredDeliverables() {
   const c = state.calc, f = state.filters, q = f.q.trim();
   return [...state.deliverables].filter((d) => {
     const k = c.del.get(d.id);
-    if (f.item && d.item_id !== f.item) return false;
-    if (f.exec && k.exec !== f.exec) return false;
-    if (f.bill && k.bill !== f.bill) return false;
-    if (k.cancelled && f.exec !== ST.CAN) return false;
-    if (f.issue === "open" && !k.openIssues) return false;
-    if (f.issue === "blocking" && !k.blocking) return false;
-    if (f.issue === "cr" && !k.crs.length) return false;
-    if (f.issue === "nosusp" && !k.suspendMissing) return false;
+    if (f.item.length && !f.item.includes(d.item_id)) return false;
+    if (f.exec.length && !f.exec.includes(k.exec)) return false;
+    if (f.bill.length && !f.bill.includes(k.bill)) return false;
+    if (k.cancelled && !f.exec.includes(ST.CAN)) return false;
+    const flags = { open: k.openIssues > 0, blocking: k.blocking > 0, cr: k.crs.length > 0, nosusp: k.suspendMissing };
+    if (f.issue.length && !f.issue.some((x) => flags[x])) return false;
     if (q && !(`${d.id} ${d.description || ""} ${d.notes || ""} ${Object.values(billingOf(d)).join(" ")}`.includes(q))) return false;
     return true;
   }).sort(byId);
@@ -1258,11 +1279,10 @@ function filteredDeliverables() {
 function viewDeliverables() {
   const c = state.calc, f = state.filters, billingView = state.delView === "billing";
   const list = filteredDeliverables();
-  const itemOpts = [...state.items].sort(byItemOrder).map((it) => `<option value="${esc(it.id)}"${f.item === it.id ? " selected" : ""}>${esc(itemLabel(it))} — ${esc(short(it.name, 40))}</option>`).join("");
-  const execOpts = [...EXEC_ORDER, ST.CAN].map((s) => `<option${f.exec === s ? " selected" : ""}>${esc(s)}</option>`).join("");
-  const billOpts = BILL_ORDER.map((s) => `<option${f.bill === s ? " selected" : ""}>${esc(s)}</option>`).join("");
-  const issueOpts = [["", "جميع المخرجات"], ["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"], ["nosusp", "معلَّقة بلا سبب"]]
-    .map(([v, l]) => `<option value="${v}"${f.issue === v ? " selected" : ""}>${l}</option>`).join("");
+  const itemOpts = [...state.items].sort(byItemOrder).map((it) => [it.id, `${itemLabel(it)} — ${short(it.name, 40)}`]);
+  const execOpts = [...EXEC_ORDER, ST.CAN].map((x) => [x, x]);
+  const billOpts = BILL_ORDER.map((x) => [x, x]);
+  const issueOpts = [["open", "عليها مشكلة أو قرار مفتوح"], ["blocking", BLOCKING], ["cr", "مرتبطة بطلب تغيير"], ["nosusp", "معلَّقة بلا سبب"]];
   const flags = (k) => [k.suspendMissing ? `<span class="flag" title="أدخل سبب التعليق من تبويب بيانات المخرج">بلا سبب تعليق</span>` : "", k.blocking ? `<span class="flag" title="مشكلة ${BLOCKING}">⚠ ${k.blocking}</span>` : k.openIssues ? `<span class="flag soft" title="مشكلات أو قرارات مفتوحة">${k.openIssues}</span>` : "",
     k.crs.length ? `<span class="flag soft" title="طلب تغيير">${k.crs.map((x) => esc(x.code)).join("، ")}</span>` : ""].join(" ");
   const head = billingView
@@ -1284,10 +1304,11 @@ function viewDeliverables() {
       <button class="btn primary" data-new-del type="button">+ مخرج جديد</button></div></div>
     <div class="filters">
       <input id="fQ" type="search" placeholder="ابحث برقم المخرج أو الوصف أو رقم الفاتورة أو المطالبة" value="${esc(f.q)}" aria-label="بحث">
-      <select id="fItem" aria-label="البند"><option value="">جميع البنود</option>${itemOpts}</select>
-      <select id="fExec" aria-label="الحالة التنفيذية"><option value="">جميع الحالات التنفيذية</option>${execOpts}</select>
-      <select id="fBill" aria-label="حالة الفوترة"><option value="">جميع حالات الفوترة</option>${billOpts}</select>
-      <select id="fIssue" aria-label="التنبيهات">${issueOpts}</select>
+      ${multiSelect("item", "البنود", "جميع البنود", itemOpts)}
+      ${multiSelect("exec", "الحالة التنفيذية", "جميع الحالات التنفيذية", execOpts)}
+      ${multiSelect("bill", "حالة الفوترة", "جميع حالات الفوترة", billOpts)}
+      ${multiSelect("issue", "التنبيهات", "جميع المخرجات", issueOpts)}
+      ${["item", "exec", "bill", "issue"].some((k) => f[k].length) ? `<button class="btn small" type="button" data-clear-filters>مسح الفلاتر</button>` : ""}
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.deliverables.filter((d) => !d.cancelled).length}</span>${state.deliverables.some((d) => d.cancelled) ? ` · الملغاة مخفية (اختر «${ST.CAN}» من الحالة التنفيذية لعرضها)` : ""}</span>
     </div>
     ${list.length ? `<div class="table-wrap tall"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
@@ -2037,7 +2058,7 @@ function billingFields(b) {
     : `<input id="b_${x.k}" name="b_${x.k}" value="${esc(b[x.k] ?? "")}">`}${x.k === "ref_no" ? `<span class="hint">رقم المطالبة الأولى التي أُعيدت المطالبة بها برقم جديد.</span>` : ""}</div>`).join("");
 }
 function drawerDelForm() {
-  const v = { id: nextDeliverableId(), item_id: state.filters.item || "" };
+  const v = { id: nextDeliverableId(), item_id: state.filters.item.length === 1 ? state.filters.item[0] : "" };
   return { title: "مخرج جديد", html: state.items.length ? `
     <form id="delForm" class="form-grid" autocomplete="off">
       ${delDataFields(v, true)}
@@ -2453,6 +2474,16 @@ function setTab(tab) {
   window.scrollTo(0, 0);
 }
 
+document.addEventListener("toggle", (ev) => {
+  const d = ev.target; if (!d.matches || !d.matches("details.msel")) return;
+  if (d.open) { state.openMsel = d.dataset.msel; document.querySelectorAll("details.msel[open]").forEach((x) => { if (x !== d) x.open = false; }); }
+  else if (state.openMsel === d.dataset.msel) state.openMsel = null;
+}, true);
+document.addEventListener("pointerdown", (ev) => {
+  if (ev.target.closest && ev.target.closest("details.msel")) return;
+  document.querySelectorAll("details.msel[open]").forEach((x) => { x.open = false; });
+  state.openMsel = null;
+});
 document.addEventListener("click", async (ev) => {
   if (ev.target.closest("input, select, textarea, label") && !ev.target.closest("button")) return;
   const t = ev.target.closest("button, tr, .card, path[data-filter-exec], path[data-filter-bill], [data-close]");
@@ -2461,7 +2492,9 @@ document.addEventListener("click", async (ev) => {
   if (ds.tab) return setTab(ds.tab);
   if ("close" in ds) return closeDrawer();
   if (ds.go) return setTab(ds.go);
-  if (ds.filterExec || ds.filterBill) { state.filters = { q: "", item: "", exec: ds.filterExec || "", bill: ds.filterBill || "", issue: "" }; return setTab("deliverables"); }
+  if (ds.filterExec || ds.filterBill) { state.filters = { q: "", item: [], exec: ds.filterExec ? [ds.filterExec] : [], bill: ds.filterBill ? [ds.filterBill] : [], issue: [] }; state.openMsel = null; return setTab("deliverables"); }
+  if (ds.mselClear) { state.filters[ds.mselClear] = []; return render(); }
+  if ("clearFilters" in ds) { Object.assign(state.filters, { item: [], exec: [], bill: [], issue: [] }); state.openMsel = null; return render(); }
   if (ds.delview) { state.delView = ds.delview; return render(); }
   if (ds.rmItem) return openDrawer({ kind: "item", id: ds.rmItem, confirm: true });
   if (ds.rmDel) return openDrawer({ kind: "del", id: ds.rmDel, sub: "info", confirm: true });
@@ -2602,7 +2635,13 @@ document.addEventListener("input", (ev) => {
 });
 document.addEventListener("change", (ev) => {
   const el = ev.target, id = el.id;
-  const set = { fItem: () => (state.filters.item = el.value), fExec: () => (state.filters.exec = el.value), fBill: () => (state.filters.bill = el.value), fIssue: () => (state.filters.issue = el.value),
+  if (el.name && el.name.startsWith("msel-")) {
+    const key = el.name.slice(5);
+    state.filters[key] = [...document.querySelectorAll(`input[name="msel-${key}"]:checked`)].map((x) => x.value);
+    state.openMsel = key;
+    return render();
+  }
+  const set = {
     lAction: () => (state.logFilters.action = el.value), iState: () => (state.issueFilters.state = el.value), iType: () => (state.issueFilters.type = el.value),
     rPreset: () => { const [a, b] = reportRange(); state.report.preset = el.value; if (el.value === "custom") { state.report.from = a; state.report.to = b; } },
     rFrom: () => { const [, b] = reportRange(); state.report = { preset: "custom", from: el.value, to: b }; },
