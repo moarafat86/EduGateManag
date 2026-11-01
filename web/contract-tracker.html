@@ -257,6 +257,10 @@ main { max-width: none; width: 100%; margin: 0 auto; padding: 26px 32px 64px; di
 .legend { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 200px; }
 .legend button { background: none; border: 0; padding: 7px 8px; border-radius: 9px; cursor: pointer; display: grid; grid-template-columns: 10px 1fr auto auto; gap: 10px; align-items: center; text-align: start; font-size: .9rem; }
 .legend button:hover { background: var(--surface-2); }
+.legend.vals button { grid-template-columns: 10px 1fr auto auto minmax(118px, auto); }
+.legend .val { color: var(--muted); font-size: .8rem; text-align: end; white-space: nowrap; }
+.legend.vals { flex-basis: 340px; }
+.legend.vals .lbl { white-space: nowrap; }
 .legend .sw { width: 10px; height: 10px; border-radius: 50%; }
 .legend .share { color: var(--muted); font-size: .8rem; min-width: 46px; text-align: end; }
 
@@ -916,7 +920,8 @@ function computeModel(data, asOfIso) {
   const statusCounts = Object.fromEntries(STATUS_ORDER.map((st) => [st, 0]));
   for (const d of data.deliverables) if (!d.cancelled) statusCounts[del.get(d.id).status]++;
   const execCounts = Object.fromEntries(EXEC_ORDER.map((st) => [st, 0])), billCounts = Object.fromEntries(BILL_ORDER.map((st) => [st, 0]));
-  for (const d of data.deliverables) { if (d.cancelled) continue; const k = del.get(d.id); execCounts[k.exec]++; if (k.bill) billCounts[k.bill]++; }
+  const execValues = Object.fromEntries(EXEC_ORDER.map((st) => [st, 0])), billValues = Object.fromEntries(BILL_ORDER.map((st) => [st, 0]));
+  for (const d of data.deliverables) { if (d.cancelled) continue; const k = del.get(d.id); execCounts[k.exec]++; execValues[k.exec] += k.value; if (k.bill) { billCounts[k.bill]++; billValues[k.bill] += k.value; } }
   // invoiced = accepted and at or past the invoice stage
   const INVOICED = new Set([ST.INV, ST.CERTW, ST.CERT]);
   tot.invoiced = 0; tot.invoicedValue = 0;
@@ -926,7 +931,7 @@ function computeModel(data, asOfIso) {
   tot.donePct = tot.qty > 0 ? tot.done / tot.qty : null;
   tot.suspendMissing = data.deliverables.filter((d) => del.get(d.id).suspendMissing).length;
 
-  return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, execCounts, billCounts, itemsById, delById, span };
+  return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, execCounts, billCounts, execValues, billValues, itemsById, delById, span };
 }
 const currentAsOf = () => isIso(state.settings.as_of_override) ? state.settings.as_of_override : todayIso();
 function compute() { state.calc = computeModel(state, currentAsOf()); }
@@ -1053,7 +1058,7 @@ function crTable(list, opts = {}) {
 }
 
 /* ---- status donut */
-function donut(counts, order, attr, label) {
+function donut(counts, order, attr, label, values) {
   const R = 100, r0 = 62, cx = 110, cy = 110;
   const live = order.filter((s) => counts[s]), total = order.reduce((a, s) => a + (counts[s] || 0), 0);
   if (!total) return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="لا توجد مخرجات"><circle cx="${cx}" cy="${cy}" r="${(R + r0) / 2}" fill="none" stroke="var(--line)" stroke-width="${R - r0}"/></svg>`;
@@ -1067,7 +1072,7 @@ function donut(counts, order, attr, label) {
     else d = `M${pt(R, a)}A${R},${R} 0 ${large} 1 ${pt(R, a2)}L${pt(r0, a2)}A${r0},${r0} 0 ${large} 0 ${pt(r0, a)}Z`;
     a = a2;
     const p = ((n / total) * 100).toFixed(1) + "%";
-    return `<path d="${d}" fill="var(--st-${STATUS_CLASS[s]})" stroke="var(--surface)" stroke-width="2" data-filter-${attr}="${esc(s)}" data-tip-title="${esc(s)}" data-tip-pct="${p}" data-tip-sub="${n} مخرج" data-center-v="${p}" data-center-l="${esc(s)}"></path>`;
+    return `<path d="${d}" fill="var(--st-${STATUS_CLASS[s]})" stroke="var(--surface)" stroke-width="2" data-filter-${attr}="${esc(s)}" data-tip-title="${esc(s)}" data-tip-pct="${p}" data-tip-sub="${n} مخرج"${values ? ` data-tip-amt="${values[s] || 0}"` : ""} data-center-v="${p}" data-center-l="${esc(s)}"></path>`;
   }).join("");
   return `<svg class="donut" viewBox="0 0 220 220" role="img" aria-label="${esc(label)}">${paths}
     <text x="${cx}" y="${cy + 4}" text-anchor="middle" class="total c-v" data-default="${total}">${total}</text><text x="${cx}" y="${cy + 26}" text-anchor="middle" class="total-lbl c-l" data-default="مخرجًا">مخرجًا</text></svg>`;
@@ -1091,8 +1096,8 @@ function rings(list) {
 function viewDashboard() {
   const c = state.calc, t = c.tot;
   if (!state.items.length) return `<section class="section">${emptyBlock("لا توجد بنود للعقد بعد", "ابدأ بإضافة بنود العقد من شاشة البنود، ثم أضف المخرجات وسجّل حركات المراجعة.", `<button class="btn primary" data-go="items" type="button">إضافة أول بند</button>`)}</section>`;
-  const legend = (counts, order, attr) => { const total = order.reduce((a, s) => a + (counts[s] || 0), 0); return order.map((s) =>
-    `<button type="button" data-filter-${attr}="${esc(s)}"><span class="sw" style="background:var(--st-${STATUS_CLASS[s]})"></span><span class="lbl">${esc(s)}</span><strong class="num">${counts[s] || 0}</strong><span class="share num">${total ? ((counts[s] / total) * 100).toFixed(1) + "%" : "-"}</span></button>`).join(""); };
+  const legend = (counts, order, attr, values) => { const total = order.reduce((a, s) => a + (counts[s] || 0), 0); return order.map((s) =>
+    `<button type="button" data-filter-${attr}="${esc(s)}"><span class="sw" style="background:var(--st-${STATUS_CLASS[s]})"></span><span class="lbl">${esc(s)}</span><strong class="num">${counts[s] || 0}</strong><span class="share num">${total ? ((counts[s] / total) * 100).toFixed(1) + "%" : "-"}</span>${values ? `<span class="val">${sar(values[s] || 0)}</span>` : ""}</button>`).join(""); };
   const withK = state.deliverables.map((d) => ({ d, k: c.del.get(d.id) }));
   const open = withK.filter((x) => x.k.openCycle && x.k.status !== ST.ACC).sort((a, b) => b.k.openCycle.review - a.k.openCycle.review);
   const returned = withK.filter((x) => x.k.status === ST.RET).sort((a, b) => b.k.waitingSinceReply - a.k.waitingSinceReply);
@@ -1154,13 +1159,13 @@ function viewDashboard() {
   </section>
   <div class="kpis">
     ${[[ST.PROG, "--st-prog"], [ST.LATE, "--st-late"], [ST.NEW, "--st-new"], [ST.SUS, "--st-sus"]].map(([st, col]) => { const n = c.execCounts[st] || 0, sh = t.qty ? n / t.qty : null;
-      return `<button type="button" class="kpi kpi-btn" data-filter-exec="${esc(st)}"><span class="label">${esc(st)}</span><span class="value">${pct(sh)}<span class="amt"><span class="num">${n}</span> مخرجًا</span></span>${meter(sh, col)}<span class="foot">من <span class="num">${t.qty}</span> مخرجًا · اضغط لعرضها</span></button>`; }).join("")}
+      return `<button type="button" class="kpi kpi-btn" data-filter-exec="${esc(st)}"><span class="label">${esc(st)}</span><span class="value">${pct(sh)}<span class="amt"><span class="num">${n}</span> مخرجًا · ${sar(c.execValues[st] || 0)}</span></span>${meter(sh, col)}<span class="foot">من <span class="num">${t.qty}</span> مخرجًا · اضغط لعرضها</span></button>`; }).join("")}
   </div>
   <section class="section">
     <div class="section-head"><h2>حالة المخرجات</h2><span class="sub">اضغط على أي حالة لعرض مخرجاتها</span></div>
     <div class="split">
       <div class="split-col"><h3 class="split-title">الحالة التنفيذية</h3>
-        <div class="donut-wrap">${donut(c.execCounts, EXEC_ORDER, "exec", "توزيع المخرجات حسب الحالة التنفيذية")}<div class="legend">${legend(c.execCounts, EXEC_ORDER, "exec")}</div></div></div>
+        <div class="donut-wrap">${donut(c.execCounts, EXEC_ORDER, "exec", "توزيع المخرجات حسب الحالة التنفيذية", c.execValues)}<div class="legend vals">${legend(c.execCounts, EXEC_ORDER, "exec", c.execValues)}</div></div></div>
       <div class="split-col"><h3 class="split-title">حالة الفوترة<span class="sub">للمخرجات المنجزة</span></h3>
         <div class="donut-wrap">${donut(c.billCounts, BILL_ORDER, "bill", "توزيع المخرجات المنجزة حسب حالة الفوترة")}<div class="legend">${legend(c.billCounts, BILL_ORDER, "bill")}</div></div></div>
     </div>
