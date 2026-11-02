@@ -133,6 +133,32 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .nav-mod-tabs { display: flex; flex-direction: column; gap: 2px; margin-inline-start: 14px; padding-inline-start: 8px; border-inline-start: 1px solid var(--line); }
 .nav-mod:not(.open) .nav-mod-tabs { display: none; }
 .nav-free { display: flex; flex-direction: column; gap: 2px; padding-top: 10px; border-top: 1px solid var(--line); }
+.dev-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 22px; }
+.dev-card { display: flex; flex-direction: column; gap: 12px; }
+.dev-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dev-big strong { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1.1; }
+.dev-big span { color: var(--muted); }
+.dev-lines { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.dev-lines > div { background: var(--surface-2); border-radius: var(--r); padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
+.dev-lines .k { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.dev-lines .k i { width: 9px; height: 9px; border-radius: 50%; }
+.dev-lines .v { font-weight: 700; font-size: 1.05rem; }
+.dev-review { display: block; width: 100%; text-align: start; border: 0; cursor: pointer; font: inherit; }
+.dev-phases { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.dev-phase { text-align: start; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 7px; }
+.dev-phase:hover { border-color: var(--accent); }
+.dev-phase.locked { background: var(--surface-2); }
+.dev-phase .t { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dev-phase .w { font-size: .9rem; }
+.dev-phase .d, .dev-phase .b { font-size: .8rem; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.dev-picklist { display: flex; flex-direction: column; gap: 2px; max-height: 52vh; overflow: auto; border: 1px solid var(--line); border-radius: var(--r); padding: 6px; }
+.dev-pick { display: grid !important; grid-template-columns: auto 44px 1fr auto; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; font-weight: 500; }
+div.dev-pick { grid-template-columns: 44px 1fr auto; }
+.dev-pick:hover { background: var(--surface-2); }
+.dev-pick.on { background: var(--accent-soft); }
+.dev-pick .nm { min-width: 0; }
+.dev-pick .nm .sub-line { display: block; }
+.dev-pick input { width: 16px; height: 16px; margin: 0; }
 .dev-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
 .dev-stage { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: var(--r); background: var(--surface-2); }
 .dev-stage .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; flex: none; }
@@ -718,13 +744,13 @@ const DEFAULT_SETTINGS = {
 const TABS = [
   ["dashboard", "لوحة المتابعة"], ["items", "البنود"], ["deliverables", "المخرجات"], ["log", "سجل المراجعات"],
   ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["reports", "التقارير"],
-  ["dev", "نظرة عامة", "أعمال التطوير"], ["settings", "الإعدادات"],
+  ["dev", "لوحة التطوير"], ["devpkgs", "الحزم التطويرية"], ["devphases", "مراحل التسليم"], ["settings", "الإعدادات"],
 ];
 const TAB_KEYS = TABS.map((t) => t[0]);
 // the sidebar groups pages into modules; settings serve the whole project
 const MODULES = [
   { key: "contract", label: "إدارة بنود العقد", tabs: ["dashboard", "items", "deliverables", "log", "issues", "crs", "report", "reports"] },
-  { key: "dev", label: "أعمال التطوير", tabs: ["dev"] },
+  { key: "dev", label: "أعمال التطوير", tabs: ["dev", "devpkgs", "devphases"] },
 ];
 const NAV_FREE = ["settings"];
 const ICON_PATHS = {
@@ -736,13 +762,15 @@ const ICON_PATHS = {
   crs: '<path d="M4 8h13l-3.5-3.5"/><path d="M20 16H7l3.5 3.5"/>',
   report: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   dev: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
+  devpkgs: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  devphases: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
   mod_contract: '<path d="M8 3h8l4 4v14H4V3h4z"/><path d="M9 11h6M9 15h6M9 7h2"/>',
   mod_dev: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
   reports: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 15.5h7M9 19h4"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
 };
 const navIcon = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[k] || ""}</svg>`;
-const COLLECTIONS = ["items", "deliverables", "events", "issues", "crs"];
+const COLLECTIONS = ["items", "deliverables", "events", "issues", "crs", "packages"];
 /* Saudi Riyal sign — glyph outline from the Saudi Riyal font (SIL OFL 1.1) */
 const SAR_PATH = "M750,1119C730,1163,716,1211,711,1262L1136,1172C1156,1127,1169,1079,1174,1028ZM1136,901C1156,857,1169,809,1174,758L843,828L843,693L1136,631C1156,587,1169,538,1174,488L843,558L843,72C793,100,748,138,711,183L711,586L579,614L579,6C528,34,483,72,447,117L447,642L151,705C131,750,117,798,112,849L447,777L447,948L88,1024C68,1068,55,1117,50,1167L425,1088C456,1081,482,1063,499,1038L568,936C575,926,579,913,579,899L579,749L711,721L711,992Z";
 const SAR = `<svg class="sar" viewBox="40 0 1145 1270" role="img" aria-label="ريال سعودي"><path d="${SAR_PATH}"/></svg>`;
@@ -750,7 +778,9 @@ const SAR = `<svg class="sar" viewBox="40 0 1145 1270" role="img" aria-label="ر
 /* ------------------------------------------------------------ state */
 const state = {
   db: null, downloads: null,
-  ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false },
+  ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false, packages: false, devconfig: false },
+  packages: [], devConfig: null, dev: null,
+  pfilters: { q: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
   filters: { q: "", item: [], exec: [], bill: [], issue: [] }, delView: "review", openMsel: null,
@@ -974,7 +1004,7 @@ function computeModel(data, asOfIso) {
   return { asOf, asOfIso, reviewLimit, vat, ev, del, items, tot, statusCounts, execCounts, billCounts, execValues, billValues, itemsById, delById, span };
 }
 const currentAsOf = () => isIso(state.settings.as_of_override) ? state.settings.as_of_override : todayIso();
-function compute() { state.calc = computeModel(state, currentAsOf()); }
+function compute() { state.calc = computeModel(state, currentAsOf()); computeDev(); }
 
 /* ------------------------------------------------------------ rendering */
 function render() {
@@ -989,7 +1019,7 @@ function render() {
   const blocking = state.issues.filter((i) => i.status !== CLOSED && i.blocking).length;
   const openCrs = state.crs.filter((x) => CR_OPEN.has(x.status)).length;
   const exportBtn = document.getElementById("exportBtn");
-  if (exportBtn && state.downloads) exportBtn.hidden = state.tab === "dev"; // the Excel export covers the contract module
+  if (exportBtn && state.downloads) exportBtn.hidden = state.tab.startsWith("dev"); // the Excel export covers the contract module
   const tabBtn = (k) => {
     const label = TABS.find((x) => x[0] === k)[1];
     const badge = k === "issues" && blocking ? `<span class="badge num">${blocking}</span>` : k === "crs" && openCrs ? `<span class="badge num">${openCrs}</span>` : "";
@@ -1006,7 +1036,7 @@ function render() {
   const loading = !Object.values(state.ready).every(Boolean) && !state.offline;
   let html = state.offline ? `<div class="notice">تعذّر الوصول إلى تخزين البيانات. افتح الصفحة من claude.ai بعد تسجيل الدخول لعرض بيانات العقد وتعديلها.</div>` : "";
   if (loading) html += `<div class="skel" style="height:280px" aria-label="جارٍ تحميل بيانات العقد"></div><div class="kpis"><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div></div>`;
-  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, reports: viewReports, dev: viewDev, settings: viewSettings })[state.tab]();
+  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, reports: viewReports, dev: viewDev, devpkgs: viewDevPkgs, devphases: viewDevPhases, settings: viewSettings })[state.tab]();
   // a data refresh keeps the place in long tables; only a page switch animates
   const samePage = state.lastTab === state.tab;
   const keep = samePage ? [...view.querySelectorAll(".table-wrap.tall")].map((w) => [w.scrollTop, w.scrollLeft]) : [];
@@ -1289,14 +1319,14 @@ function viewItems() {
 
 /* ---- deliverables */
 // a dropdown of check boxes; it stays open while boxes are ticked, and closes on a click elsewhere
-function multiSelect(key, label, allText, opts) {
-  const sel = state.filters[key], picked = opts.filter(([v]) => sel.includes(v));
+function multiSelect(key, label, allText, opts, scope = "filters") {
+  const sel = state[scope][key], picked = opts.filter(([v]) => sel.includes(v)), mid = `${scope}.${key}`;
   const text = !picked.length ? allText : picked.length === 1 ? short(picked[0][1], 34) : `${label}: ${picked.length} مختارة`;
-  return `<details class="msel${picked.length ? " on" : ""}" data-msel="${key}"${state.openMsel === key ? " open" : ""}>
+  return `<details class="msel${picked.length ? " on" : ""}" data-msel="${mid}"${state.openMsel === mid ? " open" : ""}>
     <summary aria-label="${esc(label)}">${esc(text)}</summary>
     <div class="msel-pop">
-      ${opts.map(([v, l]) => `<label class="check"><input type="checkbox" name="msel-${key}" value="${esc(v)}" ${sel.includes(v) ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}
-      ${picked.length ? `<button class="btn small" type="button" data-msel-clear="${key}">إلغاء الاختيار</button>` : ""}
+      ${opts.map(([v, l]) => `<label class="check"><input type="checkbox" name="msel-${scope}-${key}" value="${esc(v)}" ${sel.includes(v) ? "checked" : ""}> <span>${esc(l)}</span></label>`).join("")}
+      ${picked.length ? `<button class="btn small" type="button" data-msel-clear="${mid}">إلغاء الاختيار</button>` : ""}
     </div></details>`;
 }
 function filteredDeliverables() {
@@ -1898,24 +1928,391 @@ function viewReports() {
   return `<section class="section"><div class="section-head"><h2>التقارير</h2><span class="sub">تقارير جاهزة للتقديم عند الطلب</span></div><div class="rep-cards">${cards}</div></section>${body}`;
 }
 
-/* ---- development works (module in design) */
-const DEV_STAGES = ["استكشاف", "تطوير", "قبول المستخدم", "تم الإطلاق"];
+/* ============================================================ development works module
+   A development package carries a weight (its service count, from a fixed scale), a request stage and a target quarter.
+   Launched packages are grouped by hand into delivery phases of 25 weight; each phase is linked (in dev/config) to the
+   matching contract deliverables, so a phase locks once its deliverable is accepted and shows that deliverable's billing. */
+const DEV_STAGES = ["الاستكشاف", "التطوير", "قبول المستخدم", "إجراءات الإطلاق", "تم الإطلاق"];
+const DEV_LAUNCHED = "تم الإطلاق";
+const DEV_STAGE_CLASS = { "الاستكشاف": "new", "التطوير": "prog", "قبول المستخدم": "wait", "إجراءات الإطلاق": "inv", "تم الإطلاق": "acc" };
+const DEV_IFACES = [["portal", "البوابة الموحدة"], ["app", "التطبيق الموحد"], ["biz", "منصة الأعمال"]];
+const DEV_IFACE = Object.fromEntries(DEV_IFACES);
+const DEV_TARGET = { portal: 250, app: 100 };
+const DEV_QUARTERS = [["pilot", "الإطلاق التجريبي"], ["2025Q4", "الربع الرابع 2025"], ["2026Q1", "الربع الأول 2026"], ["2026Q2", "الربع الثاني 2026"], ["2026Q3", "الربع الثالث 2026"],
+  ["2026Q4", "الربع الرابع 2026"], ["2027Q1", "الربع الأول 2027"], ["2027Q2", "الربع الثاني 2027"], ["2027Q3", "الربع الثالث 2027"], ["2027Q4", "الربع الرابع 2027"]];
+const DEV_QUARTER = Object.fromEntries(DEV_QUARTERS);
+const DEV_WEIGHTS = [0.1, 0.2, 0.3, 0.5, 0.8, 1.3, 2.1, 3.4, 5.5, 8.9];
+const DEV_PRESENCE = ["خدمة قديمة", "احتياج جديد", "ليست خدمة"];
+const DEV_TYPES = ["إجرائية", "استعلامية", "ذاتية", "مكوّن / أعمال تطويرية"];
+const DEV_CATEGORIES = ["الخدمات الإدارية", "الخدمات التعليمية", "الخدمات الأساسية", "أدوات داعمة", "خدمات الأعمال"];
+const DEV_BENEF = ["موظف", "ولي أمر", "ولي الأمر والطالب", "طالب", "المعلم", "مدير المدرسة", "الزائر", "المستثمر", "الكل"];
+const DEV_SYSTEMS = ["فارس", "نور", "البوابة الموحدة", "التسجيل الإلكتروني", "نتائجي", "مدرستي"];
+const DEV_PRIORITIES = [1, 2, 3, 4, 5];
+const DEV_PHASES = { portal: ["1-2", "3", "4", "5", "6", "7", "8", "9", "10"], app: ["1", "2", "3", "4"] };
+const DEV_CORE = "core";
+const phaseLabel = (ph) => ph === DEV_CORE ? "أساسية (5.أ)" : ph === "1-2" ? "مرحلة 1 و2" : ph ? `مرحلة ${ph}` : "";
+const phaseTarget = (ph) => ph === "1-2" ? 50 : 25;
+const phaseCap = (ph) => ph === "1-2" ? 51 : 25.5;
+const devW = (v) => Number.isFinite(v) ? (Math.round(v * 10) / 10).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : "-";
+const devWHtml = (v) => `<span class="num">${devW(v)}</span>`;
+const isBilledState = (st) => [ST.INV, ST.CERTW, ST.CERT].includes(st);
+const PKG_REQUIRED = [["name", "اسم الحزمة"], ["iface", "الواجهة"], ["stage", "مرحلة الطلب"], ["quarter", "الربع المستهدف"], ["priority", "الأولوية"], ["weight", "الوزن"],
+  ["presence", "التواجد في النظام التكاملي"], ["group", "المجموعة"], ["type", "نوع الخدمة"], ["category", "تصنيف الخدمة"], ["beneficiary", "الفئة المستفيدة"],
+  ["system", "النظام المستهدف للإغلاق"], ["dependency", "الاعتمادية"], ["brd", "BRD No"], ["uat", "UAT No"]];
+
+function computeDev() {
+  const c = state.calc, links = state.devConfig?.links || {};
+  const phaseDels = (iface, ph) => ph === "1-2" ? [...(links[iface]?.["1"] || []), ...(links[iface]?.["2"] || [])] : (links[iface]?.[ph] || []);
+  const phases = new Map();
+  for (const [iface, list] of Object.entries(DEV_PHASES)) for (const ph of list) {
+    const dels = phaseDels(iface, ph).filter((id) => c.delById.has(id));
+    const ks = dels.map((id) => c.del.get(id));
+    const bills = ks.map((k) => k.bill).filter(Boolean);
+    const bill = bills.length ? bills.reduce((a, b) => (BILL_ORDER.indexOf(a) <= BILL_ORDER.indexOf(b) ? a : b)) : "";
+    phases.set(`${iface}:${ph}`, { iface, ph, dels, locked: ks.some((k) => k.accepted > 0), bill, target: phaseTarget(ph), cap: phaseCap(ph), pkgs: [], weight: 0 });
+  }
+  const tot = Object.fromEntries(["portal", "app", "biz"].map((i) => [i, { count: 0, weight: 0, launched: 0, launchedN: 0, delivered: 0, billed: 0, pool: 0, poolN: 0, byStage: {}, byQuarter: {} }]));
+  const pk = new Map(), review = [];
+  for (const p of state.packages) {
+    const flags = [];
+    const w = Number.isFinite(p.weight) ? p.weight : null;
+    if (w === null) flags.push("بلا وزن");
+    else if (!DEV_WEIGHTS.includes(w)) flags.push("وزن خارج المقياس");
+    if (p.presence === "ليست خدمة") flags.push("ليست خدمة");
+    if (!DEV_IFACE[p.iface]) flags.push("بلا واجهة");
+    if (!DEV_STAGES.includes(p.stage)) flags.push("بلا مرحلة طلب");
+    const missing = PKG_REQUIRED.filter(([k]) => p[k] === undefined || p[k] === null || p[k] === "").map(([, l]) => l);
+    const core = p.phase === DEV_CORE;
+    const phase = !core && p.phase ? phases.get(`${p.iface}:${p.phase}`) : null;
+    if (p.phase && !core && !phase) flags.push("مرحلة تسليم غير صالحة");
+    const launched = p.stage === DEV_LAUNCHED;
+    if (phase && !launched) flags.push("مربوطة بمرحلة ولم تُطلق");
+    const counted = !core && (p.iface === "portal" || p.iface === "app");
+    const bill = core ? "" : phase ? (phase.bill || "لم يُسلَّم المخرج بعد") : launched && counted ? "لم تُسلَّم بعد" : "";
+    const k = { flags, missing, core, phase, launched, counted, bill, locked: !!phase?.locked, w: w || 0 };
+    pk.set(p.id, k);
+    if (flags.length) review.push(p);
+    if (phase) { phase.pkgs.push(p); phase.weight += k.w; }
+    if (!core && tot[p.iface]) {
+      const t = tot[p.iface];
+      t.count++; t.weight += k.w;
+      t.byStage[p.stage] = (t.byStage[p.stage] || 0) + k.w;
+      t.byQuarter[p.quarter || ""] = (t.byQuarter[p.quarter || ""] || 0) + k.w;
+      if (launched) { t.launched += k.w; t.launchedN++; }
+      if (phase) { t.delivered += k.w; if (isBilledState(phase.bill)) t.billed += k.w; }
+      else if (launched) { t.pool += k.w; t.poolN++; }
+    }
+  }
+  state.dev = { phases, tot, pk, review };
+}
+
+/* ---- pages */
+function devCard(iface) {
+  const t = state.dev.tot[iface], target = DEV_TARGET[iface];
+  const bar = (v, col) => `<div class="meter"><span style="width:${Math.max(0, Math.min(100, (v / target) * 100))}%;background:var(${col})"></span></div>`;
+  return `<section class="section dev-card">
+    <div class="section-head"><h2>${DEV_IFACE[iface]}</h2><span class="sub">المستهدف التعاقدي <span class="num">${target}</span> خدمة (وزن)</span></div>
+    <div class="dev-big"><strong class="num">${devW(t.launched)}</strong><span>من <span class="num">${target}</span> وزن مطلق · ${pct(t.launched / target)}</span></div>
+    ${bar(t.launched, "--st-acc")}
+    <div class="dev-lines">
+      <div><span class="k"><i style="background:var(--st-wait)"></i>مسلَّم في مراحل التسليم</span><span class="v">${devWHtml(t.delivered)} · ${pct(t.delivered / target)}</span></div>
+      <div><span class="k"><i style="background:var(--st-inv)"></i>مفوتر</span><span class="v">${devWHtml(t.billed)} · ${pct(t.billed / target)}</span></div>
+      <div><span class="k"><i style="background:var(--st-prog)"></i>مطلق ولم يُسلَّم بعد</span><span class="v">${devWHtml(t.pool)} · <span class="num">${t.poolN}</span> حزمة</span></div>
+      <div><span class="k"><i style="background:var(--st-new)"></i>الوزن الكلي المحصور</span><span class="v">${devWHtml(t.weight)} · <span class="num">${t.count}</span> حزمة</span></div>
+    </div></section>`;
+}
 function viewDev() {
+  const D = state.dev;
+  const stageRows = DEV_STAGES.map((st) => { const n = state.packages.filter((p) => p.stage === st && p.phase !== DEV_CORE).length;
+    return `<tr class="clickable" data-pfilter-stage="${esc(st)}"><td>${pill(st, DEV_STAGE_CLASS[st])}</td><td class="n">${int(n)}</td><td class="n">${devWHtml(D.tot.portal.byStage[st] || 0)}</td><td class="n">${devWHtml(D.tot.app.byStage[st] || 0)}</td><td class="n">${devWHtml(D.tot.biz.byStage[st] || 0)}</td></tr>`; }).join("");
+  const qRows = [...DEV_QUARTERS, ["", "دون ربع مستهدف"]].map(([q, l]) => { const a = D.tot.portal.byQuarter[q] || 0, b = D.tot.app.byQuarter[q] || 0, cc = D.tot.biz.byQuarter[q] || 0;
+    if (!a && !b && !cc) return ""; return `<tr class="clickable" data-pfilter-quarter="${esc(q || "none")}"><td>${esc(l)}</td><td class="n">${devWHtml(a)}</td><td class="n">${devWHtml(b)}</td><td class="n">${devWHtml(cc)}</td></tr>`; }).join("");
+  return `<div class="dev-cards">${devCard("portal")}${devCard("app")}</div>
+  ${D.review.length ? `<button type="button" class="notice dev-review" data-pfilter-flag="review"><strong class="num">${D.review.length}</strong> حزمة تحتاج إلى مراجعة (بلا وزن، أو ليست خدمة، أو بيانات ناقصة) — اضغط لعرضها</button>` : ""}
+  <section class="section"><div class="section-head"><h2>الوزن حسب مرحلة الطلب</h2><span class="sub">دون الخدمات الأساسية (5.أ) · اضغط على أي مرحلة لعرض حزمها</span></div>
+    <div class="table-wrap"><table><thead><tr><th>مرحلة الطلب</th><th class="n">عدد الحزم</th><th class="n">البوابة الموحدة</th><th class="n">التطبيق الموحد</th><th class="n">منصة الأعمال</th></tr></thead><tbody>${stageRows}</tbody></table></div></section>
+  <section class="section"><div class="section-head"><h2>الوزن حسب الربع المستهدف</h2><span class="sub">اضغط على أي ربع لعرض حزمه</span></div>
+    <div class="table-wrap"><table><thead><tr><th>الربع المستهدف</th><th class="n">البوابة الموحدة</th><th class="n">التطبيق الموحد</th><th class="n">منصة الأعمال</th></tr></thead><tbody>${qRows}</tbody></table></div></section>`;
+}
+
+function filteredPackages() {
+  const f = state.pfilters, q = f.q.trim(), D = state.dev;
+  return state.packages.filter((p) => {
+    const k = D.pk.get(p.id);
+    if (f.iface.length && !f.iface.includes(p.iface)) return false;
+    if (f.stage.length && !f.stage.includes(p.stage)) return false;
+    if (f.quarter.length && !f.quarter.includes(p.quarter || "none")) return false;
+    if (f.phase.length && !f.phase.includes(k.core ? DEV_CORE : p.phase ? p.phase : k.launched ? "pool" : "none")) return false;
+    if (f.benef.length && !f.benef.includes(p.beneficiary)) return false;
+    if (f.cat.length && !f.cat.includes(p.category)) return false;
+    if (f.prio.length && !f.prio.includes(String(p.priority))) return false;
+    if (f.bill.length && !f.bill.includes(k.bill || "—")) return false;
+    if (f.flag.length && !f.flag.some((x) => x === "review" ? k.flags.length > 0 : x === "locked" ? k.locked : k.flags.includes(x))) return false;
+    if (q && !`${p.no} ${p.name} ${p.group || ""} ${p.dependency || ""} ${p.brd || ""} ${p.uat || ""}`.includes(q)) return false;
+    return true;
+  }).sort((a, b) => (a.no || 0) - (b.no || 0));
+}
+function viewDevPkgs() {
+  const f = state.pfilters, D = state.dev, list = filteredPackages();
+  const sumW = list.reduce((a, p) => a + (D.pk.get(p.id).core ? 0 : D.pk.get(p.id).w), 0);
+  const ms = (key, label, all, opts) => multiSelect(key, label, all, opts, "pfilters");
+  const phaseOpts = [["pool", "مطلقة ولم تُسلَّم"], ["none", "غير مطلقة"], [DEV_CORE, "أساسية (5.أ)"], ...[...new Set([...DEV_PHASES.portal, ...DEV_PHASES.app])].map((ph) => [ph, phaseLabel(ph)])];
+  const flagOpts = [["review", "تحتاج إلى مراجعة"], ["بلا وزن", "بلا وزن"], ["ليست خدمة", "ليست خدمة"], ["locked", "مقفلة (مخرجها مقبول)"]];
+  const billOpts = [["لم تُسلَّم بعد", "لم تُسلَّم بعد"], ["لم يُسلَّم المخرج بعد", "لم يُسلَّم المخرج بعد"], ...BILL_ORDER.map((x) => [x, x]), ["—", "—"]];
+  const any = ["iface", "stage", "quarter", "phase", "benef", "cat", "prio", "bill", "flag"].some((k) => f[k].length);
+  const rows = list.map((p) => {
+    const k = D.pk.get(p.id);
+    const flags = [k.locked ? `<span class="flag soft" title="مخرج المرحلة مقبول">مقفلة</span>` : "", ...k.flags.map((x) => `<span class="flag">${esc(x)}</span>`)].join(" ");
+    return `<tr class="clickable" tabindex="0" data-open-pkg="${esc(p.id)}">
+      <td class="n"><span class="num">${p.no ?? ""}</span></td>
+      <td><div class="desc strong">${esc(p.name)}</div><div class="sub-line">${esc(p.group || "")}</div></td>
+      <td>${esc(DEV_IFACE[p.iface] || "—")}</td>
+      <td>${p.stage ? pill(p.stage, DEV_STAGE_CLASS[p.stage]) : '<span class="muted">—</span>'}</td>
+      <td>${esc(DEV_QUARTER[p.quarter] || "—")}</td>
+      <td class="n">${p.priority ? `<span class="num">${p.priority}</span>` : '<span class="muted">—</span>'}</td>
+      <td class="n">${k.core ? '<span class="muted" title="لا تدخل في الحساب">—</span>' : devWHtml(p.weight)}</td>
+      <td>${k.core ? `<span class="flag soft">أساسية 5.أ</span>` : p.phase ? esc(phaseLabel(p.phase)) : '<span class="muted">—</span>'}</td>
+      <td>${k.bill ? (BILL_ORDER.includes(k.bill) ? pill(k.bill) : `<span class="muted">${esc(k.bill)}</span>`) : '<span class="muted">—</span>'}</td>
+      <td>${flags}</td>
+      ${k.locked ? `<td class="act"><div class="row-actions"><button class="row-btn" type="button" data-open-pkg="${esc(p.id)}" title="عرض" aria-label="عرض">${ICON_EDIT}</button></div></td>` : rowActions(`data-open-pkg="${esc(p.id)}"`, `data-rm-pkg="${esc(p.id)}"`)}</tr>`;
+  }).join("");
   return `<section class="section">
-    <div class="section-head"><h2>أعمال التطوير</h2><span class="sub">موديول قيد التصميم</span></div>
-    <p class="muted" style="margin:0">يتابع هذا الموديول الخدمات والمهام معًا عبر مراحل التطوير، مع الربع المستهدف للإطلاق. تُستكمل حقوله من شيت المتابعة الحالي، ويُحدَّد ربطه بمخرجات العقد بعد مراجعة الوضع الحالي.</p>
-    <div class="dev-stages">${DEV_STAGES.map((st, i) => `<div class="dev-stage"><span class="n num">${i + 1}</span><strong>${st}</strong></div>`).join("")}</div>
-  </section>
-  <section class="section">
-    <div class="section-head"><h2>ما تم الاتفاق عليه</h2></div>
-    <ul class="dev-plan">
-      <li><strong>نطاق المتابعة:</strong> الخدمات، والمهام وطلبات التطوير.</li>
-      <li><strong>المراحل:</strong> ${DEV_STAGES.join(" ← ")}.</li>
-      <li><strong>التخطيط:</strong> ربع مستهدف للإطلاق لكل عمل، دون إصدارات.</li>
-      <li><strong>الحقول:</strong> بانتظار شيت المتابعة الحالي.</li>
-      <li><strong>الربط بمخرجات العقد:</strong> يُناقَش ويُحدَّد قبل التنفيذ.</li>
-    </ul>
+    <div class="section-head"><h2>الحزم التطويرية</h2><div class="actions">
+      <button class="btn" type="button" data-pkg-import>استيراد من Excel</button>
+      <button class="btn primary" type="button" data-new-pkg>+ حزمة جديدة</button></div></div>
+    <input type="file" id="pkgImportFile" accept=".xlsx" hidden>
+    <div class="filters">
+      <input id="pQ" type="search" placeholder="ابحث برقم الحزمة أو اسمها أو المجموعة أو BRD/UAT" value="${esc(f.q)}" aria-label="بحث">
+      ${ms("iface", "الواجهة", "جميع الواجهات", DEV_IFACES)}
+      ${ms("stage", "مرحلة الطلب", "جميع مراحل الطلب", DEV_STAGES.map((x) => [x, x]))}
+      ${ms("quarter", "الربع المستهدف", "جميع الأرباع", [...DEV_QUARTERS, ["none", "دون ربع"]])}
+      ${ms("phase", "مرحلة التسليم", "جميع مراحل التسليم", phaseOpts)}
+      ${ms("bill", "حالة الفوترة", "جميع حالات الفوترة", billOpts)}
+      ${ms("benef", "الفئة المستفيدة", "جميع الفئات", DEV_BENEF.map((x) => [x, x]))}
+      ${ms("cat", "تصنيف الخدمة", "جميع التصنيفات", DEV_CATEGORIES.map((x) => [x, x]))}
+      ${ms("prio", "الأولوية", "جميع الأولويات", DEV_PRIORITIES.map((x) => [String(x), `الأولوية ${x}`]))}
+      ${ms("flag", "التنبيهات", "جميع الحزم", flagOpts)}
+      ${any ? `<button class="btn small" type="button" data-clear-pfilters>مسح الفلاتر</button>` : ""}
+      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.packages.length}</span> حزمة · الوزن <span class="num">${devW(sumW)}</span></span>
+    </div>
+    ${list.length ? `<div class="table-wrap tall"><table><thead><tr><th class="n">#</th><th>الحزمة والمجموعة</th><th>الواجهة</th><th>مرحلة الطلب</th><th>الربع المستهدف</th><th class="n">الأولوية</th><th class="n">الوزن</th><th>مرحلة التسليم</th><th>حالة الفوترة</th><th>تنبيهات</th>${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
+      : emptyBlock(state.packages.length ? "لا توجد حزم مطابقة" : "لا توجد حزم بعد", state.packages.length ? "غيّر البحث أو عوامل التصفية." : "أضف حزمة جديدة أو استورد شيت الحزم من Excel.")}
   </section>`;
+}
+
+function viewDevPhases() {
+  const D = state.dev;
+  const card = (P) => {
+    const over = P.weight > P.cap + 1e-9, pctv = Math.min(100, (P.weight / P.target) * 100);
+    const dels = P.dels.map((id) => { const k = state.calc.del.get(id); return `<span class="code">${esc(id)}</span>${k ? ` ${pill(k.exec)}` : ""}`; }).join(" · ");
+    return `<button type="button" class="dev-phase${P.locked ? " locked" : ""}" data-open-phase="${P.iface}:${P.ph}">
+      <span class="t"><strong>${esc(phaseLabel(P.ph))}</strong>${P.locked ? `<span class="flag soft">مقفلة</span>` : ""}</span>
+      <span class="w"><span dir="ltr" class="num">${devW(P.weight)} / ${P.target}</span>${over ? ` <span class="red">تجاوز الحد</span>` : P.weight < P.target - 1e-9 ? ` <span class="muted">ناقص ${devW(P.target - P.weight)}</span>` : ""}</span>
+      <div class="meter"><span style="width:${pctv}%;background:var(${P.weight >= P.target - 1e-9 ? "--st-acc" : "--st-wait"})"></span></div>
+      <span class="d">${dels || '<span class="red">غير مربوطة بمخرجات</span>'}</span>
+      <span class="b">${P.bill ? pill(P.bill) : '<span class="muted">—</span>'} · <span class="num">${P.pkgs.length}</span> حزمة</span>
+    </button>`;
+  };
+  const block = (iface) => `<section class="section"><div class="section-head"><h2>${DEV_IFACE[iface]}</h2>
+      <span class="sub">مطلق ولم يُسلَّم: ${devWHtml(D.tot[iface].pool)} وزن في <span class="num">${D.tot[iface].poolN}</span> حزمة</span></div>
+    <div class="dev-phases">${DEV_PHASES[iface].map((ph) => card(D.phases.get(`${iface}:${ph}`))).join("")}</div></section>`;
+  return `<section class="section"><div class="section-head"><h2>مراحل التسليم</h2><span class="sub">كل مرحلة ٢٥ وزنًا (مرحلة 1 و2 معًا ٥٠) بحد أقصى ٢٥٫٥ · تُختار الحزم من المطلقة فقط · تُقفل المرحلة بقبول مخرجها</span></div></section>
+  ${block("portal")}${block("app")}`;
+}
+
+/* ---- package drawer */
+function drawerPkg() {
+  const d = state.drawer, p = d.id ? state.packages.find((x) => x.id === d.id) : null;
+  if (d.id && !p) return null;
+  const k = p ? state.dev.pk.get(p.id) : null, locked = !!k?.locked;
+  const v = p || { no: nextPkgNo(), iface: "portal", stage: DEV_STAGES[0], quarter: "", priority: "", weight: "" };
+  const dis = locked ? " disabled" : "";
+  const sel = (id, name, opts, val, ph = "اختر") => `<select id="${id}" name="${name}" required${dis}><option value="">${ph}</option>${opts.map(([o, l]) => `<option value="${esc(o)}"${String(val ?? "") === String(o) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  const groups = [...new Set(state.packages.map((x) => x.group).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ar"));
+  const systems = [...new Set([...DEV_SYSTEMS, ...state.packages.map((x) => x.system).filter(Boolean)])];
+  const phaseOptsFor = (iface) => [[DEV_CORE, "أساسية (5.أ) — لا تدخل في الحساب"], ...(DEV_PHASES[iface] || []).map((ph) => [ph, phaseLabel(ph)])];
+  const info = k ? `<div class="kv">
+      <div><span class="k">مرحلة التسليم</span><span class="v">${k.core ? "أساسية (5.أ)" : p.phase ? esc(phaseLabel(p.phase)) : "—"}</span></div>
+      <div><span class="k">المخرجات</span><span class="v">${k.phase ? k.phase.dels.map((id) => `<span class="code">${esc(id)}</span>`).join("، ") || "—" : "—"}</span></div>
+      <div><span class="k">حالة الفوترة</span><span class="v">${k.bill ? (BILL_ORDER.includes(k.bill) ? pill(k.bill) : esc(k.bill)) : "—"}</span></div>
+    </div>${k.flags.length ? `<div class="notice">تحتاج إلى مراجعة: ${k.flags.map(esc).join("، ")}${k.missing.length ? ` · حقول ناقصة: ${k.missing.map(esc).join("، ")}` : ""}</div>` : k.missing.length ? `<div class="notice">حقول ناقصة: ${k.missing.map(esc).join("، ")}</div>` : ""}` : "";
+  return { title: p ? `الحزمة #${p.no}` : "حزمة تطويرية جديدة", titleHtml: p ? `<span class="code">#${esc(p.no)}</span> ${p.stage ? pill(p.stage, DEV_STAGE_CLASS[p.stage]) : ""} ${locked ? `<span class="flag soft">مقفلة</span>` : ""}` : "", html: `
+    ${locked ? `<div class="notice">هذه الحزمة ضمن ${esc(phaseLabel(p.phase))} ومخرجها مقبول، فلا يمكن تعديلها أو حذفها.</div>` : ""}
+    ${info}
+    <form id="pkgForm" class="form-grid" autocomplete="off" novalidate>
+      <div class="form-group">بيانات الحزمة · جميع الحقول إلزامية</div>
+      <div class="field"><label for="pkNo">رقم الحزمة</label><input id="pkNo" name="no" type="number" min="1" step="1" required value="${esc(v.no ?? "")}"${dis}></div>
+      <div class="field wide"><label for="pkName">اسم الحزمة التطويرية</label><input id="pkName" name="name" required value="${esc(v.name ?? "")}"${dis}></div>
+      <div class="field"><label for="pkIface">الواجهة</label>${sel("pkIface", "iface", DEV_IFACES, v.iface)}</div>
+      <div class="field"><label for="pkStage">مرحلة الطلب</label>${sel("pkStage", "stage", DEV_STAGES.map((x) => [x, x]), v.stage)}</div>
+      <div class="field"><label for="pkQuarter">الربع المستهدف</label>${sel("pkQuarter", "quarter", DEV_QUARTERS, v.quarter)}</div>
+      <div class="field"><label for="pkPrio">الأولوية</label>${sel("pkPrio", "priority", DEV_PRIORITIES.map((x) => [x, `${x}${x === 1 ? " (الأعلى)" : x === 5 ? " (الأدنى)" : ""}`]), v.priority)}</div>
+      <div class="field"><label for="pkWeight">الوزن (عدد الخدمات)</label>${sel("pkWeight", "weight", DEV_WEIGHTS.map((x) => [x, devW(x)]), v.weight, "اختر من المقياس")}</div>
+      <div class="field"><label for="pkPresence">التواجد في النظام التكاملي</label>${sel("pkPresence", "presence", DEV_PRESENCE.map((x) => [x, x]), v.presence)}</div>
+      <div class="field"><label for="pkGroup">المجموعة</label><input id="pkGroup" name="group" list="pkGroups" required value="${esc(v.group ?? "")}"${dis}><datalist id="pkGroups">${groups.map((g) => `<option value="${esc(g)}">`).join("")}</datalist></div>
+      <div class="field"><label for="pkType">نوع الخدمة</label>${sel("pkType", "type", DEV_TYPES.map((x) => [x, x]), v.type)}</div>
+      <div class="field"><label for="pkCat">تصنيف الخدمة</label>${sel("pkCat", "category", DEV_CATEGORIES.map((x) => [x, x]), v.category)}</div>
+      <div class="field"><label for="pkBenef">الفئة المستفيدة</label>${sel("pkBenef", "beneficiary", DEV_BENEF.map((x) => [x, x]), v.beneficiary)}</div>
+      <div class="field"><label for="pkSystem">النظام المستهدف للإغلاق</label><input id="pkSystem" name="system" list="pkSystems" required value="${esc(v.system ?? "")}"${dis}><datalist id="pkSystems">${systems.map((g) => `<option value="${esc(g)}">`).join("")}</datalist></div>
+      <div class="field"><label for="pkBrd">BRD No</label><input id="pkBrd" name="brd" required value="${esc(v.brd ?? "")}" placeholder="اكتب «لا يوجد» إن لم يتوفر"${dis}></div>
+      <div class="field"><label for="pkUat">UAT No</label><input id="pkUat" name="uat" required value="${esc(v.uat ?? "")}" placeholder="اكتب «لا يوجد» إن لم يتوفر"${dis}></div>
+      <div class="field wide"><label for="pkDep">الاعتمادية</label><textarea id="pkDep" name="dependency" required placeholder="ما تعتمد عليه الحزمة أو ما يعيقها، أو «لا يوجد»"${dis}>${esc(v.dependency ?? "")}</textarea></div>
+      <div class="field wide"><label for="pkPhase">مرحلة التسليم (اختياري)</label><select id="pkPhase" name="phase"${dis}><option value="">غير مربوطة بمرحلة</option>${phaseOptsFor(v.iface).map(([o, l]) => `<option value="${esc(o)}"${(v.phase || "") === o ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>
+        <span class="hint">تُربط بمرحلة تسليم الحزمُ المطلقة فقط، ولا تتجاوز المرحلة ٢٥٫٥ وزنًا (٥١ لمرحلة 1 و2). الأفضل الربط من صفحة «مراحل التسليم».</span></div>
+      ${locked ? "" : `<div class="actions wide"><button class="btn primary" type="submit">${p ? "حفظ التعديل" : "إضافة الحزمة"}</button>${p ? `<button class="btn danger" type="button" data-ask-delete>حذف الحزمة</button>` : ""}</div>`}
+    </form>
+    ${p && d.confirm && !locked ? confirmBlock("ستُحذف الحزمة نهائيًا.", "pkg") : ""}` };
+}
+const nextPkgNo = () => (state.packages.reduce((a, p) => Math.max(a, Number(p.no) || 0), 0) + 1);
+const pkgDocId = (no) => "p" + String(no).padStart(3, "0");
+// a phase may only take launched packages of its interface, never past its cap, and never once its deliverable is accepted
+function phaseProblem(p, phase, extraWeight = 0) {
+  if (!phase || phase === DEV_CORE) return "";
+  const P = state.dev.phases.get(`${p.iface}:${phase}`);
+  if (!P) return "مرحلة التسليم لا تخص هذه الواجهة.";
+  if (P.locked) return `${phaseLabel(phase)} مقفلة لأن مخرجها مقبول.`;
+  if (p.stage !== DEV_LAUNCHED) return "لا تُربط بمرحلة تسليم إلا الحزم المطلقة.";
+  const others = P.pkgs.filter((x) => x.id !== p.id).reduce((a, x) => a + (state.dev.pk.get(x.id)?.w || 0), 0);
+  if (others + (Number(p.weight) || 0) + extraWeight > P.cap + 1e-9) return `يتجاوز وزن ${phaseLabel(phase)} الحد الأقصى ${devW(P.cap)} (الحالي ${devW(others)}).`;
+  return "";
+}
+async function savePkg(form, btn) {
+  const id = state.drawer.id, prev = id ? state.packages.find((x) => x.id === id) : null;
+  if (prev && state.dev.pk.get(id)?.locked) return;
+  const f = formData(form);
+  const body = { no: Number(f.no), name: (f.name || "").trim(), iface: f.iface, stage: f.stage, quarter: f.quarter, priority: Number(f.priority), weight: f.weight === "" ? null : Number(f.weight),
+    presence: f.presence, group: (f.group || "").trim(), type: f.type, category: f.category, beneficiary: f.beneficiary, system: (f.system || "").trim(),
+    dependency: (f.dependency || "").trim(), brd: (f.brd || "").trim(), uat: (f.uat || "").trim(), phase: f.phase || "" };
+  const missing = PKG_REQUIRED.filter(([k]) => body[k] === "" || body[k] === null || (typeof body[k] === "number" && !Number.isFinite(body[k])) || body[k] === 0 && k !== "weight").map(([, l]) => l);
+  if (missing.length) { toast("أكمل الحقول الإلزامية: " + missing.join("، "), true); form.querySelector(":invalid, [required]:placeholder-shown")?.focus(); return; }
+  if (!(body.no > 0)) { toast("رقم الحزمة غير صحيح.", true); return; }
+  const docId = prev ? id : pkgDocId(body.no);
+  if (state.packages.some((x) => x.id !== docId && Number(x.no) === body.no)) { toast(`الرقم ${body.no} مستخدم لحزمة أخرى.`, true); return; }
+  if (body.iface === "biz" && body.phase && body.phase !== DEV_CORE) { toast("حزم منصة الأعمال لا تُربط بمراحل التسليم قبل تطبيق طلب التغيير.", true); return; }
+  const prob = phaseProblem({ ...body, id: docId }, body.phase);
+  if (prob) { toast(prob, true); return; }
+  if (await run(btn, () => state.db.collection("packages").doc(docId).set(clean(body)), prev ? "تم حفظ الحزمة" : "تمت إضافة الحزمة")) backToRow(`tr[data-open-pkg="${CSS.escape(docId)}"]`);
+}
+
+/* ---- phase drawer: pick launched packages for a delivery phase */
+function drawerPhase() {
+  const d = state.drawer, P = state.dev.phases.get(d.id);
+  if (!P) return null;
+  const picked = d.picked || P.pkgs.map((p) => p.id);
+  const wOf = (p) => state.dev.pk.get(p.id)?.w || 0;
+  const pool = state.packages.filter((p) => p.iface === P.iface && p.stage === DEV_LAUNCHED && p.phase !== DEV_CORE && (!p.phase || p.phase === P.ph)).sort((a, b) => (a.no || 0) - (b.no || 0));
+  const total = pool.filter((p) => picked.includes(p.id)).reduce((a, p) => a + wOf(p), 0);
+  const over = total > P.cap + 1e-9;
+  const list = pool.map((p) => `<label class="check dev-pick${picked.includes(p.id) ? " on" : ""}"><input type="checkbox" name="phasePick" value="${esc(p.id)}" ${picked.includes(p.id) ? "checked" : ""}${P.locked ? " disabled" : ""}>
+      <span class="num">#${p.no}</span><span class="nm">${esc(p.name)}<span class="sub-line">${esc(p.group || "")} · ${esc(DEV_QUARTER[p.quarter] || "")}</span></span><strong class="num">${devW(p.weight)}</strong></label>`).join("");
+  return { title: `${DEV_IFACE[P.iface]} — ${phaseLabel(P.ph)}`, html: `
+    <div class="kv">
+      <div><span class="k">المخرجات المرتبطة</span><span class="v">${P.dels.map((id) => `<span class="code">${esc(id)}</span>`).join("، ") || "—"}</span></div>
+      <div><span class="k">حالة الفوترة</span><span class="v">${P.bill ? pill(P.bill) : "—"}</span></div>
+      <div><span class="k">الوزن المختار</span><span class="v ${over ? "red" : ""}"><span dir="ltr">${devW(total)} / ${P.target}</span></span></div>
+    </div>
+    <div class="meter"><span style="width:${Math.min(100, (total / P.target) * 100)}%;background:var(${over ? "--st-late" : total >= P.target - 1e-9 ? "--st-acc" : "--st-wait"})"></span></div>
+    ${P.locked ? `<div class="notice">المرحلة مقفلة لأن مخرجها مقبول؛ تُعرض حزمها للاطلاع فقط.</div>` : over ? `<div class="notice">الوزن المختار يتجاوز الحد الأقصى ${devW(P.cap)}. أزل بعض الحزم.</div>` : total < P.target - 1e-9 ? `<p class="muted" style="margin:0">ناقص ${devW(P.target - total)} للوصول إلى ${P.target}. الحد الأقصى ${devW(P.cap)}.</p>` : ""}
+    <div class="block"><h4>الحزم المطلقة المتاحة لهذه المرحلة (<span class="num">${pool.length}</span>)</h4>
+      ${pool.length ? `<div class="dev-picklist">${list}</div>` : `<span class="muted">لا توجد حزم مطلقة غير مسلَّمة لهذه الواجهة.</span>`}</div>
+    ${P.locked ? "" : `<div class="actions"><button class="btn primary" type="button" data-save-phase${over ? " disabled" : ""}>حفظ حزم المرحلة</button><button class="btn" type="button" data-close>إلغاء</button></div>`}` };
+}
+async function savePhase(btn) {
+  const d = state.drawer, P = state.dev.phases.get(d.id); if (!P || P.locked) return;
+  const picked = new Set(d.picked || P.pkgs.map((p) => p.id));
+  const total = state.packages.filter((p) => picked.has(p.id)).reduce((a, p) => a + (state.dev.pk.get(p.id)?.w || 0), 0);
+  if (total > P.cap + 1e-9) { toast(`الوزن يتجاوز الحد الأقصى ${devW(P.cap)}.`, true); return; }
+  const changes = state.packages.filter((p) => p.iface === P.iface && ((picked.has(p.id) && p.phase !== P.ph) || (!picked.has(p.id) && p.phase === P.ph)));
+  if (changes.some((p) => picked.has(p.id) && p.stage !== DEV_LAUNCHED)) { toast("لا تُربط إلا الحزم المطلقة.", true); return; }
+  const ok = await run(btn, async () => { for (const p of changes) { const { id: pid, ...rest } = p; await state.db.collection("packages").doc(pid).set({ ...rest, phase: picked.has(pid) ? P.ph : "" }); } },
+    changes.length ? `تم حفظ ${phaseLabel(P.ph)}` : "لا تغييرات");
+  if (ok) closeDrawer();
+}
+
+/* ---- Excel import (transition period): the sheet's columns, matched by header */
+const DEV_HEADERS = { "#": "no", "الأولوية": "priority", "الربع المستهدف": "quarter", "التواجد في النظام التكاملي": "presence", "المجموعة": "group", "رقم مرحلة المخرج": "phaseA",
+  "الفوترة والتسليم": "phaseB", "الحزمة التطويرية": "name", "نوع الخدمة": "type", "تصنيف الخدمة": "category", "الفئة المستفيدة": "beneficiary", "مرحلة الطلب": "stage",
+  "الاعتمادية": "dependency", "الواجهة": "iface", "النظام المستهدف للاغلاق": "system", "النظام المستهدف للإغلاق": "system", "Actual": "weight", "الوزن": "weight", "BRD No": "brd", "UAT No": "uat", "Column2": "mark" };
+const QUARTER_IN = { "الاطلاق التجريبي": "pilot", "الإطلاق التجريبي": "pilot", "الرابع25": "2025Q4", "الاول26": "2026Q1", "الثاني26": "2026Q2", "الثالث26": "2026Q3", "الرابع26": "2026Q4",
+  "الاول27": "2027Q1", "الثاني27": "2027Q2", "الثالث27": "2027Q3", "الرابع27": "2027Q4" };
+const normTxt = (v) => v === null || v === undefined ? "" : String(typeof v === "object" && v.richText ? v.richText.map((r) => r.text).join("") : typeof v === "object" && "result" in v ? v.result : v).replace(/[​‎‏]/g, "").replace(/\s+/g, " ").trim();
+function normalizePkg(r) {
+  const t = (k) => normTxt(r[k]);
+  const ifaceTxt = t("iface");
+  const iface = /التطبيق/.test(ifaceTxt) ? "app" : /منصة/.test(ifaceTxt) ? "biz" : /البوابة/.test(ifaceTxt) ? "portal" : "";
+  const pa = t("phaseA"), pb = t("phaseB");
+  let phase = "";
+  if (/core/i.test(pa) || pb === "0") phase = DEV_CORE;
+  else if (/1\s*و\s*2/.test(pa) || pb === "12") phase = "1-2";
+  else if (/^\d+$/.test(pa)) phase = pa; else if (/^\d+$/.test(pb)) phase = pb;
+  const stage = t("stage").replace("تم الاطلاق", "تم الإطلاق").replace("اجراءات الاطلاق", "إجراءات الإطلاق").replace("إجراءات الاطلاق", "إجراءات الإطلاق");
+  const type = { "اجرائية": "إجرائية", "إجرائية": "إجرائية", "استعلامية": "استعلامية", "ذاتية": "ذاتية", "(مكون/اعمال تطويرية)": "مكوّن / أعمال تطويرية" }[t("type")] ?? t("type");
+  const benef = t("beneficiary").replace("ولي الامر والطالب", "ولي الأمر والطالب");
+  const w = Number(t("weight")), pr = Number(t("priority"));
+  return { no: Number(t("no")), name: t("name"), iface, stage, quarter: QUARTER_IN[t("quarter")] || "", priority: Number.isFinite(pr) && pr > 0 ? pr : null,
+    weight: t("weight") !== "" && Number.isFinite(w) ? w : null, presence: t("presence"), group: t("group"), type, category: t("category"), beneficiary: benef,
+    system: t("system"), dependency: t("dependency"), brd: t("brd"), uat: t("uat"), phase, _delete: /delete/i.test(t("mark")) };
+}
+async function readPkgSheet(file) {
+  if (!window.ExcelJS) throw new Error("مكتبة Excel غير متاحة");
+  // the sheet's validation lists span a million rows; skipping them keeps the read fast
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer(), { ignoreNodes: ["dataValidations", "conditionalFormatting", "extLst"] });
+  const ws = wb.worksheets.find((w) => w.rowCount > 1) || wb.worksheets[0];
+  const head = {}; ws.getRow(1).eachCell((cell, col) => { const key = DEV_HEADERS[normTxt(cell.value)]; if (key) head[col] = key; });
+  if (!Object.values(head).includes("name") || !Object.values(head).includes("no")) throw new Error("لم يُعثر على عمودي «#» و«الحزمة التطويرية» في الصف الأول");
+  const out = [];
+  ws.eachRow((row, i) => { if (i === 1) return; const r = {}; for (const [col, key] of Object.entries(head)) r[key] = row.getCell(Number(col)).value; const p = normalizePkg(r); if (p.no > 0 && p.name) out.push(p); });
+  return out;
+}
+function importPlan(rows) {
+  const byNo = new Map(state.packages.map((p) => [Number(p.no), p]));
+  const plan = { add: [], update: [], same: 0, del: [], locked: [] };
+  const FIELDS = ["name", "iface", "stage", "quarter", "priority", "weight", "presence", "group", "type", "category", "beneficiary", "system", "dependency", "brd", "uat", "phase"];
+  for (const r of rows) {
+    const cur = byNo.get(r.no);
+    if (r._delete) { if (cur) (state.dev.pk.get(cur.id)?.locked ? plan.locked : plan.del).push(cur); continue; }
+    const body = Object.fromEntries(FIELDS.map((k) => [k, r[k] ?? ""])); body.no = r.no;
+    if (!cur) { plan.add.push(body); continue; }
+    if (state.dev.pk.get(cur.id)?.locked) { if (FIELDS.some((k) => String(cur[k] ?? "") !== String(body[k] ?? ""))) plan.locked.push(cur); else plan.same++; continue; }
+    if (FIELDS.some((k) => String(cur[k] ?? "") !== String(body[k] ?? ""))) plan.update.push({ id: cur.id, ...body }); else plan.same++;
+  }
+  return plan;
+}
+function drawerImport() {
+  const pl = state.drawer.plan;
+  return { title: "استيراد الحزم من Excel", html: `
+    <div class="kv">
+      <div><span class="k">حزم جديدة</span><span class="v">${int(pl.add.length)}</span></div>
+      <div><span class="k">حزم ستُحدَّث</span><span class="v">${int(pl.update.length)}</span></div>
+      <div><span class="k">بلا تغيير</span><span class="v">${int(pl.same)}</span></div>
+      <div><span class="k">ستُحذف (Delete)</span><span class="v">${int(pl.del.length)}</span></div>
+      <div><span class="k">مقفلة لن تتغير</span><span class="v">${int(pl.locked.length)}</span></div>
+    </div>
+    <p class="muted" style="margin:0">يُطابق الاستيراد الحزم بعمود «#». الحزم الموجودة في النظام وغير الموجودة في الشيت تبقى كما هي، والحزم ضمن مراحل مقفلة لا تتغير.</p>
+    ${pl.update.length ? `<div class="block"><h4>أمثلة على التحديث</h4><ul class="dev-plan">${pl.update.slice(0, 8).map((p) => `<li>#${p.no} ${esc(short(p.name, 60))}</li>`).join("")}</ul></div>` : ""}
+    <div class="actions"><button class="btn primary" type="button" data-apply-import${pl.add.length + pl.update.length + pl.del.length ? "" : " disabled"}>تطبيق الاستيراد</button><button class="btn" type="button" data-close>إلغاء</button></div>` };
+}
+async function applyImport(btn) {
+  const pl = state.drawer.plan;
+  const ok = await run(btn, async () => {
+    for (const p of pl.add) await state.db.collection("packages").doc(pkgDocId(p.no)).set(clean({ ...p }));
+    for (const { id, ...p } of pl.update) await state.db.collection("packages").doc(id).set(clean({ ...p }));
+    for (const p of pl.del) await state.db.collection("packages").doc(p.id).delete();
+  }, `تم الاستيراد: ${pl.add.length} جديدة، ${pl.update.length} محدّثة، ${pl.del.length} محذوفة`);
+  if (ok) closeDrawer();
+}
+
+/* ---- contract side: the packages behind a deliverable */
+function delPackagesBlock(delId) {
+  if (!state.dev) return "";
+  for (const P of state.dev.phases.values()) {
+    if (!P.dels.includes(delId)) continue;
+    const list = [...P.pkgs].sort((a, b) => (a.no || 0) - (b.no || 0));
+    return `<div class="block"><h4>الحزم التطويرية · ${esc(DEV_IFACE[P.iface])} ${esc(phaseLabel(P.ph))} (<span class="num">${list.length}</span> حزمة · وزن <span class="num" dir="ltr">${devW(P.weight)} / ${P.target}</span>)</h4>
+      ${list.length ? `<div class="dev-picklist">${list.map((p) => `<div class="check dev-pick"><span class="num">#${p.no}</span><span class="nm">${esc(p.name)}</span><strong class="num">${devW(p.weight)}</strong></div>`).join("")}</div>` : `<span class="muted">لم تُربط حزم بهذه المرحلة بعد.</span>`}
+      <button class="btn small" type="button" data-go-phase="${P.iface}:${P.ph}">فتح المرحلة</button></div>`;
+  }
+  return "";
 }
 
 /* ---- settings */
@@ -1959,13 +2356,13 @@ function openDrawer(d) { state.drawer = d; renderDrawer(); }
 function closeDrawer() { state.drawer = null; const r = document.getElementById("drawerRoot"); r.innerHTML = ""; r.dataset.key = ""; }
 function renderDrawer() {
   const d = state.drawer; if (!d) return;
-  const body = ({ item: drawerItem, del: drawerDel, delForm: drawerDelForm, ev: drawerEv, issue: drawerIssue, cr: drawerCr })[d.kind]();
+  const body = ({ item: drawerItem, del: drawerDel, delForm: drawerDelForm, ev: drawerEv, issue: drawerIssue, cr: drawerCr, pkg: drawerPkg, phase: drawerPhase, import: drawerImport })[d.kind]();
   if (body === null) { closeDrawer(); return; }
   const root = document.getElementById("drawerRoot");
   const key = d.kind + (d.id || "") + (d.sub || "");
   const scroll = root.dataset.key === key ? (root.querySelector(".drawer-body")?.scrollTop || 0) : 0;
   root.dataset.key = key;
-  root.innerHTML = `<div class="scrim" data-close></div><aside class="drawer${d.kind === "cr" ? " wide" : ""}" role="dialog" aria-modal="true" aria-label="${esc(body.title)}">
+  root.innerHTML = `<div class="scrim" data-close></div><aside class="drawer${d.kind === "cr" || d.kind === "pkg" || d.kind === "phase" ? " wide" : ""}" role="dialog" aria-modal="true" aria-label="${esc(body.title)}">
     <div class="drawer-head ${body.tabs ? "" : "plain"}"><div class="row1"><h3>${body.titleHtml || esc(body.title)}</h3><button class="icon-btn" type="button" data-close aria-label="إغلاق">×</button></div>${body.tabs || ""}</div>
     <div class="drawer-body">${body.html}</div></aside>`;
   root.querySelector(".drawer-body").scrollTop = scroll;
@@ -2019,7 +2416,8 @@ function drawerDel() {
         <div class="actions wide"><button class="btn primary" type="submit">حفظ بيانات المخرج</button><button class="btn danger" type="button" data-ask-delete>حذف المخرج</button></div>
       </form>
       ${d.confirm ? confirmBlock(`سيُحذف المخرج${counts[0] ? ` و${counts[0]} حركة مراجعة` : ""}${counts[1] ? ` و${counts[1]} مشكلة أو قرار` : ""} نهائيًا.`, "del") : ""}
-      ${k.crs.length ? `<div class="block"><h4>طلبات تغيير مرتبطة</h4><div class="cards">${k.crs.map(crCard).join("")}</div></div>` : ""}`;
+      ${k.crs.length ? `<div class="block"><h4>طلبات تغيير مرتبطة</h4><div class="cards">${k.crs.map(crCard).join("")}</div></div>` : ""}
+      ${delPackagesBlock(del.id)}`;
   } else if (sub === "issues") {
     const editing = d.editIssue ? state.issues.find((i) => i.id === d.editIssue) : null;
     html = `${issueForm(editing, del.id)}
@@ -2554,7 +2952,7 @@ document.addEventListener("click", async (ev) => {
   if ("close" in ds) return closeDrawer();
   if (ds.go) return setTab(ds.go);
   if (ds.filterExec || ds.filterBill) { state.filters = { q: "", item: [], exec: ds.filterExec ? [ds.filterExec] : [], bill: ds.filterBill ? [ds.filterBill] : [], issue: [] }; state.openMsel = null; return setTab("deliverables"); }
-  if (ds.mselClear) { state.filters[ds.mselClear] = []; return render(); }
+  if (ds.mselClear) { const [sc, k] = ds.mselClear.split("."); state[sc][k] = []; return render(); }
   if ("clearFilters" in ds) { Object.assign(state.filters, { item: [], exec: [], bill: [], issue: [] }); state.openMsel = null; return render(); }
   if (ds.delview) { state.delView = ds.delview; return render(); }
   if (ds.rmItem) return openDrawer({ kind: "item", id: ds.rmItem, confirm: true });
@@ -2582,12 +2980,26 @@ document.addEventListener("click", async (ev) => {
   if ("newCr" in ds) return openDrawer({ kind: "cr" });
   if (ds.editCr) return openDrawer({ kind: "cr", id: ds.editCr });
   if ("askDelete" in ds) { state.drawer.confirm = true; return renderDrawer(); }
+  if (ds.openPkg) return openDrawer({ kind: "pkg", id: ds.openPkg });
+  if (ds.rmPkg) return openDrawer({ kind: "pkg", id: ds.rmPkg, confirm: true });
+  if ("newPkg" in ds) return openDrawer({ kind: "pkg" });
+  if (ds.openPhase) return openDrawer({ kind: "phase", id: ds.openPhase });
+  if (ds.goPhase) { const id = ds.goPhase; closeDrawer(); setTab("devphases"); return openDrawer({ kind: "phase", id }); }
+  if ("savePhase" in ds) return savePhase(t);
+  if ("pkgImport" in ds) return document.getElementById("pkgImportFile")?.click();
+  if ("applyImport" in ds) return applyImport(t);
+  if ("clearPfilters" in ds) { Object.assign(state.pfilters, { iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return render(); }
+  if (ds.pfilterStage || ds.pfilterQuarter || ds.pfilterFlag) {
+    Object.assign(state.pfilters, { q: "", iface: [], stage: ds.pfilterStage ? [ds.pfilterStage] : [], quarter: ds.pfilterQuarter ? [ds.pfilterQuarter] : [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: ds.pfilterFlag ? [ds.pfilterFlag] : [] });
+    return setTab("devpkgs");
+  }
   if ("askApply" in ds) { state.drawer.confirmApply = true; return renderDrawer(); }
   if (ds.delEv) { state.drawer.confirmEv = ds.delEv; return renderDrawer(); }
   if ("cancelConfirm" in ds) { Object.assign(state.drawer, { confirm: false, confirmEv: null, confirmIssue: null, confirmApply: false }); return renderDrawer(); }
   if (ds.confirm) {
     const d = state.drawer;
     if (ds.confirm === "apply") { if (await applyCr(state.crs.find((x) => x.id === d.id), t)) closeDrawer(); return; }
+    if (ds.confirm === "pkg") { if (await run(t, () => state.db.collection("packages").doc(d.id).delete(), "تم حذف الحزمة")) closeDrawer(); return; }
     if (ds.confirm === "item") { if (await run(t, () => state.db.collection("items").doc(d.id).delete(), "تم حذف البند")) closeDrawer(); }
     else if (ds.confirm === "cr") { if (await run(t, () => state.db.collection("crs").doc(d.id).delete(), "تم حذف طلب التغيير")) closeDrawer(); }
     else if (ds.confirm === "del") {
@@ -2635,6 +3047,7 @@ document.addEventListener("submit", (ev) => {
   const form = ev.target, btn = form.querySelector('button[type="submit"]');
   const fid = form.getAttribute("id"); // not form.id: a field named "id" would shadow it
   if (fid === "itemForm") return saveItem(form, btn);
+  if (fid === "pkgForm") return savePkg(form, btn);
   if (fid === "delForm") return saveDeliverable(form, btn);
   if (fid === "delInfoForm") return saveDelInfo(form, btn);
   if (fid === "billingForm") return saveBilling(form, btn);
@@ -2682,7 +3095,7 @@ document.addEventListener("mouseout", (ev) => {
 });
 
 let inputTimer;
-const SEARCH = { fQ: (v) => (state.filters.q = v), lQ: (v) => (state.logFilters.q = v), iQ: (v) => (state.issueFilters.q = v) };
+const SEARCH = { pQ: (v) => (state.pfilters.q = v), fQ: (v) => (state.filters.q = v), lQ: (v) => (state.logFilters.q = v), iQ: (v) => (state.issueFilters.q = v) };
 document.addEventListener("input", (ev) => {
   const id = ev.target.id;
   if (!SEARCH[id]) return;
@@ -2697,10 +3110,25 @@ document.addEventListener("input", (ev) => {
 document.addEventListener("change", (ev) => {
   const el = ev.target, id = el.id;
   if (el.name && el.name.startsWith("msel-")) {
-    const key = el.name.slice(5);
-    state.filters[key] = [...document.querySelectorAll(`input[name="msel-${key}"]:checked`)].map((x) => x.value);
-    state.openMsel = key;
+    const [, scope, key] = el.name.match(/^msel-([^-]+)-(.+)$/);
+    state[scope][key] = [...document.querySelectorAll(`input[name="${el.name}"]:checked`)].map((x) => x.value);
+    state.openMsel = `${scope}.${key}`;
     return render();
+  }
+  if (el.name === "phasePick" && state.drawer?.kind === "phase") {
+    state.drawer.picked = [...document.querySelectorAll('input[name="phasePick"]:checked')].map((x) => x.value);
+    return renderDrawer();
+  }
+  if (id === "pkIface") {
+    const ph = document.getElementById("pkPhase");
+    if (ph) ph.innerHTML = `<option value="">غير مربوطة بمرحلة</option><option value="${DEV_CORE}">أساسية (5.أ) — لا تدخل في الحساب</option>` + (DEV_PHASES[el.value] || []).map((x) => `<option value="${x}">${phaseLabel(x)}</option>`).join("");
+    return;
+  }
+  if (id === "pkgImportFile") {
+    const file = el.files && el.files[0]; el.value = "";
+    if (!file) return;
+    readPkgSheet(file).then((rows) => openDrawer({ kind: "import", plan: importPlan(rows) })).catch((e) => toast("تعذّر قراءة الملف: " + (e?.message || e), true));
+    return;
   }
   const set = {
     lAction: () => (state.logFilters.action = el.value), iState: () => (state.issueFilters.state = el.value), iType: () => (state.issueFilters.type = el.value),
@@ -2756,6 +3184,10 @@ async function boot() {
   db.doc("contract/settings").onSnapshot((snap) => {
     state.settings = { ...DEFAULT_SETTINGS, ...(snap.exists ? snap.data() : {}) };
     state.ready.settings = true; scheduleRender();
+  }, onErr);
+  db.doc("dev/config").onSnapshot((snap) => {
+    state.devConfig = snap.exists ? snap.data() : null;
+    state.ready.devconfig = true; scheduleRender();
   }, onErr);
   for (const name of COLLECTIONS) db.collection(name).onSnapshot((snap) => {
     state[name] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
