@@ -151,6 +151,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dev-legend { display: inline-flex; align-items: center; gap: 12px; }
 .dev-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 5px; vertical-align: -1px; }
 .dev-benef tfoot td { font-weight: 700; background: var(--surface-2); }
+.dev-note { margin: 10px 0 0; font-size: .82rem; }
 .dev-review { display: block; width: 100%; text-align: start; border: 0; cursor: pointer; font: inherit; }
 .dev-phases { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; }
 .dev-phase { text-align: start; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 7px; }
@@ -2035,35 +2036,49 @@ function devCard(iface) {
       <div><span class="k"><i style="background:var(--st-new)"></i>الوزن الكلي المحصور</span><span class="v">${devWHtml(t.weight)} · <span class="num">${t.count}</span> حزمة</span></div>
     </div></section>`;
 }
+// a combined beneficiary counts once in each of its categories in the statistics
+const BENEF_SPLIT = { "ولي الأمر والطالب": ["ولي أمر", "طالب"] };
+const benefCats = (b) => BENEF_SPLIT[b] || [b || ""];
+function devBenefSection(iface) {
+  const D = state.dev, rows = new Map(), sum = { n: 0, w: 0, l: 0, ln: 0 };
+  for (const p of state.packages) {
+    if (p.iface !== iface) continue;
+    const k = D.pk.get(p.id); if (!k || k.core) continue;
+    sum.n++; sum.w += k.w; if (k.launched) { sum.l += k.w; sum.ln++; }
+    for (const c of benefCats(p.beneficiary)) {
+      const r = rows.get(c) || { n: 0, w: 0, l: 0, ln: 0, src: new Set() };
+      r.n++; r.w += k.w; if (k.launched) { r.l += k.w; r.ln++; }
+      r.src.add(p.beneficiary || ""); rows.set(c, r);
+    }
+  }
+  const list = [...rows.entries()].sort((a, b) => b[1].w - a[1].w || b[1].n - a[1].n);
+  const split = list.some(([, r]) => [...r.src].some((x) => BENEF_SPLIT[x]));
+  const target = DEV_TARGET[iface];
+  const head = `<div class="section-head"><h2>${DEV_IFACE[iface]} — حسب الفئة المستفيدة</h2>
+    <span class="sub"><span class="dev-legend"><span><i style="background:var(--st-acc)"></i>مطلق</span><span><i style="background:var(--surface-3)"></i>غير مطلق</span></span>${target ? ` · المستهدف <span class="num">${target}</span>` : " · خارج المستهدف التعاقدي حتى تطبيق طلب التغيير"} · اضغط على أي فئة لعرض حزمها</span></div>`;
+  if (!list.length) return `<section class="section">${head}<p class="muted" style="margin:0">لا توجد حزم لهذه الواجهة بعد.</p></section>`;
+  const body = list.map(([c, r]) => {
+    const vals = [...r.src].filter(Boolean);
+    return `<tr${vals.length ? ` class="clickable" data-pfilter-benef="${esc(vals.join("|"))}" data-pfilter-iface="${iface}"` : ""}>
+      <td><strong>${esc(c || "غير محددة")}</strong>${vals.some((x) => BENEF_SPLIT[x]) ? `<div class="sub-line">تشمل «${esc(vals.filter((x) => BENEF_SPLIT[x]).join("، "))}»</div>` : ""}</td>
+      <td class="n"><span class="num">${r.n}</span><div class="sub-line">مطلقة <span class="num">${r.ln}</span></div></td>
+      <td class="n">${devWHtml(r.w)}</td><td class="n">${devWHtml(r.l)}</td>
+      <td><div class="dev-barcell"><div class="dev-bar" title="مطلق ${devW(r.l)} من ${devW(r.w)}"><span class="l" style="width:${r.w ? (r.l / r.w) * 100 : 0}%"></span></div>${pct(r.w ? r.l / r.w : null)}</div></td>
+      <td class="n">${pct(sum.l ? r.l / sum.l : null)}</td>${target ? `<td class="n">${pct(r.l / target)}</td>` : ""}</tr>`;
+  }).join("");
+  return `<section class="section">${head}
+    <div class="table-wrap"><table class="dev-benef"><thead><tr><th>الفئة المستفيدة</th><th class="n">الحزم</th><th class="n">الوزن الكلي</th><th class="n">الوزن المطلق</th><th>نسبة الإطلاق</th><th class="n">الحصة من المطلق</th>${target ? `<th class="n">من المستهدف</th>` : ""}</tr></thead>
+    <tbody>${body}</tbody>
+    <tfoot><tr><td>الإجمالي${split ? `<div class="sub-line">كل حزمة مرة واحدة</div>` : ""}</td><td class="n"><span class="num">${sum.n}</span><div class="sub-line">مطلقة <span class="num">${sum.ln}</span></div></td><td class="n">${devWHtml(sum.w)}</td><td class="n">${devWHtml(sum.l)}</td><td>${pct(sum.w ? sum.l / sum.w : null)}</td><td class="n">${pct(sum.l ? 1 : null)}</td>${target ? `<td class="n">${pct(sum.l / target)}</td>` : ""}</tr></tfoot></table></div>
+    ${split ? `<p class="muted dev-note">حزم «ولي الأمر والطالب» تُحتسب في فئة «ولي أمر» وفي فئة «طالب» معًا، لذا قد يزيد مجموع الصفوف على الإجمالي.</p>` : ""}</section>`;
+}
 function viewDev() {
   const D = state.dev;
   const stageRows = DEV_STAGES.map((st) => { const n = state.packages.filter((p) => p.stage === st && p.phase !== DEV_CORE).length;
     return `<tr class="clickable" data-pfilter-stage="${esc(st)}"><td>${pill(st, DEV_STAGE_CLASS[st])}</td><td class="n">${int(n)}</td><td class="n">${devWHtml(D.tot.portal.byStage[st] || 0)}</td><td class="n">${devWHtml(D.tot.app.byStage[st] || 0)}</td><td class="n">${devWHtml(D.tot.biz.byStage[st] || 0)}</td></tr>`; }).join("");
   const qRows = [...DEV_QUARTERS, ["", "دون ربع مستهدف"]].map(([q, l]) => { const a = D.tot.portal.byQuarter[q] || 0, b = D.tot.app.byQuarter[q] || 0, cc = D.tot.biz.byQuarter[q] || 0;
     if (!a && !b && !cc) return ""; return `<tr class="clickable" data-pfilter-quarter="${esc(q || "none")}"><td>${esc(l)}</td><td class="n">${devWHtml(a)}</td><td class="n">${devWHtml(b)}</td><td class="n">${devWHtml(cc)}</td></tr>`; }).join("");
-  // statistics by beneficiary category (core 5.أ excluded, as in the other tables)
-  const bMap = new Map();
-  for (const p of state.packages) {
-    const k = D.pk.get(p.id); if (!k || k.core) continue;
-    const key = p.beneficiary || "";
-    const r = bMap.get(key) || { n: 0, w: 0, l: 0, ln: 0, portal: 0, app: 0, biz: 0 };
-    r.n++; r.w += k.w; if (k.launched) { r.l += k.w; r.ln++; } if (p.iface in r) r[p.iface] += k.w;
-    bMap.set(key, r);
-  }
-  const bList = [...bMap.entries()].sort((a, b) => b[1].w - a[1].w || b[1].n - a[1].n);
-  const bSum = bList.reduce((a, [, r]) => { for (const x of ["n", "w", "l", "ln", "portal", "app", "biz"]) a[x] += r[x]; return a; }, { n: 0, w: 0, l: 0, ln: 0, portal: 0, app: 0, biz: 0 });
-  const bRows = bList.map(([b, r]) => `<tr${b ? ` class="clickable" data-pfilter-benef="${esc(b)}"` : ""}>
-      <td><strong>${esc(b || "غير محددة")}</strong></td>
-      <td class="n"><span class="num">${r.n}</span><div class="sub-line">مطلقة <span class="num">${r.ln}</span></div></td>
-      <td class="n">${devWHtml(r.w)}</td><td class="n">${devWHtml(r.l)}</td>
-      <td><div class="dev-barcell"><div class="dev-bar" title="مطلق ${devW(r.l)} من ${devW(r.w)}"><span class="l" style="width:${r.w ? (r.l / r.w) * 100 : 0}%"></span></div>${pct(r.w ? r.l / r.w : null)}</div></td>
-      <td class="n">${pct(bSum.l ? r.l / bSum.l : null)}</td>
-      <td class="n">${devWHtml(r.portal)}</td><td class="n">${devWHtml(r.app)}</td><td class="n">${devWHtml(r.biz)}</td></tr>`).join("");
-  const benefSection = `<section class="section"><div class="section-head"><h2>حسب الفئة المستفيدة</h2>
-      <span class="sub"><span class="dev-legend"><span><i style="background:var(--st-acc)"></i>مطلق</span><span><i style="background:var(--surface-3)"></i>غير مطلق</span></span> · دون الخدمات الأساسية (5.أ) · اضغط على أي فئة لعرض حزمها</span></div>
-    <div class="table-wrap"><table class="dev-benef"><thead><tr><th>الفئة المستفيدة</th><th class="n">الحزم</th><th class="n">الوزن الكلي</th><th class="n">الوزن المطلق</th><th>نسبة الإطلاق</th><th class="n">الحصة من المطلق</th><th class="n">البوابة الموحدة</th><th class="n">التطبيق الموحد</th><th class="n">منصة الأعمال</th></tr></thead>
-    <tbody>${bRows}</tbody>
-    <tfoot><tr><td>الإجمالي</td><td class="n"><span class="num">${bSum.n}</span><div class="sub-line">مطلقة <span class="num">${bSum.ln}</span></div></td><td class="n">${devWHtml(bSum.w)}</td><td class="n">${devWHtml(bSum.l)}</td><td>${pct(bSum.w ? bSum.l / bSum.w : null)}</td><td class="n">${pct(bSum.l ? 1 : null)}</td><td class="n">${devWHtml(bSum.portal)}</td><td class="n">${devWHtml(bSum.app)}</td><td class="n">${devWHtml(bSum.biz)}</td></tr></tfoot></table></div></section>`;
+  const benefSection = DEV_IFACES.map(([i]) => devBenefSection(i)).join("");
   return `<div class="dev-cards">${devCard("portal")}${devCard("app")}</div>
   ${D.review.length ? `<button type="button" class="notice dev-review" data-pfilter-flag="review"><strong class="num">${D.review.length}</strong> حزمة تحتاج إلى مراجعة (بلا وزن، أو ليست خدمة، أو لا يوجد BRD / UAT، أو بيانات ناقصة) — اضغط لعرضها</button>` : ""}
   ${benefSection}
@@ -3030,7 +3045,7 @@ document.addEventListener("click", async (ev) => {
   if ("applyImport" in ds) return applyImport(t);
   if ("clearPfilters" in ds) { Object.assign(state.pfilters, { iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return render(); }
   if (ds.pfilterStage || ds.pfilterQuarter || ds.pfilterFlag || ds.pfilterBenef) {
-    Object.assign(state.pfilters, { q: "", iface: [], stage: ds.pfilterStage ? [ds.pfilterStage] : [], quarter: ds.pfilterQuarter ? [ds.pfilterQuarter] : [], phase: [], benef: ds.pfilterBenef ? [ds.pfilterBenef] : [], cat: [], prio: [], bill: [], flag: ds.pfilterFlag ? [ds.pfilterFlag] : [] });
+    Object.assign(state.pfilters, { q: "", iface: ds.pfilterIface ? [ds.pfilterIface] : [], stage: ds.pfilterStage ? [ds.pfilterStage] : [], quarter: ds.pfilterQuarter ? [ds.pfilterQuarter] : [], phase: [], benef: ds.pfilterBenef ? ds.pfilterBenef.split("|") : [], cat: [], prio: [], bill: [], flag: ds.pfilterFlag ? [ds.pfilterFlag] : [] });
     return setTab("devpkgs");
   }
   if ("askApply" in ds) { state.drawer.confirmApply = true; return renderDrawer(); }
