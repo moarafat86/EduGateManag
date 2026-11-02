@@ -122,6 +122,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .nav button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 .nav button[aria-selected="true"] svg { color: var(--accent-ink); }
 .nav .lbl { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav { overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+.nav-mod { display: flex; flex-direction: column; gap: 2px; }
+.nav-mod + .nav-mod, .nav-free { margin-top: 10px; }
+.nav .nav-mod-head { color: var(--ink); font-weight: 700; font-size: .84rem; padding: 8px 10px; }
+.nav .nav-mod-head svg { color: var(--ink-2); }
+.nav-mod.current .nav-mod-head svg { color: var(--accent); }
+.nav-mod-head .chev { width: 7px; height: 7px; border: solid var(--muted); border-width: 0 0 1.6px 1.6px; transform: rotate(-45deg); transition: transform .15s; flex: none; margin-inline-start: 4px; }
+.nav-mod:not(.open) .nav-mod-head .chev { transform: rotate(45deg); }
+.nav-mod-tabs { display: flex; flex-direction: column; gap: 2px; margin-inline-start: 14px; padding-inline-start: 8px; border-inline-start: 1px solid var(--line); }
+.nav-mod:not(.open) .nav-mod-tabs { display: none; }
+.nav-free { display: flex; flex-direction: column; gap: 2px; padding-top: 10px; border-top: 1px solid var(--line); }
+.dev-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
+.dev-stage { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: var(--r); background: var(--surface-2); }
+.dev-stage .n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; flex: none; }
+.dev-plan { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.7; }
 .nav .badge { min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--st-late); color: #fff; font-size: .72rem; font-weight: 700; line-height: 20px; text-align: center; }
 .side-foot { margin-top: auto; padding: 12px 10px 0; border-top: 1px solid var(--line); font-size: .76rem; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
 
@@ -401,6 +416,8 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
   .brand, .side-foot { display: none; }
   .theme-m { display: inline-grid; place-items: center; width: 36px; height: 36px; }
   .nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; gap: 2px; width: 100%; }
+  .nav-mod, .nav-mod-tabs, .nav-free, .nav-mod:not(.open) .nav-mod-tabs { display: contents; }
+  .nav .nav-mod-head { display: none; }
   .nav button { flex: 0 0 78px; flex-direction: column; gap: 3px; padding: 6px 4px; font-size: .66rem; align-items: center; text-align: center; position: relative; }
   .nav .lbl { white-space: normal; line-height: 1.2; overflow: visible; }
   .nav button[aria-selected="true"] { background: none; color: var(--accent); }
@@ -620,7 +637,7 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
   <aside class="sidebar" aria-label="التنقل">
     <div class="brand">
       <span class="brand-logo"><img id="brandLogo" alt="بوابة التعليم — البوابة الموحدة لخدمات وزارة التعليم"></span>
-      <div class="brand-text"><strong>متابعة العقد</strong><span id="projCode"></span></div>
+      <div class="brand-text"><strong>إدارة المشروع</strong><span id="projCode"></span></div>
     </div>
     <nav class="nav" role="tablist" id="tabs"></nav>
     <div class="side-foot"><div class="theme-row"><span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>الوضع الداكن</span><button class="switch" id="themeToggle" type="button" role="switch" aria-checked="false" aria-label="الوضع الداكن"><span class="knob"></span></button></div><span id="asOfLabel"></span><span>البيانات محفوظة تلقائيًا</span></div>
@@ -700,9 +717,16 @@ const DEFAULT_SETTINGS = {
 };
 const TABS = [
   ["dashboard", "لوحة المتابعة"], ["items", "البنود"], ["deliverables", "المخرجات"], ["log", "سجل المراجعات"],
-  ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["reports", "التقارير"], ["settings", "الإعدادات"],
+  ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["reports", "التقارير"],
+  ["dev", "نظرة عامة", "أعمال التطوير"], ["settings", "الإعدادات"],
 ];
 const TAB_KEYS = TABS.map((t) => t[0]);
+// the sidebar groups pages into modules; settings serve the whole project
+const MODULES = [
+  { key: "contract", label: "إدارة بنود العقد", tabs: ["dashboard", "items", "deliverables", "log", "issues", "crs", "report", "reports"] },
+  { key: "dev", label: "أعمال التطوير", tabs: ["dev"] },
+];
+const NAV_FREE = ["settings"];
 const ICON_PATHS = {
   dashboard: '<rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5" rx="2"/><rect x="13.5" y="11" width="7.5" height="10" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/>',
   items: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/>',
@@ -711,6 +735,9 @@ const ICON_PATHS = {
   issues: '<path d="M12 3.5 2.8 19.5h18.4L12 3.5z"/><path d="M12 10v4"/><circle cx="12" cy="16.8" r=".6"/>',
   crs: '<path d="M4 8h13l-3.5-3.5"/><path d="M20 16H7l3.5 3.5"/>',
   report: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  dev: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
+  mod_contract: '<path d="M8 3h8l4 4v14H4V3h4z"/><path d="M9 11h6M9 15h6M9 7h2"/>',
+  mod_dev: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
   reports: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 15.5h7M9 19h4"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
 };
@@ -730,6 +757,7 @@ const state = {
   logFilters: { q: "", action: "" }, issueFilters: { state: OPEN, type: "", q: "" },
   report: { preset: "last_week", from: "", to: "" },
   reports: { pick: "billing", bill: null },
+  navClosed: (() => { try { return JSON.parse(localStorage.getItem("navClosed") || "[]"); } catch (_) { return []; } })(),
   calc: null, drawer: null, offline: false,
 };
 
@@ -952,7 +980,7 @@ function compute() { state.calc = computeModel(state, currentAsOf()); }
 function render() {
   compute();
   const s = state.settings, c = state.calc;
-  const tabLabel = (TABS.find((x) => x[0] === state.tab) || TABS[0])[1];
+  const tabRow = TABS.find((x) => x[0] === state.tab) || TABS[0], tabLabel = tabRow[2] || tabRow[1];
   document.getElementById("pageTitle").textContent = tabLabel;
   document.getElementById("projTitle").textContent = s.project_name || "متابعة عقد البوابة الموحدة";
   document.getElementById("pageMeta").innerHTML = [s.contract_no && `عقد رقم <span class="code">${esc(s.contract_no)}</span>`, s.client && esc(s.client)].filter(Boolean).join(" · ");
@@ -960,16 +988,25 @@ function render() {
   document.getElementById("asOfLabel").innerHTML = `محسوب حتى <span class="date">${esc(c.asOfIso)}</span>${isIso(s.as_of_override) ? " (تاريخ ثابت)" : ""}`;
   const blocking = state.issues.filter((i) => i.status !== CLOSED && i.blocking).length;
   const openCrs = state.crs.filter((x) => CR_OPEN.has(x.status)).length;
-  document.getElementById("tabs").innerHTML = TABS.map(([k, label]) => {
+  const exportBtn = document.getElementById("exportBtn");
+  if (exportBtn && state.downloads) exportBtn.hidden = state.tab === "dev"; // the Excel export covers the contract module
+  const tabBtn = (k) => {
+    const label = TABS.find((x) => x[0] === k)[1];
     const badge = k === "issues" && blocking ? `<span class="badge num">${blocking}</span>` : k === "crs" && openCrs ? `<span class="badge num">${openCrs}</span>` : "";
     return `<button role="tab" data-tab="${k}" type="button" aria-selected="${k === state.tab}">${navIcon(k)}<span class="lbl">${label}</span>${badge}</button>`;
-  }).join("");
+  };
+  document.getElementById("tabs").innerHTML = MODULES.map((m) => {
+    const open = !state.navClosed.includes(m.key);
+    return `<div class="nav-mod${open ? " open" : ""}${m.tabs.includes(state.tab) ? " current" : ""}">
+      <button type="button" class="nav-mod-head" data-mod="${m.key}" aria-expanded="${open}">${navIcon("mod_" + m.key)}<span class="lbl">${m.label}</span><i class="chev" aria-hidden="true"></i></button>
+      <div class="nav-mod-tabs" role="tablist">${m.tabs.map(tabBtn).join("")}</div></div>`;
+  }).join("") + `<div class="nav-free" role="tablist">${NAV_FREE.map(tabBtn).join("")}</div>`;
 
   const view = document.getElementById("view");
   const loading = !Object.values(state.ready).every(Boolean) && !state.offline;
   let html = state.offline ? `<div class="notice">تعذّر الوصول إلى تخزين البيانات. افتح الصفحة من claude.ai بعد تسجيل الدخول لعرض بيانات العقد وتعديلها.</div>` : "";
   if (loading) html += `<div class="skel" style="height:280px" aria-label="جارٍ تحميل بيانات العقد"></div><div class="kpis"><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div></div>`;
-  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, reports: viewReports, settings: viewSettings })[state.tab]();
+  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, reports: viewReports, dev: viewDev, settings: viewSettings })[state.tab]();
   // a data refresh keeps the place in long tables; only a page switch animates
   const samePage = state.lastTab === state.tab;
   const keep = samePage ? [...view.querySelectorAll(".table-wrap.tall")].map((w) => [w.scrollTop, w.scrollLeft]) : [];
@@ -1861,6 +1898,26 @@ function viewReports() {
   return `<section class="section"><div class="section-head"><h2>التقارير</h2><span class="sub">تقارير جاهزة للتقديم عند الطلب</span></div><div class="rep-cards">${cards}</div></section>${body}`;
 }
 
+/* ---- development works (module in design) */
+const DEV_STAGES = ["استكشاف", "تطوير", "قبول المستخدم", "تم الإطلاق"];
+function viewDev() {
+  return `<section class="section">
+    <div class="section-head"><h2>أعمال التطوير</h2><span class="sub">موديول قيد التصميم</span></div>
+    <p class="muted" style="margin:0">يتابع هذا الموديول الخدمات والمهام معًا عبر مراحل التطوير، مع الربع المستهدف للإطلاق. تُستكمل حقوله من شيت المتابعة الحالي، ويُحدَّد ربطه بمخرجات العقد بعد مراجعة الوضع الحالي.</p>
+    <div class="dev-stages">${DEV_STAGES.map((st, i) => `<div class="dev-stage"><span class="n num">${i + 1}</span><strong>${st}</strong></div>`).join("")}</div>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>ما تم الاتفاق عليه</h2></div>
+    <ul class="dev-plan">
+      <li><strong>نطاق المتابعة:</strong> الخدمات، والمهام وطلبات التطوير.</li>
+      <li><strong>المراحل:</strong> ${DEV_STAGES.join(" ← ")}.</li>
+      <li><strong>التخطيط:</strong> ربع مستهدف للإطلاق لكل عمل، دون إصدارات.</li>
+      <li><strong>الحقول:</strong> بانتظار شيت المتابعة الحالي.</li>
+      <li><strong>الربط بمخرجات العقد:</strong> يُناقَش ويُحدَّد قبل التنفيذ.</li>
+    </ul>
+  </section>`;
+}
+
 /* ---- settings */
 function viewSettings() {
   const s = state.settings;
@@ -2465,9 +2522,12 @@ function exportReport(btn) {
 }
 
 /* ------------------------------------------------------------ events */
+function setNavClosed(list) { state.navClosed = list; try { localStorage.setItem("navClosed", JSON.stringify(list)); } catch (_) {} }
 function setTab(tab) {
   if (!TAB_KEYS.includes(tab)) tab = "dashboard";
   state.tab = tab;
+  const mod = MODULES.find((m) => m.tabs.includes(tab));
+  if (mod && state.navClosed.includes(mod.key)) setNavClosed(state.navClosed.filter((k) => k !== mod.key));
   try { localStorage.setItem("tab", tab); } catch (_) {}
   if (location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
   render();
@@ -2490,6 +2550,7 @@ document.addEventListener("click", async (ev) => {
   if (!t) return;
   const ds = t.dataset;
   if (ds.tab) return setTab(ds.tab);
+  if (ds.mod) { const k = ds.mod; setNavClosed(state.navClosed.includes(k) ? state.navClosed.filter((x) => x !== k) : [...state.navClosed, k]); return render(); }
   if ("close" in ds) return closeDrawer();
   if (ds.go) return setTab(ds.go);
   if (ds.filterExec || ds.filterBill) { state.filters = { q: "", item: [], exec: ds.filterExec ? [ds.filterExec] : [], bill: ds.filterBill ? [ds.filterBill] : [], issue: [] }; state.openMsel = null; return setTab("deliverables"); }
