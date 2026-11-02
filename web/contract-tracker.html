@@ -143,6 +143,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dev-lines .k { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 7px; }
 .dev-lines .k i { width: 9px; height: 9px; border-radius: 50%; }
 .dev-lines .v { font-weight: 700; font-size: 1.05rem; }
+.dev-bar { height: 10px; border-radius: 5px; overflow: hidden; min-width: 120px; flex: 1; background: var(--surface-3); }
+.dev-bar span { display: block; height: 100%; }
+.dev-bar .l { background: var(--st-acc); }
+.dev-barcell { display: flex; align-items: center; gap: 10px; }
+.dev-barcell .num { min-width: 46px; text-align: end; font-weight: 600; }
+.dev-legend { display: inline-flex; align-items: center; gap: 12px; }
+.dev-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 5px; vertical-align: -1px; }
+.dev-benef tfoot td { font-weight: 700; background: var(--surface-2); }
 .dev-review { display: block; width: 100%; text-align: start; border: 0; cursor: pointer; font: inherit; }
 .dev-phases { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; }
 .dev-phase { text-align: start; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 7px; }
@@ -266,8 +274,9 @@ main { max-width: none; width: 100%; margin: 0 auto; padding: 26px 32px 64px; di
 .kpi .value { font-family: var(--font-display); font-size: 1.55rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.3; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; }
 .kpi .value .amt { font-size: .6em; color: var(--muted); font-weight: 500; letter-spacing: 0; }
 .kpi .foot { color: var(--muted); font-size: .78rem; }
-.kpi .meter { height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; margin-top: 8px; }
-.kpi .meter span { display: block; height: 100%; border-radius: 3px; }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.meter span { display: block; height: 100%; border-radius: 3px; }
+.kpi .meter { height: 5px; margin-top: 8px; }
 .kpi.wait .value { color: var(--st-wait-fg); }
 .kpi.acc .value { color: var(--st-acc-fg); }
 
@@ -1958,7 +1967,10 @@ const devWHtml = (v) => `<span class="num">${devW(v)}</span>`;
 const isBilledState = (st) => [ST.INV, ST.CERTW, ST.CERT].includes(st);
 const PKG_REQUIRED = [["name", "اسم الحزمة"], ["iface", "الواجهة"], ["stage", "مرحلة الطلب"], ["quarter", "الربع المستهدف"], ["priority", "الأولوية"], ["weight", "الوزن"],
   ["presence", "التواجد في النظام التكاملي"], ["group", "المجموعة"], ["type", "نوع الخدمة"], ["category", "تصنيف الخدمة"], ["beneficiary", "الفئة المستفيدة"],
-  ["system", "النظام المستهدف للإغلاق"], ["dependency", "الاعتمادية"], ["brd", "BRD No"], ["uat", "UAT No"]];
+  ["system", "النظام المستهدف للإغلاق"]];
+// BRD / UAT may be left empty, but an empty value or a "none" placeholder raises an alert
+const NO_DOC_RE = /^(?:لا\s*يوجد|لا\s*توجد|لايوجد|غير\s*موجود|-+|—|[؟?]+|no|none|n\/?a|not\s*exist(?:s)?|no\s+(?:brd|uat)\b.*)$/i;
+const noDoc = (v) => { const t = String(v ?? "").trim(); return !t || NO_DOC_RE.test(t); };
 
 function computeDev() {
   const c = state.calc, links = state.devConfig?.links || {};
@@ -1981,6 +1993,8 @@ function computeDev() {
     if (p.presence === "ليست خدمة") flags.push("ليست خدمة");
     if (!DEV_IFACE[p.iface]) flags.push("بلا واجهة");
     if (!DEV_STAGES.includes(p.stage)) flags.push("بلا مرحلة طلب");
+    if (noDoc(p.brd)) flags.push("لا يوجد BRD");
+    if (noDoc(p.uat)) flags.push("لا يوجد UAT");
     const missing = PKG_REQUIRED.filter(([k]) => p[k] === undefined || p[k] === null || p[k] === "").map(([, l]) => l);
     const core = p.phase === DEV_CORE;
     const phase = !core && p.phase ? phases.get(`${p.iface}:${p.phase}`) : null;
@@ -2027,8 +2041,32 @@ function viewDev() {
     return `<tr class="clickable" data-pfilter-stage="${esc(st)}"><td>${pill(st, DEV_STAGE_CLASS[st])}</td><td class="n">${int(n)}</td><td class="n">${devWHtml(D.tot.portal.byStage[st] || 0)}</td><td class="n">${devWHtml(D.tot.app.byStage[st] || 0)}</td><td class="n">${devWHtml(D.tot.biz.byStage[st] || 0)}</td></tr>`; }).join("");
   const qRows = [...DEV_QUARTERS, ["", "دون ربع مستهدف"]].map(([q, l]) => { const a = D.tot.portal.byQuarter[q] || 0, b = D.tot.app.byQuarter[q] || 0, cc = D.tot.biz.byQuarter[q] || 0;
     if (!a && !b && !cc) return ""; return `<tr class="clickable" data-pfilter-quarter="${esc(q || "none")}"><td>${esc(l)}</td><td class="n">${devWHtml(a)}</td><td class="n">${devWHtml(b)}</td><td class="n">${devWHtml(cc)}</td></tr>`; }).join("");
+  // statistics by beneficiary category (core 5.أ excluded, as in the other tables)
+  const bMap = new Map();
+  for (const p of state.packages) {
+    const k = D.pk.get(p.id); if (!k || k.core) continue;
+    const key = p.beneficiary || "";
+    const r = bMap.get(key) || { n: 0, w: 0, l: 0, ln: 0, portal: 0, app: 0, biz: 0 };
+    r.n++; r.w += k.w; if (k.launched) { r.l += k.w; r.ln++; } if (p.iface in r) r[p.iface] += k.w;
+    bMap.set(key, r);
+  }
+  const bList = [...bMap.entries()].sort((a, b) => b[1].w - a[1].w || b[1].n - a[1].n);
+  const bSum = bList.reduce((a, [, r]) => { for (const x of ["n", "w", "l", "ln", "portal", "app", "biz"]) a[x] += r[x]; return a; }, { n: 0, w: 0, l: 0, ln: 0, portal: 0, app: 0, biz: 0 });
+  const bRows = bList.map(([b, r]) => `<tr${b ? ` class="clickable" data-pfilter-benef="${esc(b)}"` : ""}>
+      <td><strong>${esc(b || "غير محددة")}</strong></td>
+      <td class="n"><span class="num">${r.n}</span><div class="sub-line">مطلقة <span class="num">${r.ln}</span></div></td>
+      <td class="n">${devWHtml(r.w)}</td><td class="n">${devWHtml(r.l)}</td>
+      <td><div class="dev-barcell"><div class="dev-bar" title="مطلق ${devW(r.l)} من ${devW(r.w)}"><span class="l" style="width:${r.w ? (r.l / r.w) * 100 : 0}%"></span></div>${pct(r.w ? r.l / r.w : null)}</div></td>
+      <td class="n">${pct(bSum.l ? r.l / bSum.l : null)}</td>
+      <td class="n">${devWHtml(r.portal)}</td><td class="n">${devWHtml(r.app)}</td><td class="n">${devWHtml(r.biz)}</td></tr>`).join("");
+  const benefSection = `<section class="section"><div class="section-head"><h2>حسب الفئة المستفيدة</h2>
+      <span class="sub"><span class="dev-legend"><span><i style="background:var(--st-acc)"></i>مطلق</span><span><i style="background:var(--surface-3)"></i>غير مطلق</span></span> · دون الخدمات الأساسية (5.أ) · اضغط على أي فئة لعرض حزمها</span></div>
+    <div class="table-wrap"><table class="dev-benef"><thead><tr><th>الفئة المستفيدة</th><th class="n">الحزم</th><th class="n">الوزن الكلي</th><th class="n">الوزن المطلق</th><th>نسبة الإطلاق</th><th class="n">الحصة من المطلق</th><th class="n">البوابة الموحدة</th><th class="n">التطبيق الموحد</th><th class="n">منصة الأعمال</th></tr></thead>
+    <tbody>${bRows}</tbody>
+    <tfoot><tr><td>الإجمالي</td><td class="n"><span class="num">${bSum.n}</span><div class="sub-line">مطلقة <span class="num">${bSum.ln}</span></div></td><td class="n">${devWHtml(bSum.w)}</td><td class="n">${devWHtml(bSum.l)}</td><td>${pct(bSum.w ? bSum.l / bSum.w : null)}</td><td class="n">${pct(bSum.l ? 1 : null)}</td><td class="n">${devWHtml(bSum.portal)}</td><td class="n">${devWHtml(bSum.app)}</td><td class="n">${devWHtml(bSum.biz)}</td></tr></tfoot></table></div></section>`;
   return `<div class="dev-cards">${devCard("portal")}${devCard("app")}</div>
-  ${D.review.length ? `<button type="button" class="notice dev-review" data-pfilter-flag="review"><strong class="num">${D.review.length}</strong> حزمة تحتاج إلى مراجعة (بلا وزن، أو ليست خدمة، أو بيانات ناقصة) — اضغط لعرضها</button>` : ""}
+  ${D.review.length ? `<button type="button" class="notice dev-review" data-pfilter-flag="review"><strong class="num">${D.review.length}</strong> حزمة تحتاج إلى مراجعة (بلا وزن، أو ليست خدمة، أو لا يوجد BRD / UAT، أو بيانات ناقصة) — اضغط لعرضها</button>` : ""}
+  ${benefSection}
   <section class="section"><div class="section-head"><h2>الوزن حسب مرحلة الطلب</h2><span class="sub">دون الخدمات الأساسية (5.أ) · اضغط على أي مرحلة لعرض حزمها</span></div>
     <div class="table-wrap"><table><thead><tr><th>مرحلة الطلب</th><th class="n">عدد الحزم</th><th class="n">البوابة الموحدة</th><th class="n">التطبيق الموحد</th><th class="n">منصة الأعمال</th></tr></thead><tbody>${stageRows}</tbody></table></div></section>
   <section class="section"><div class="section-head"><h2>الوزن حسب الربع المستهدف</h2><span class="sub">اضغط على أي ربع لعرض حزمه</span></div>
@@ -2057,7 +2095,7 @@ function viewDevPkgs() {
   const sumW = list.reduce((a, p) => a + (D.pk.get(p.id).core ? 0 : D.pk.get(p.id).w), 0);
   const ms = (key, label, all, opts) => multiSelect(key, label, all, opts, "pfilters");
   const phaseOpts = [["pool", "مطلقة ولم تُسلَّم"], ["none", "غير مطلقة"], [DEV_CORE, "أساسية (5.أ)"], ...[...new Set([...DEV_PHASES.portal, ...DEV_PHASES.app])].map((ph) => [ph, phaseLabel(ph)])];
-  const flagOpts = [["review", "تحتاج إلى مراجعة"], ["بلا وزن", "بلا وزن"], ["ليست خدمة", "ليست خدمة"], ["locked", "مقفلة (مخرجها مقبول)"]];
+  const flagOpts = [["review", "تحتاج إلى مراجعة"], ["بلا وزن", "بلا وزن"], ["ليست خدمة", "ليست خدمة"], ["لا يوجد BRD", "لا يوجد BRD"], ["لا يوجد UAT", "لا يوجد UAT"], ["locked", "مقفلة (مخرجها مقبول)"]];
   const billOpts = [["لم تُسلَّم بعد", "لم تُسلَّم بعد"], ["لم يُسلَّم المخرج بعد", "لم يُسلَّم المخرج بعد"], ...BILL_ORDER.map((x) => [x, x]), ["—", "—"]];
   const any = ["iface", "stage", "quarter", "phase", "benef", "cat", "prio", "bill", "flag"].some((k) => f[k].length);
   const rows = list.map((p) => {
@@ -2154,9 +2192,9 @@ function drawerPkg() {
       <div class="field"><label for="pkCat">تصنيف الخدمة</label>${sel("pkCat", "category", DEV_CATEGORIES.map((x) => [x, x]), v.category)}</div>
       <div class="field"><label for="pkBenef">الفئة المستفيدة</label>${sel("pkBenef", "beneficiary", DEV_BENEF.map((x) => [x, x]), v.beneficiary)}</div>
       <div class="field"><label for="pkSystem">النظام المستهدف للإغلاق</label><input id="pkSystem" name="system" list="pkSystems" required value="${esc(v.system ?? "")}"${dis}><datalist id="pkSystems">${systems.map((g) => `<option value="${esc(g)}">`).join("")}</datalist></div>
-      <div class="field"><label for="pkBrd">BRD No</label><input id="pkBrd" name="brd" required value="${esc(v.brd ?? "")}" placeholder="اكتب «لا يوجد» إن لم يتوفر"${dis}></div>
-      <div class="field"><label for="pkUat">UAT No</label><input id="pkUat" name="uat" required value="${esc(v.uat ?? "")}" placeholder="اكتب «لا يوجد» إن لم يتوفر"${dis}></div>
-      <div class="field wide"><label for="pkDep">الاعتمادية</label><textarea id="pkDep" name="dependency" required placeholder="ما تعتمد عليه الحزمة أو ما يعيقها، أو «لا يوجد»"${dis}>${esc(v.dependency ?? "")}</textarea></div>
+      <div class="field"><label for="pkBrd">BRD No</label><input id="pkBrd" name="brd" value="${esc(v.brd ?? "")}" placeholder="يظهر تنبيه إن تُرك فارغًا"${dis}></div>
+      <div class="field"><label for="pkUat">UAT No</label><input id="pkUat" name="uat" value="${esc(v.uat ?? "")}" placeholder="يظهر تنبيه إن تُرك فارغًا"${dis}></div>
+      <div class="field wide"><label for="pkDep">الاعتمادية <span class="muted">(اختياري)</span></label><textarea id="pkDep" name="dependency" placeholder="ما تعتمد عليه الحزمة أو ما يعيقها"${dis}>${esc(v.dependency ?? "")}</textarea></div>
       <div class="field wide"><label for="pkPhase">مرحلة التسليم (اختياري)</label><select id="pkPhase" name="phase"${dis}><option value="">غير مربوطة بمرحلة</option>${phaseOptsFor(v.iface).map(([o, l]) => `<option value="${esc(o)}"${(v.phase || "") === o ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>
         <span class="hint">تُربط بمرحلة تسليم الحزمُ المطلقة فقط، ولا تتجاوز المرحلة ٢٥٫٥ وزنًا (٥١ لمرحلة 1 و2). الأفضل الربط من صفحة «مراحل التسليم».</span></div>
       ${locked ? "" : `<div class="actions wide"><button class="btn primary" type="submit">${p ? "حفظ التعديل" : "إضافة الحزمة"}</button>${p ? `<button class="btn danger" type="button" data-ask-delete>حذف الحزمة</button>` : ""}</div>`}
@@ -2191,7 +2229,9 @@ async function savePkg(form, btn) {
   if (body.iface === "biz" && body.phase && body.phase !== DEV_CORE) { toast("حزم منصة الأعمال لا تُربط بمراحل التسليم قبل تطبيق طلب التغيير.", true); return; }
   const prob = phaseProblem({ ...body, id: docId }, body.phase);
   if (prob) { toast(prob, true); return; }
-  if (await run(btn, () => state.db.collection("packages").doc(docId).set(clean(body)), prev ? "تم حفظ الحزمة" : "تمت إضافة الحزمة")) backToRow(`tr[data-open-pkg="${CSS.escape(docId)}"]`);
+  const noDocs = [noDoc(body.brd) && "BRD", noDoc(body.uat) && "UAT"].filter(Boolean);
+  const done = (prev ? "تم حفظ الحزمة" : "تمت إضافة الحزمة") + (noDocs.length ? ` — تنبيه: لا يوجد ${noDocs.join(" ولا ")}` : "");
+  if (await run(btn, () => state.db.collection("packages").doc(docId).set(clean(body)), done)) backToRow(`tr[data-open-pkg="${CSS.escape(docId)}"]`);
 }
 
 /* ---- phase drawer: pick launched packages for a delivery phase */
@@ -2989,8 +3029,8 @@ document.addEventListener("click", async (ev) => {
   if ("pkgImport" in ds) return document.getElementById("pkgImportFile")?.click();
   if ("applyImport" in ds) return applyImport(t);
   if ("clearPfilters" in ds) { Object.assign(state.pfilters, { iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return render(); }
-  if (ds.pfilterStage || ds.pfilterQuarter || ds.pfilterFlag) {
-    Object.assign(state.pfilters, { q: "", iface: [], stage: ds.pfilterStage ? [ds.pfilterStage] : [], quarter: ds.pfilterQuarter ? [ds.pfilterQuarter] : [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: ds.pfilterFlag ? [ds.pfilterFlag] : [] });
+  if (ds.pfilterStage || ds.pfilterQuarter || ds.pfilterFlag || ds.pfilterBenef) {
+    Object.assign(state.pfilters, { q: "", iface: [], stage: ds.pfilterStage ? [ds.pfilterStage] : [], quarter: ds.pfilterQuarter ? [ds.pfilterQuarter] : [], phase: [], benef: ds.pfilterBenef ? [ds.pfilterBenef] : [], cat: [], prio: [], bill: [], flag: ds.pfilterFlag ? [ds.pfilterFlag] : [] });
     return setTab("devpkgs");
   }
   if ("askApply" in ds) { state.drawer.confirmApply = true; return renderDrawer(); }
