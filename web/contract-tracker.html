@@ -541,6 +541,98 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 /* ---------- periodic report: a light document in the TETCO identity, in every theme */
 /* letter-spacing must stay 0: the PDF renderer draws spaced text letter by letter, which breaks Arabic joining */
 .rp, .rp * { letter-spacing: 0 !important; }
+.dr-deck { display: flex; flex-direction: column; gap: 22px; }
+.dr-wrap { container-type: inline-size; }
+.dr-slide { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #fff; color: #0C3C44; border-radius: 14px; box-shadow: 0 1px 2px rgba(12,60,68,.06), 0 10px 30px rgba(12,60,68,.08); border: 1px solid #E3EAEB;
+  font-family: "IBM Plex Sans Arabic", var(--font); font-size: 1.32cqw; line-height: 1.5; padding: 3.6cqw 4.1cqw 3.4cqw; display: flex; flex-direction: column; gap: 1.6cqw; letter-spacing: 0; }
+.dr-slide .num { font-variant-numeric: tabular-nums; }
+.dr-slide .rp-logos { gap: 1.4cqw; }
+.dr-slide .rp-logos img.portal { height: 3.1cqw; }
+.dr-slide .rp-logos img.tetco { height: 2.1cqw; }
+.dr-slide .rp-logos i { height: 2.8cqw; }
+.dr-eye { color: #1F7A5C; font-weight: 700; font-size: .85em; }
+.dr-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 2cqw; padding-bottom: 1.3cqw; border-bottom: 1px solid #DCE3E4; }
+.dr-head h3 { margin: .1em 0 0; font-size: 1.85em; line-height: 1.25; font-weight: 700; }
+.dr-head p { margin: .2em 0 0; color: #5B6E73; font-size: .85em; }
+.dr-foot { position: absolute; inset: auto 4.1cqw 1.4cqw; display: flex; justify-content: space-between; color: #5B6E73; font-size: .68em; }
+.dr-cover { justify-content: space-between; background: #fff; }
+.dr-orb { position: absolute; border-radius: 50%; pointer-events: none; }
+.dr-orb.a { width: 62cqw; height: 62cqw; left: -18cqw; bottom: -34cqw; background: radial-gradient(circle, rgba(54,186,145,.32), rgba(54,186,145,0) 70%); }
+.dr-orb.b { width: 44cqw; height: 44cqw; left: -20cqw; top: -6cqw; background: radial-gradient(circle, rgba(0,95,150,.20), rgba(0,95,150,0) 70%); }
+.dr-orb.c { width: 22cqw; height: 22cqw; left: 24cqw; top: -4cqw; background: radial-gradient(circle, rgba(158,216,195,.42), rgba(158,216,195,0) 70%); }
+.dr-cover-top { position: relative; display: flex; justify-content: flex-start; }
+.dr-cover .rp-logos img.portal { height: 4.6cqw; }
+.dr-cover .rp-logos img.tetco { height: 3.1cqw; }
+.dr-cover .rp-logos i { height: 4cqw; }
+.dr-cover-main { position: relative; display: flex; flex-direction: column; gap: .5cqw; }
+.dr-cover-main .dr-eye { font-size: 1.2em; }
+.dr-cover-main h2 { margin: 0 0 1.2cqw; font-size: 3.6em; line-height: 1.2; font-weight: 700; }
+.dr-cover-main .rp-grad { width: 11cqw; height: .5cqw; }
+.dr-meta { display: flex; gap: 4.5cqw; margin: 2.6cqw 0 0; }
+.dr-meta dt { color: #5B6E73; font-size: .85em; }
+.dr-meta dd { margin: .2em 0 0; font-weight: 700; font-size: 1.15em; }
+.dr-vat { position: relative; margin: 0; color: #5B6E73; font-size: .78em; }
+.dr-sum { display: grid; grid-template-columns: 25cqw 1fr; gap: 1.6cqw; flex: 1; min-height: 0; }
+.dr-big { background: #0C3C44; color: #fff; border-radius: 1.4cqw; padding: 2cqw 2.2cqw; display: flex; flex-direction: column; justify-content: center; gap: .2cqw; }
+.dr-big .k, .dr-big .d { color: #9ED8C3; font-weight: 700; }
+.dr-big strong { font-size: 2.5em; line-height: 1.15; }
+.dr-big .u { color: #CFE3DF; font-size: .9em; }
+.dr-big .d { margin-top: 1.6cqw; font-size: .9em; }
+.dr-kpis { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 1.6cqw; }
+.dr-kpi { border: 1px solid #DCE3E4; border-radius: 1.4cqw; padding: 2cqw 1.6cqw 1.6cqw; display: flex; flex-direction: column; gap: .3cqw; position: relative; overflow: hidden; }
+.dr-kpi strong { margin-top: 1.4cqw; }
+.dr-kpi .u { color: #5B6E73; font-size: .78em; margin-top: -.3cqw; }
+.dr-kbar { display: block; height: .7cqw; border-radius: .35cqw; background: #E8EEEF; overflow: hidden; margin-top: auto; }
+.dr-kbar span { display: block; height: 100%; background: var(--c); border-radius: .35cqw; }
+.dr-kpi::before { content: ""; position: absolute; inset: 0 0 auto 0; height: .45cqw; background: var(--c); }
+.dr-kpi .k { color: #5B6E73; font-weight: 700; font-size: .85em; display: flex; align-items: center; gap: .6cqw; }
+.dr-kpi .k i { width: .8cqw; height: .8cqw; border-radius: 50%; background: var(--c); flex: none; }
+.dr-kpi strong { font-size: 1.65em; line-height: 1.25; }
+.dr-kpi .s { color: #5B6E73; font-size: .78em; }
+.dr-kpi .s b { color: #0C3C44; }
+.dr-valbar { display: flex; height: 2.2cqw; border-radius: 1.1cqw; overflow: hidden; gap: 2px; background: #E8EEEF; }
+.dr-valbar span { display: block; height: 100%; }
+.dr-legend { display: flex; flex-wrap: wrap; gap: .6cqw 2.2cqw; color: #44696F; font-size: .78em; }
+.dr-legend i { display: inline-block; width: .9cqw; height: .9cqw; border-radius: .25cqw; margin-inline-end: .5cqw; vertical-align: -.1em; }
+.dr-legend .m { color: #5B6E73; margin-inline-start: auto; }
+.dr-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .69em; line-height: 1.3; table-layout: fixed; }
+.dr-table th, .dr-table td { padding: .34cqw .45cqw; text-align: center; border-bottom: 1px solid #E8EEEF; vertical-align: middle; }
+.dr-table th { background: #0C3C44; color: #fff; font-weight: 700; font-size: .92em; line-height: 1.3; min-width: 0; position: static; letter-spacing: 0; padding-block: .5cqw; }
+.dr-table td.q { font-weight: 700; font-size: 1.1em; }
+.dr-table thead th:first-child { border-start-start-radius: .7cqw; }
+.dr-table thead th:last-child { border-start-end-radius: .7cqw; }
+.dr-table th:nth-child(1), .dr-table td.no { width: 4.4cqw; }
+.dr-table th:nth-child(3) { width: 5cqw; }
+.dr-table th.st { width: 9.6cqw; }
+.dr-table th.nt { width: 12.6cqw; }
+.dr-table .dsc { text-align: right; }
+.dr-table td.dsc { font-size: .92em; line-height: 1.35; }
+.dr-table td.no { color: #1F7A5C; font-weight: 700; font-size: 1.1em; }
+.dr-table td.v b { display: block; font-size: 1.12em; }
+.dr-table td.v small { display: block; color: #5B6E73; font-size: .85em; }
+.dr-table td.v .z { color: #B9C5C7; }
+.dr-table tbody tr:nth-child(even) td { background: #FAFCFC; }
+.dr-table tfoot td { background: #F3F7F7; font-weight: 700; border-bottom: 0; }
+.dr-table tfoot td:first-child { text-align: right; }
+.dr-chip { display: inline-block; background: #FDF1E2; color: #9A5A0C; font-weight: 700; border-radius: 99px; padding: .2em .7em; font-size: .88em; line-height: 1.35; white-space: nowrap; }
+.dr-bars { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: .5cqw; min-height: 0; }
+.dr-bar-row { display: grid; grid-template-columns: 7cqw 1fr 3.4cqw; align-items: center; gap: 1.2cqw; }
+.dr-bar-row .lb { font-weight: 600; font-size: .9em; }
+.dr-bar-row .lb b { color: #1F7A5C; }
+.dr-bar-row .q { color: #5B6E73; font-weight: 700; text-align: left; font-size: .9em; }
+.dr-bar { display: flex; height: 2.5cqw; border-radius: .6cqw; overflow: hidden; gap: 2px; background: #E8EEEF; }
+.dr-bar span { display: flex; align-items: center; justify-content: center; min-width: 0; font-size: .78em; overflow: hidden; }
+.dr-cr { margin: 0; padding: .9cqw 1.4cqw; background: #FDF1E2; color: #9A5A0C; border-radius: .9cqw; font-size: .85em; }
+.dr-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 1.4cqw; flex: 1; min-height: 0; }
+.dr-card { border: 1px solid #DCE3E4; border-radius: 1.3cqw; padding: 1.8cqw 1.4cqw 1.3cqw; display: flex; flex-direction: column; gap: .4cqw; position: relative; overflow: hidden; }
+.dr-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: .5cqw; background: #E59A3B; }
+.dr-card .it { color: #1F7A5C; font-weight: 700; font-size: 1.05em; }
+.dr-card .nm { color: #5B6E73; font-size: .78em; line-height: 1.4; min-height: 3.2em; }
+.dr-card strong { font-size: 2.6em; line-height: 1.1; margin-top: auto; }
+.dr-card strong small { font-size: .38em; color: #5B6E73; font-weight: 500; }
+.dr-card .am { font-size: .9em; }
+.dr-card .dr-chip { align-self: stretch; text-align: center; margin-top: .6cqw; }
+.dr-empty { margin: auto; color: #5B6E73; font-size: 1.2em; }
 .rp { color: #0C3C44; background: #fff; font-family: "IBM Plex Sans Arabic", var(--font); line-height: 1.6; }
 .rp .muted, .rp .rp-sub, .rp .m { color: #5B6E73; }
 .rp .red { color: #C63C40; font-weight: 700; }
@@ -1952,6 +2044,7 @@ function exportDelayPdf(btn) {
 const REPORTS = [
   ["billing", "المخرجات بحسب حالة الفوترة", "جدول بالمخرجات المنجزة مصنَّفة حسب حالة الفوترة، لكل حالة قسم مستقل يبدأ بصفحة جديدة."],
   ["delay", "التأخير في قبول المخرجات", "المخرجات في انتظار القبول مع تواريخ التسليم والردود وأيام المراجعة والتأخير (A4 أفقي)."],
+  ["delivery", "حالة تسليم بنود العقد", "كمية كل بند موزّعة على حالات التسليم بالعدد والمبلغ، مع المعلّق بطلب التغيير (عرض PowerPoint)."],
 ];
 const billPicked = () => state.reports.bill || [...BILL_ORDER];
 function billingReport() {
@@ -1983,6 +2076,244 @@ function exportBillingPdf(btn) {
   if (!billingReport().shown.length) { toast("لا توجد مخرجات في الحالات المختارة.", true); return; }
   return savePdf(btn, billingPages, `المخرجات_بحسب_حالة_الفوترة_${state.calc.asOfIso}.pdf`, true);
 }
+/* ---- delivery status of the contract items: on-screen slides + editable PowerPoint */
+const PPTX_SRC = "https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js";
+// delivery states a contracted quantity splits into; "other suspension" appears only when it occurs
+const DR_ST = [
+  ["accepted", "مقبول", "#36BA91", "#FFFFFF"],
+  ["waiting", "مسلَّم في انتظار القبول", "#2B83BE", "#FFFFFF"],
+  ["notDelivered", "لم يُسلَّم بعد", "#B9C5C7", "#0C3C44"],
+  ["susCr", "معلّق بطلب التغيير", "#E59A3B", "#FFFFFF"],
+  ["susOther", "معلّق لأسباب أخرى", "#5B6E73", "#FFFFFF"],
+];
+const DR_INK = "#0C3C44", DR_MUTED = "#5B6E73", DR_LINE = "#DCE3E4", DR_SOFT = "#F3F7F7", DR_AMBER_BG = "#FDF1E2", DR_AMBER_FG = "#9A5A0C";
+const drNum = (v) => nf0.format(Math.round(v || 0));
+const drPct = (v) => Number.isFinite(v) ? `${(v * 100).toFixed(1)}%` : "—";
+const crNote = (crs) => crs.length ? `مرتبطة بطلب التغيير ${crs.map((c) => c.code || "").filter(Boolean).join("، ")}`.trim() : "مرتبطة بطلب التغيير";
+
+function deliveryReport() {
+  const c = state.calc;
+  const blank = () => ({ accepted: 0, waiting: 0, notDelivered: 0, susCr: 0, susOther: 0 });
+  const allCrs = new Map();
+  const items = [...state.items].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).map((it) => {
+    const qty = numOr(it.qty, 0), price = numOr(it.unit_price, 0), n = blank(), crs = new Map();
+    for (const d of state.deliverables) {
+      if (d.item_id !== it.id || d.cancelled) continue;
+      const k = c.del.get(d.id); if (!k) continue;
+      if (k.suspended) {
+        if (d.suspend_cr_linked) { n.susCr++; if (k.suspendCr) { crs.set(k.suspendCr.id, k.suspendCr); allCrs.set(k.suspendCr.id, k.suspendCr); } }
+        else n.susOther++;
+      } else if (k.status === ST.ACC) n.accepted++;
+      else if (k.firstSubmit > 0) n.waiting++;
+    }
+    n.notDelivered = Math.max(0, qty - n.accepted - n.waiting - n.susCr - n.susOther);
+    const v = Object.fromEntries(Object.entries(n).map(([key, x]) => [key, x * price]));
+    return { id: it.id, no: itemLabel(it), name: it.name || "", qty, price, total: qty * price, n, v, crs: [...crs.values()] };
+  });
+  const tot = { qty: 0, total: 0, n: blank(), v: blank() };
+  for (const r of items) { tot.qty += r.qty; tot.total += r.total; for (const k of Object.keys(tot.n)) { tot.n[k] += r.n[k]; tot.v[k] += r.v[k]; } }
+  const sts = DR_ST.filter(([k]) => k !== "susOther" || tot.n.susOther > 0);
+  const s = state.settings;
+  return { items, tot, sts, crs: [...allCrs.values()], asOf: c.asOfIso, project: s.project_name || "", contract: s.contract_no || s.project_code || "" };
+}
+
+/* preview: five 16:9 slides drawn in HTML (sizes in container units so they scale with the page) */
+function drHead(R, title, sub, no) {
+  return `<header class="dr-head"><div><span class="dr-eye">حالة تسليم بنود العقد</span><h3>${esc(title)}</h3>${sub ? `<p>${sub}</p>` : ""}</div>${rpLogos()}</header>
+    <footer class="dr-foot"><span>${esc(R.project)} · الوضع في ${esc(arDate(R.asOf))}</span><span class="num">${no}</span></footer>`;
+}
+function drSlidesHtml(R) {
+  const t = R.tot, total = t.total || 1;
+  const kpiSts = R.sts.filter(([k]) => k !== "susOther");
+  const cover = `<section class="dr-slide dr-cover">
+      <i class="dr-orb a"></i><i class="dr-orb b"></i><i class="dr-orb c"></i>
+      <div class="dr-cover-top">${rpLogos()}</div>
+      <div class="dr-cover-main"><span class="dr-eye">تقرير بنود العقد</span><h2>حالة تسليم بنود العقد</h2><i class="rp-grad"></i>
+        <dl class="dr-meta"><div><dt>المشروع</dt><dd>${esc(R.project)}</dd></div><div><dt>رقم العقد</dt><dd class="num">${esc(R.contract)}</dd></div><div><dt>الوضع في</dt><dd>${esc(arDate(R.asOf))}</dd></div></dl>
+      </div>
+      <p class="dr-vat">المبالغ بالريال السعودي وغير شاملة ضريبة القيمة المضافة</p>
+    </section>`;
+  const summary = `<section class="dr-slide">${drHead(R, "الملخص التنفيذي", `<span class="num">${R.items.length}</span> بندًا · كمية تعاقدية <span class="num">${drNum(t.qty)}</span> مخرجًا`, 2)}
+      <div class="dr-sum">
+        <div class="dr-big"><span class="k">قيمة العقد</span><strong class="num">${drNum(t.total)}</strong><span class="u">ريال</span><span class="d">كمية تعاقدية <b class="num">${drNum(t.qty)}</b> مخرجًا</span></div>
+        <div class="dr-kpis">${kpiSts.map(([k, l, col]) => `<div class="dr-kpi" style="--c:${col}"><span class="k"><i></i>${esc(l)}</span><strong class="num">${drNum(t.v[k])}</strong><span class="u">ريال</span><span class="s"><b class="num">${drNum(t.n[k])}</b> مخرج · <span class="num">${drPct(t.v[k] / total)}</span> من قيمة العقد</span><span class="dr-kbar"><span style="width:${Math.min(100, (t.v[k] / total) * 100)}%"></span></span></div>`).join("")}</div>
+      </div>
+      <div class="dr-valbar">${R.sts.map(([k, , col]) => t.v[k] ? `<span style="flex:${t.v[k]};background:${col}" title="${drPct(t.v[k] / total)}"></span>` : "").join("")}</div>
+      <div class="dr-legend">${R.sts.map(([k, l, col]) => `<span><i style="background:${col}"></i>${esc(l)} <b class="num">${drPct(t.v[k] / total)}</b></span>`).join("")}</div>
+    </section>`;
+  const cell = (r, k) => r.n[k] ? `<b class="num">${drNum(r.n[k])}</b><small class="num">${drNum(r.v[k])}</small>` : `<span class="z">—</span>`;
+  const table = `<section class="dr-slide">${drHead(R, "حالة التسليم لكل بند", "العدد والمبلغ (ريال) لكل حالة من الكمية التعاقدية", 3)}
+      <table class="dr-table"><thead><tr><th>البند</th><th class="dsc">الوصف</th><th>الكمية</th>${R.sts.map(([, l, col, fg]) => `<th class="st" style="background:${col};color:${fg}">${esc(l)}</th>`).join("")}<th class="nt">ملاحظة</th></tr></thead>
+      <tbody>${R.items.map((r) => `<tr><td class="no">${esc(r.no)}</td><td class="dsc">${esc(r.name)}</td><td class="q"><span class="num">${drNum(r.qty)}</span></td>${R.sts.map(([k]) => `<td class="v">${cell(r, k)}</td>`).join("")}<td class="nt">${r.n.susCr ? `<span class="dr-chip">${esc(crNote(r.crs))}</span>` : ""}</td></tr>`).join("")}</tbody>
+      <tfoot><tr><td colspan="2">الإجمالي</td><td class="q"><span class="num">${drNum(t.qty)}</span></td>${R.sts.map(([k]) => `<td class="v"><b class="num">${drNum(t.n[k])}</b><small class="num">${drNum(t.v[k])}</small></td>`).join("")}<td></td></tr></tfoot></table>
+    </section>`;
+  const chart = `<section class="dr-slide">${drHead(R, "توزيع كمية كل بند حسب حالة التسليم", "نسبة من الكمية التعاقدية لكل بند، والرقم داخل الشريط عدد المخرجات", 4)}
+      <div class="dr-bars">${R.items.map((r) => `<div class="dr-bar-row"><span class="lb">البند <b>${esc(r.no)}</b></span><div class="dr-bar">${R.sts.map(([k, , col, fg]) => r.n[k] ? `<span style="flex:${r.n[k]};background:${col};color:${fg}"><b class="num">${drNum(r.n[k])}</b></span>` : "").join("")}</div><span class="q num">${drNum(r.qty)}</span></div>`).join("")}</div>
+      <div class="dr-legend">${R.sts.map(([, l, col]) => `<span><i style="background:${col}"></i>${esc(l)}</span>`).join("")}<span class="m">الرقم على اليسار: الكمية التعاقدية</span></div>
+    </section>`;
+  const aff = R.items.filter((r) => r.n.susCr);
+  const crLine = R.crs.map((x) => `${esc(x.code || "")} «${esc(x.title || "")}» · ${esc(x.status || "")}`).join("<br>");
+  const crSlide = `<section class="dr-slide">${drHead(R, "مخرجات معلّقة مرتبطة بطلب التغيير", aff.length ? `<b class="num">${drNum(t.n.susCr)}</b> مخرجًا بقيمة <b class="num">${drNum(t.v.susCr)}</b> ريال في <b class="num">${aff.length}</b> بنود` : "", 5)}
+      ${aff.length ? `<p class="dr-cr">${crLine}</p><div class="dr-cards">${aff.map((r) => `<div class="dr-card"><span class="it">البند <b>${esc(r.no)}</b></span><span class="nm">${esc(r.name)}</span>
+        <strong><span class="num">${drNum(r.n.susCr)}</span><small> من <span class="num">${drNum(r.qty)}</span></small></strong><span class="am"><b class="num">${drNum(r.v.susCr)}</b> ريال</span><span class="dr-chip">${esc(crNote(r.crs))}</span></div>`).join("")}</div>`
+      : `<p class="dr-empty">لا توجد مخرجات معلّقة مرتبطة بطلب تغيير.</p>`}
+    </section>`;
+  return [cover, summary, table, chart, crSlide];
+}
+
+/* export: the same five slides as native, editable PowerPoint objects */
+function drGradPng(w, h, stops, kind = "bar") {
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const g = cv.getContext("2d");
+  if (kind === "bar") {
+    const lg = g.createLinearGradient(w, 0, 0, 0); stops.forEach((s, i) => lg.addColorStop(i / (stops.length - 1), s));
+    g.fillStyle = lg; g.beginPath(); g.roundRect(0, 0, w, h, h / 2); g.fill();
+  } else { // soft corner orbs for the cover
+    const orb = (x, y, r, a, b) => { const rg = g.createRadialGradient(x, y, r * 0.1, x, y, r); rg.addColorStop(0, a); rg.addColorStop(1, b); g.fillStyle = rg; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
+    orb(w * 0.18, h * 0.95, h * 0.75, "rgba(54,186,145,0.30)", "rgba(54,186,145,0)");
+    orb(w * 0.02, h * 0.35, h * 0.55, "rgba(0,95,150,0.20)", "rgba(0,95,150,0)");
+    orb(w * 0.34, h * 0.12, h * 0.28, "rgba(158,216,195,0.35)", "rgba(158,216,195,0)");
+  }
+  return cv.toDataURL("image/png");
+}
+async function exportDeliveryPptx(btn) {
+  if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
+  const label = btn.textContent; btn.disabled = true; btn.textContent = "جارٍ إنشاء العرض…";
+  try {
+    if (!window.PptxGenJS) await loadScript(PPTX_SRC).catch(() => { throw new Error("تعذّر تحميل مكتبة PowerPoint"); });
+    const R = deliveryReport(), t = R.tot, total = t.total || 1;
+    const pptx = new window.PptxGenJS();
+    pptx.layout = "LAYOUT_WIDE"; pptx.rtlMode = true; pptx.title = "حالة تسليم بنود العقد"; pptx.company = R.project;
+    const F = "IBM Plex Sans Arabic", hex = (c) => c.replace("#", "");
+    const T = (o = {}) => ({ fontFace: F, color: hex(DR_INK), rtlMode: true, lang: "ar-SA", align: "right", valign: "middle", margin: 0, ...o });
+    const W = 13.333, M = 0.55;
+    const grad = drGradPng(600, 24, ["#005F96", "#36BA91"]);
+    const logos = (s, x, y, h) => { // portal on the right, vendor to its left, as on the printed reports
+      const pw = h * 193 / 48, tw = h * 0.68 * 246 / 40;
+      s.addImage({ data: LOGO_PORTAL, x: x - pw, y, w: pw, h });
+      s.addShape(pptx.ShapeType.line, { x: x - pw - 0.16, y: y + 0.04, w: 0, h: h - 0.08, line: { color: hex(DR_LINE), width: 0.75 } });
+      s.addImage({ data: LOGO_TETCO, x: x - pw - 0.32 - tw, y: y + h * 0.16, w: tw, h: h * 0.68 });
+    };
+    const head = (s, title, sub, no) => {
+      s.addText("حالة تسليم بنود العقد", T({ x: W - M - 7, y: 0.38, w: 7, h: 0.28, fontSize: 11, bold: true, color: "1F7A5C" }));
+      s.addText(title, T({ x: W - M - 8.6, y: 0.66, w: 8.6, h: 0.5, fontSize: 24, bold: true }));
+      if (sub) s.addText(sub, T({ x: W - M - 8.6, y: 1.14, w: 8.6, h: 0.3, fontSize: 11, color: hex(DR_MUTED) }));
+      logos(s, 4.1, 0.5, 0.42);
+      s.addShape(pptx.ShapeType.line, { x: M, y: 1.55, w: W - 2 * M, h: 0, line: { color: hex(DR_LINE), width: 0.75 } });
+      s.addText(`${R.project} · الوضع في ${arDate(R.asOf)}`, T({ x: W - M - 7, y: 7.05, w: 7, h: 0.25, fontSize: 9, color: hex(DR_MUTED) }));
+      s.addText(String(no), { x: M, y: 7.05, w: 0.6, h: 0.25, fontFace: F, fontSize: 9, color: hex(DR_MUTED), align: "left", margin: 0 });
+    };
+    // 1 — cover
+    let s = pptx.addSlide(); s.background = { color: "FFFFFF" };
+    s.addImage({ data: drGradPng(1600, 900, [], "orbs"), x: 0, y: 0, w: W, h: 7.5 });
+    logos(s, W - M, 0.6, 0.62);
+    s.addText("تقرير بنود العقد", T({ x: W - M - 9, y: 2.35, w: 9, h: 0.4, fontSize: 16, bold: true, color: "1F7A5C" }));
+    s.addText("حالة تسليم بنود العقد", T({ x: W - M - 10, y: 2.8, w: 10, h: 1.1, fontSize: 46, bold: true }));
+    s.addImage({ data: grad, x: W - M - 1.5, y: 4.05, w: 1.5, h: 0.07 });
+    [["المشروع", R.project], ["رقم العقد", R.contract], ["الوضع في", arDate(R.asOf)]].forEach(([k, v], i) => {
+      const x = W - M - 3.4 * (i + 1) + 0.2;
+      s.addText(k, T({ x, y: 4.55, w: 3.2, h: 0.28, fontSize: 11, color: hex(DR_MUTED) }));
+      s.addText(v, T({ x, y: 4.83, w: 3.2, h: 0.38, fontSize: 15, bold: true }));
+    });
+    s.addText("المبالغ بالريال السعودي وغير شاملة ضريبة القيمة المضافة", T({ x: W - M - 8, y: 6.75, w: 8, h: 0.3, fontSize: 10, color: hex(DR_MUTED) }));
+    // 2 — executive summary
+    s = pptx.addSlide(); head(s, "الملخص التنفيذي", `${R.items.length} بندًا · كمية تعاقدية ${drNum(t.qty)} مخرجًا`, 2);
+    const bigW = 3.3, gap = 0.22;
+    s.addShape(pptx.ShapeType.roundRect, { x: W - M - bigW, y: 1.9, w: bigW, h: 3.0, fill: { color: hex(DR_INK) }, rectRadius: 0.18, line: { color: hex(DR_INK) } });
+    s.addText("قيمة العقد", T({ x: W - M - bigW + 0.3, y: 2.2, w: bigW - 0.6, h: 0.32, fontSize: 13, bold: true, color: "9ED8C3" }));
+    s.addText(drNum(t.total), T({ x: W - M - bigW + 0.25, y: 2.6, w: bigW - 0.5, h: 0.8, fontSize: 27, bold: true, color: "FFFFFF" }));
+    s.addText("ريال", T({ x: W - M - bigW + 0.3, y: 3.4, w: bigW - 0.6, h: 0.3, fontSize: 12, color: "CFE3DF" }));
+    s.addText(`كمية تعاقدية ${drNum(t.qty)} مخرجًا`, T({ x: W - M - bigW + 0.3, y: 4.2, w: bigW - 0.6, h: 0.32, fontSize: 12, bold: true, color: "9ED8C3" }));
+    const kpis = R.sts.filter(([k]) => k !== "susOther"), kw = (W - 2 * M - bigW - gap - gap * (kpis.length - 1)) / kpis.length;
+    kpis.forEach(([k, l, col], i) => {
+      const x = W - M - bigW - gap - (i + 1) * kw - i * gap;
+      s.addShape(pptx.ShapeType.roundRect, { x, y: 1.9, w: kw, h: 3.0, fill: { color: "FFFFFF" }, line: { color: hex(DR_LINE), width: 0.75 }, rectRadius: 0.18 });
+      s.addShape(pptx.ShapeType.rect, { x: x + kw - 0.3 - 0.12, y: 2.27, w: 0.12, h: 0.12, fill: { color: hex(col) }, line: { color: hex(col) } });
+      s.addText(l, T({ x: x + 0.2, y: 2.15, w: kw - 0.68, h: 0.36, fontSize: 11, bold: true, color: hex(DR_MUTED) }));
+      s.addText(drNum(t.v[k]), T({ x: x + 0.15, y: 2.7, w: kw - 0.3, h: 0.6, fontSize: 17, bold: true }));
+      s.addText("ريال", T({ x: x + 0.2, y: 3.28, w: kw - 0.4, h: 0.26, fontSize: 10, color: hex(DR_MUTED) }));
+      s.addText(`${drNum(t.n[k])} مخرج`, T({ x: x + 0.2, y: 3.85, w: kw - 0.4, h: 0.3, fontSize: 12, bold: true, color: hex(col === "#B9C5C7" ? DR_MUTED : col) }));
+      s.addText(`${drPct(t.v[k] / total)} من قيمة العقد`, T({ x: x + 0.2, y: 4.18, w: kw - 0.4, h: 0.28, fontSize: 10, color: hex(DR_MUTED) }));
+      const share = Math.min(1, t.v[k] / total), bw = kw - 0.4;
+      s.addShape(pptx.ShapeType.roundRect, { x: x + 0.2, y: 4.58, w: bw, h: 0.1, fill: { color: "E8EEEF" }, line: { color: "E8EEEF" }, rectRadius: 0.05 });
+      if (share > 0) s.addShape(pptx.ShapeType.roundRect, { x: x + 0.2 + bw * (1 - share), y: 4.58, w: Math.max(0.1, bw * share), h: 0.1, fill: { color: hex(col) }, line: { color: hex(col) }, rectRadius: 0.05 });
+    });
+    let bx = W - M; const barW = W - 2 * M;
+    s.addText("توزيع قيمة العقد حسب حالة التسليم", T({ x: W - M - 6, y: 5.3, w: 6, h: 0.3, fontSize: 12, bold: true }));
+    for (const [k, , col] of R.sts) { const w = barW * (t.v[k] / total); if (w <= 0) continue; bx -= w; s.addShape(pptx.ShapeType.rect, { x: bx, y: 5.72, w, h: 0.34, fill: { color: hex(col) }, line: { color: "FFFFFF", width: 1 } }); }
+    let lx = W - M;
+    for (const [k, l, col] of R.sts) {
+      const txt = `${l}  ${drPct(t.v[k] / total)}`, w = Math.min(3, 0.5 + txt.length * 0.085);
+      s.addShape(pptx.ShapeType.rect, { x: lx - 0.13, y: 6.31, w: 0.13, h: 0.13, fill: { color: hex(col) }, line: { color: hex(col) } });
+      s.addText(txt, T({ x: lx - 0.2 - w, y: 6.22, w, h: 0.3, fontSize: 10, color: hex(DR_MUTED) }));
+      lx -= w + 0.45;
+    }
+    // 3 — the items table (columns listed left→right, so the first column on the right is «البند»)
+    s = pptx.addSlide(); head(s, "حالة التسليم لكل بند", "العدد والمبلغ (ريال) لكل حالة من الكمية التعاقدية", 3);
+    const cellT = (o = {}) => ({ fontFace: F, fontSize: 9, color: hex(DR_INK), rtlMode: true, lang: "ar-SA", align: "center", valign: "middle", margin: [2, 4, 2, 4], border: { type: "solid", pt: 0.5, color: hex(DR_LINE) }, ...o });
+    const vc = (n, v, o = {}) => n ? { text: [{ text: drNum(n), options: { bold: true, fontSize: 10, breakLine: true } }, { text: drNum(v), options: { fontSize: 8, color: hex(DR_MUTED) } }], options: cellT(o) } : { text: "—", options: cellT({ color: "B9C5C7", ...o }) };
+    const hdr = [{ text: "ملاحظة", options: cellT({ bold: true, fill: { color: hex(DR_INK) }, color: "FFFFFF" }) },
+      ...R.sts.slice().reverse().map(([, l, col, fg]) => ({ text: l, options: cellT({ bold: true, fill: { color: hex(col) }, color: hex(fg) }) })),
+      { text: "الكمية", options: cellT({ bold: true, fill: { color: hex(DR_INK) }, color: "FFFFFF" }) },
+      { text: "الوصف", options: cellT({ bold: true, fill: { color: hex(DR_INK) }, color: "FFFFFF", align: "right" }) },
+      { text: "البند", options: cellT({ bold: true, fill: { color: hex(DR_INK) }, color: "FFFFFF" }) }];
+    const body = R.items.map((r, i) => {
+      const band = i % 2 ? { fill: { color: "FAFCFC" } } : {};
+      return [
+        r.n.susCr ? { text: crNote(r.crs), options: cellT({ bold: true, fontSize: 8, color: hex(DR_AMBER_FG), fill: { color: hex(DR_AMBER_BG) } }) } : { text: "", options: cellT(band) },
+        ...R.sts.slice().reverse().map(([k]) => vc(r.n[k], r.v[k], band)),
+        { text: drNum(r.qty), options: cellT({ bold: true, fontSize: 10, ...band }) },
+        { text: r.name, options: cellT({ align: "right", fontSize: 8.5, ...band }) },
+        { text: r.no, options: cellT({ bold: true, fontSize: 11, color: "1F7A5C", ...band }) }];
+    });
+    const foot = [{ text: "", options: cellT({ fill: { color: hex(DR_SOFT) } }) },
+      ...R.sts.slice().reverse().map(([k]) => vc(t.n[k], t.v[k], { fill: { color: hex(DR_SOFT) } })),
+      { text: drNum(t.qty), options: cellT({ bold: true, fontSize: 10, fill: { color: hex(DR_SOFT) } }) },
+      { text: "الإجمالي", options: cellT({ bold: true, fontSize: 10, align: "right", fill: { color: hex(DR_SOFT) } }) },
+      { text: "", options: cellT({ fill: { color: hex(DR_SOFT) } }) }];
+    const stW = R.sts.length > 4 ? 1.12 : 1.38;
+    const colW = [1.75, ...R.sts.map(() => stW), 0.68, 0, 0.62];
+    colW[colW.length - 2] = (W - 2 * M) - colW.reduce((a, b) => a + b, 0);
+    s.addTable([hdr, ...body, foot], { x: M, y: 1.75, w: W - 2 * M, colW, rowH: [0.4, ...body.map(() => 0.42), 0.42], autoPage: false });
+    // 4 — native 100%-stacked bar chart
+    s = pptx.addSlide(); head(s, "توزيع كمية كل بند حسب حالة التسليم", "نسبة من الكمية التعاقدية لكل بند، والرقم داخل الشريط عدد المخرجات", 4);
+    const labels = R.items.map((r) => `البند ${r.no}`);
+    s.addChart(pptx.ChartType.bar, R.sts.map(([k, l]) => ({ name: l, labels, values: R.items.map((r) => r.n[k]) })), {
+      x: M, y: 1.75, w: W - 2 * M, h: 5.15, barDir: "bar", barGrouping: "percentStacked", barGapWidthPct: 45, overlap: 100,
+      chartColors: R.sts.map(([, , col]) => hex(col)), catAxisOrientation: "maxMin", valAxisOrientation: "maxMin",
+      catAxisLabelFontFace: F, catAxisLabelFontSize: 11, catAxisLabelColor: hex(DR_INK), catAxisLineShow: false,
+      valAxisLabelFontFace: F, valAxisLabelFontSize: 9, valAxisLabelColor: hex(DR_MUTED), valAxisLabelFormatCode: "0%", valGridLine: { color: "E8EEEF", size: 0.5 },
+      showValue: true, dataLabelFormatCode: "#,##0;;;", dataLabelFontFace: F, dataLabelFontSize: 9, dataLabelColor: "FFFFFF", dataLabelPosition: "ctr",
+      showLegend: true, legendPos: "b", legendFontFace: F, legendFontSize: 10, legendColor: hex(DR_INK), lang: "ar-SA",
+    });
+    // 5 — CR-linked suspensions
+    const aff = R.items.filter((r) => r.n.susCr);
+    s = pptx.addSlide(); head(s, "مخرجات معلّقة مرتبطة بطلب التغيير", aff.length ? `${drNum(t.n.susCr)} مخرجًا بقيمة ${drNum(t.v.susCr)} ريال في ${aff.length} بنود` : "", 5);
+    if (!aff.length) s.addText("لا توجد مخرجات معلّقة مرتبطة بطلب تغيير.", T({ x: M, y: 3.4, w: W - 2 * M, h: 0.5, fontSize: 16, align: "center", color: hex(DR_MUTED) }));
+    else {
+      s.addText(R.crs.map((x) => `${x.code || ""} «${x.title || ""}» · ${x.status || ""}`).join("\n"), T({ x: M, y: 1.72, w: W - 2 * M, h: 0.55, fontSize: 11, color: hex(DR_AMBER_FG), fill: { color: hex(DR_AMBER_BG) }, margin: [4, 10, 4, 10] }));
+      const per = Math.min(5, aff.length), cw = (W - 2 * M - 0.25 * (per - 1)) / per, ch = aff.length > 5 ? 2.15 : 3.6;
+      aff.forEach((r, i) => {
+        const row = Math.floor(i / per), col = i % per, x = W - M - (col + 1) * cw - col * 0.25, y = 2.5 + row * (ch + 0.2);
+        s.addShape(pptx.ShapeType.roundRect, { x, y, w: cw, h: ch, fill: { color: "FFFFFF" }, line: { color: hex(DR_LINE), width: 0.75 }, rectRadius: 0.16 });
+        s.addShape(pptx.ShapeType.rect, { x, y, w: cw, h: 0.08, fill: { color: "E59A3B" }, line: { color: "E59A3B" } });
+        s.addText(`البند ${r.no}`, T({ x: x + 0.2, y: y + 0.2, w: cw - 0.4, h: 0.32, fontSize: 13, bold: true, color: "1F7A5C" }));
+        s.addText(r.name, T({ x: x + 0.2, y: y + 0.52, w: cw - 0.4, h: ch > 3 ? 0.75 : 0.5, fontSize: 9.5, color: hex(DR_MUTED), valign: "top" }));
+        const ny = y + (ch > 3 ? 1.35 : 1.0);
+        s.addText([{ text: drNum(r.n.susCr), options: { fontSize: ch > 3 ? 34 : 24, bold: true, color: hex(DR_INK) } }, { text: `  من ${drNum(r.qty)}`, options: { fontSize: 12, color: hex(DR_MUTED) } }], T({ x: x + 0.2, y: ny, w: cw - 0.4, h: ch > 3 ? 0.75 : 0.5 }));
+        if (ch > 3) s.addText(`${drNum(r.v.susCr)} ريال`, T({ x: x + 0.2, y: ny + 0.8, w: cw - 0.4, h: 0.32, fontSize: 12, bold: true }));
+        s.addText(crNote(r.crs), T({ x: x + 0.15, y: y + ch - 0.55, w: cw - 0.3, h: 0.38, fontSize: 9, bold: true, color: hex(DR_AMBER_FG), fill: { color: hex(DR_AMBER_BG) }, align: "center", margin: [2, 6, 2, 6] }));
+      });
+    }
+    const data = await pptx.write({ outputType: "blob" });
+    await state.downloads.save({ filename: `حالة_تسليم_بنود_العقد_${R.asOf}.pptx`, data });
+    toast("تم حفظ ملف PowerPoint");
+  } catch (e) {
+    if (e?.code === "declined") toast("أُلغي التنزيل.");
+    else toast(e?.code ? errText(e) : "تعذّر إنشاء ملف PowerPoint: " + (e?.message || e), true);
+  } finally { btn.disabled = false; btn.textContent = label; }
+}
+
 function viewReports() {
   const pick = state.reports.pick, c = state.calc;
   const cards = REPORTS.map(([k, t, d]) => `<button type="button" class="rep-card" data-rep="${k}" aria-pressed="${pick === k}"><strong>${t}</strong><span>${d}</span></button>`).join("");
@@ -1995,6 +2326,13 @@ function viewReports() {
       <div class="field"><span class="label">الحالات المشمولة في التقرير</span><div class="checks">${BILL_ORDER.map((st) => `<label class="check"><input type="checkbox" name="billst" value="${esc(st)}" ${picked.includes(st) ? "checked" : ""}><span class="br-st"><i style="background:${RP_BILL[st]}"></i>${esc(st)}</span> <span class="muted num">(${counts[st]})</span></label>`).join("")}</div></div>
     </section>
     <article class="rp rp-sheet"><header class="rp-cover br-cover">${rpLogos()}<div class="rp-ctitle"><span class="rp-eyebrow">تقرير المخرجات</span><h1>المخرجات بحسب حالة الفوترة</h1><i class="rp-grad"></i></div></header>${B.summary}${B.sections.join("") || `<div class="rp-empty">لا توجد مخرجات في الحالات المختارة.</div>`}</article>`;
+  } else if (pick === "delivery") {
+    const R = deliveryReport();
+    body = `<section class="section">
+      <div class="section-head"><h2>حالة تسليم بنود العقد</h2><div class="actions"><button class="btn primary" type="button" data-pptx="delivery">تصدير PowerPoint</button></div></div>
+      <p class="muted" style="margin:0">خمس شرائح: الغلاف، والملخص، وجدول البنود، والرسم البياني، والمخرجات المعلّقة بطلب التغيير. الملف المصدَّر قابل للتعديل في PowerPoint، والمبالغ غير شاملة الضريبة.</p>
+    </section>
+    <div class="dr-deck">${drSlidesHtml(R).map((x) => `<div class="dr-wrap">${x}</div>`).join("")}</div>`;
   } else {
     const n = delayRows().reduce((a, g) => a + g.rows.length, 0);
     body = `<section class="section">
@@ -2238,7 +2576,7 @@ function phaseCard(P) {
   const c = state.calc, st = phaseState(P), over = P.weight > P.cap + 1e-9, gap = P.target - P.weight;
   const dels = P.dels.map((id) => {
     const d = c.delById.get(id), k = c.del.get(id), it = d ? c.itemsById.get(d.item_id) : null;
-    return `<li><span class="code">${esc(id)}</span><span class="it">البند <bdi dir="ltr">${esc(itemLabel(it) || "—")}</bdi></span>${k ? pill(k.exec) : ""}</li>`;
+    return `<li><span class="code">${esc(id)}</span><span class="it">البند ${esc(itemLabel(it) || "—")}</span>${k ? pill(k.exec) : ""}</li>`;
   }).join("");
   return `<button type="button" class="ph-card st-${st.key}${over ? " over" : ""}" data-open-phase="${P.iface}:${P.ph}" style="--ph:var(${st.color})" aria-label="${esc(DEV_IFACE[P.iface])} — ${esc(phaseLabel(P.ph))}">
     <div class="ph-top">
@@ -3481,6 +3819,7 @@ document.addEventListener("click", async (ev) => {
   if (t.id === "reportPdf") return exportReportPdf(t);
   if (t.id === "delayPdf" || ds.pdf === "delay") return exportDelayPdf(t);
   if (ds.pdf === "billing") return exportBillingPdf(t);
+  if (ds.pptx === "delivery") return exportDeliveryPptx(t);
   if (ds.rep) { state.reports.pick = ds.rep; return render(); }
   if (t.id === "reportCopy") {
     const text = reportText(buildReport());
