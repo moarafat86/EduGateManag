@@ -2009,9 +2009,9 @@ function viewReports() {
    A development package carries a weight (its service count, from a fixed scale), a request stage and a target quarter.
    Launched packages are grouped by hand into delivery phases of 25 weight; each phase is linked (in dev/config) to the
    matching contract deliverables, so a phase locks once its deliverable is accepted and shows that deliverable's billing. */
-const DEV_STAGES = ["الاستكشاف", "التطوير", "قبول المستخدم", "إجراءات الإطلاق", "تم الإطلاق"];
+const DEV_STAGES = ["لم يبدأ", "الاستكشاف", "التطوير", "قبول المستخدم", "إجراءات الإطلاق", "تم الإطلاق"];
 const DEV_LAUNCHED = "تم الإطلاق";
-const DEV_STAGE_CLASS = { "الاستكشاف": "new", "التطوير": "prog", "قبول المستخدم": "wait", "إجراءات الإطلاق": "inv", "تم الإطلاق": "acc" };
+const DEV_STAGE_CLASS = { "لم يبدأ": "new", "الاستكشاف": "cert", "التطوير": "prog", "قبول المستخدم": "wait", "إجراءات الإطلاق": "inv", "تم الإطلاق": "acc" };
 const DEV_IFACES = [["portal", "البوابة الموحدة"], ["app", "التطبيق الموحد"], ["biz", "منصة الأعمال"]];
 const DEV_IFACE = Object.fromEntries(DEV_IFACES);
 const DEV_TARGET = { portal: 250, app: 100 };
@@ -2415,7 +2415,7 @@ function normalizePkg(r) {
   if (/core/i.test(pa) || pb === "0") phase = DEV_CORE;
   else if (/1\s*و\s*2/.test(pa) || pb === "12") phase = "1-2";
   else if (/^\d+$/.test(pa)) phase = pa; else if (/^\d+$/.test(pb)) phase = pb;
-  const stage = t("stage").replace("تم الاطلاق", "تم الإطلاق").replace("اجراءات الاطلاق", "إجراءات الإطلاق").replace("إجراءات الاطلاق", "إجراءات الإطلاق");
+  const stage = t("stage").replace(/^لم\s*يبد[أا]$/, "لم يبدأ").replace("تم الاطلاق", "تم الإطلاق").replace("اجراءات الاطلاق", "إجراءات الإطلاق").replace("إجراءات الاطلاق", "إجراءات الإطلاق");
   const type = { "اجرائية": "إجرائية", "إجرائية": "إجرائية", "استعلامية": "استعلامية", "ذاتية": "ذاتية", "(مكون/اعمال تطويرية)": "مكوّن / أعمال تطويرية" }[t("type")] ?? t("type");
   const benef = t("beneficiary").replace("ولي الامر والطالب", "ولي الأمر والطالب");
   const w = Number(t("weight")), pr = Number(t("priority"));
