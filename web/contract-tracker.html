@@ -551,8 +551,10 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .rp-logos { display: flex; align-items: center; gap: 20px; }
 .rp-logos img { height: 48px; width: auto; display: block; }
 .rp-logos img.portal { height: 44px; }
+.rp-logos img.tetco { height: 30px; }
 .rp-phead .rp-logos img { height: 40px; }
 .rp-phead .rp-logos img.portal { height: 36px; }
+.rp-phead .rp-logos img.tetco { height: 25px; }
 .rp-phead .rp-logos i { height: 32px; }
 .rp-sheet .br-cover { gap: 14px; }
 .rp-sheet .br-cover h1 { font-size: 1.8rem; }
@@ -715,6 +717,7 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
 .rp-cpage { padding: 80px 84px 72px; justify-content: space-between; }
 .rp-ctop .rp-logos img { height: 66px; }
 .rp-ctop .rp-logos img.portal { height: 60px; }
+.rp-ctop .rp-logos img.tetco { height: 40px; }
 .rp-ctop .rp-logos i { height: 58px; }
 .rp-cmain h1 { font-size: 3.2rem; line-height: 1.25; margin: 10px 0 20px; }
 .rp-cmain .rp-eyebrow { font-size: 1.15rem; }
@@ -1738,7 +1741,7 @@ function reportModel(R) {
   return { units, s };
 }
 // the portal logo carries the ministry emblem, so it stands for both beside the TETCO logo
-const rpLogos = () => `<div class="rp-logos"><img class="portal" src="${LOGO_PORTAL}" alt="بوابة التعليم"><i></i><img src="${LOGO_TETCO}" alt="تطوير لتقنيات التعليم"></div>`;
+const rpLogos = () => `<div class="rp-logos"><img class="portal" src="${LOGO_PORTAL}" alt="بوابة التعليم"><i></i><img class="tetco" src="${LOGO_TETCO}" alt="تطوير لتقنيات التعليم"></div>`;
 function rpMeta(R) {
   const s = state.settings;
   return [["الفترة", `${arDate(R.from)} – ${arDate(R.to)}`], ["تاريخ الإصدار", arDate(todayIso())], ["رقم العقد", s.contract_no], ["الجهة المالكة", s.client]]
