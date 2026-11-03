@@ -153,6 +153,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dev-benef tfoot td { font-weight: 700; background: var(--surface-2); }
 .dev-note { margin: 10px 0 0; font-size: .82rem; }
 .dev-review { display: block; width: 100%; text-align: start; border: 0; cursor: pointer; font: inherit; }
+.doc-gen { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface-2); }
+.doc-gen-head { display: flex; align-items: center; gap: 12px; }
+.doc-gen-head svg, .doc-tpl-file svg { width: 30px; height: 30px; flex: none; fill: none; stroke: var(--st-acc-fg); stroke-width: 1.7; stroke-linejoin: round; }
+.doc-gen-head h4 { margin: 0 0 2px; }
+.doc-gen-head .muted { font-size: .8rem; }
+.doc-gen .actions { justify-content: flex-start; }
+.doc-warn { margin: 0; padding: 10px 14px 10px 0; padding-inline-start: 28px; border-radius: 8px; background: var(--st-ret-bg); color: var(--st-ret-fg); font-size: .84rem; display: flex; flex-direction: column; gap: 4px; }
+.doc-tpl { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 14px 16px; border-radius: var(--r); background: var(--surface-2); margin-bottom: 16px; }
+.doc-tpl-file { display: flex; align-items: center; gap: 12px; }
+.doc-tpl-file > div { display: flex; flex-direction: column; gap: 2px; }
+.doc-tpl-file .muted { font-size: .82rem; }
 .ph-intro { display: flex; align-items: center; justify-content: space-between; gap: 10px 24px; flex-wrap: wrap; padding: 0 4px; }
 .ph-intro p { margin: 0; font-size: .84rem; }
 .ph-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .84rem; color: var(--ink-2); }
@@ -2368,6 +2379,7 @@ function drawerPhase() {
     </div>
     <div class="meter"><span style="width:${Math.min(100, (total / P.target) * 100)}%;background:var(${over ? "--st-late" : total >= P.target - 1e-9 ? "--st-acc" : "--st-wait"})"></span></div>
     ${P.locked ? `<div class="notice">المرحلة مقفلة لأن مخرجها مقبول؛ تُعرض حزمها للاطلاع فقط.</div>` : over ? `<div class="notice">الوزن المختار يتجاوز الحد الأقصى ${devW(P.cap)}. أزل بعض الحزم.</div>` : total < P.target - 1e-9 ? `<p class="muted" style="margin:0">ناقص ${devW(P.target - total)} للوصول إلى ${P.target}. الحد الأقصى ${devW(P.cap)}.</p>` : ""}
+    ${phaseDocBlock(P, picked)}
     <div class="block"><h4>الحزم المطلقة المتاحة لهذه المرحلة (<span class="num">${pool.length}</span>)</h4>
       ${pool.length ? `<div class="dev-picklist">${list}</div>` : `<span class="muted">لا توجد حزم مطلقة غير مسلَّمة لهذه الواجهة.</span>`}</div>
     ${P.locked ? "" : `<div class="actions"><button class="btn primary" type="button" data-save-phase${over ? " disabled" : ""}>حفظ حزم المرحلة</button><button class="btn" type="button" data-close>إلغاء</button></div>`}` };
@@ -2470,6 +2482,284 @@ function delPackagesBlock(delId) {
   return "";
 }
 
+/* ---- phase approval document: fills the client's Excel template in place
+   The template is edited at the XML level so its header logo, styles, print
+   setup and formulas survive exactly; only the cells below are written. */
+const JSZIP_SRC = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+const XNS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+const SIGNERS = [
+  ["tetco", "مدير المشروع - شركة تطوير لتقنيات التعليم", /^مدير المشروع\s*-\s*شركة/],
+  ["client_pm", "مدير المشروع - الإدارة العامة للتحول الرقمي", /^مدير المشروع\s*-\s*الإدارة/],
+  ["owner", "مالك المشروع - الإدارة العامة للتحول الرقمي", /^مالك المشروع/],
+];
+const DOC_COLS = [["idx", /^#$/], ["group", /^المجموعة$/], ["name", /^الحزمة التطويرية$/], ["category", /^تصنيف الخدمة$/], ["weight", /^(الوزن|actual)$/i], ["brd", /^brd/i], ["uat", /^uat/i]];
+async function loadJsZip() {
+  if (!window.JSZip) await loadScript(JSZIP_SRC).catch(() => { throw new Error("تعذّر تحميل مكتبة ملفات Excel"); });
+  return window.JSZip;
+}
+const b64ToBytes = (b64) => Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0));
+function bytesToB64(bytes) { let s = ""; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s); }
+const xmlDoc = (text) => { const d = new DOMParser().parseFromString(text, "application/xml"); if (d.getElementsByTagName("parsererror").length) throw new Error("ملف القالب تالف"); return d; };
+const xmlText = (doc) => { const s = new XMLSerializer().serializeToString(doc); return s.startsWith("<?xml") ? s : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + s; };
+const kids = (el, name) => [...el.childNodes].filter((n) => n.nodeType === 1 && n.localName === name);
+const refCol = (ref) => ref.replace(/[\d$]/g, ""), refRow = (ref) => Number(ref.replace(/[^\d]/g, ""));
+const colNum = (c) => [...c].reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0);
+
+// workbook parts the generator needs: the first sheet, shared strings, and the analysed layout
+async function openTemplate(bytes) {
+  const JSZip = await loadJsZip();
+  const zip = await JSZip.loadAsync(bytes);
+  const wbRels = xmlDoc(await zip.file("xl/_rels/workbook.xml.rels").async("string"));
+  const wb = xmlDoc(await zip.file("xl/workbook.xml").async("string"));
+  const firstSheet = wb.getElementsByTagNameNS(XNS, "sheet")[0];
+  const rid = firstSheet.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+  const rel = [...wbRels.getElementsByTagName("Relationship")].find((r) => r.getAttribute("Id") === rid);
+  const sheetPath = "xl/" + rel.getAttribute("Target").replace(/^\/?xl\//, "").replace(/^\//, "");
+  const sheet = xmlDoc(await zip.file(sheetPath).async("string"));
+  const sstFile = zip.file("xl/sharedStrings.xml");
+  const sst = sstFile ? [...xmlDoc(await sstFile.async("string")).getElementsByTagNameNS(XNS, "si")].map((si) => [...si.getElementsByTagNameNS(XNS, "t")].map((t) => t.textContent).join("")) : [];
+  const colWidth = {};
+  for (const c of sheet.getElementsByTagNameNS(XNS, "col")) for (let i = Number(c.getAttribute("min")); i <= Number(c.getAttribute("max")); i++) colWidth[String.fromCharCode(64 + i)] = Number(c.getAttribute("width")) || 9;
+  const t = { zip, wb, wbRels, sheet, sheetPath, sst, colWidth };
+  t.layout = analyseTemplate(t);
+  return t;
+}
+function cellText(t, c) {
+  const type = c.getAttribute("t"), v = kids(c, "v")[0];
+  if (type === "s") return t.sst[Number(v?.textContent)] ?? "";
+  if (type === "inlineStr") return [...c.getElementsByTagNameNS(XNS, "t")].map((x) => x.textContent).join("");
+  return v ? v.textContent : "";
+}
+function analyseTemplate(t) {
+  const rows = new Map(), cells = new Map();
+  for (const r of t.sheet.getElementsByTagNameNS(XNS, "row")) {
+    rows.set(Number(r.getAttribute("r")), r);
+    for (const c of kids(r, "c")) cells.set(c.getAttribute("r"), c);
+  }
+  const txt = (ref) => (cells.has(ref) ? cellText(t, cells.get(ref)) : "").replace(/\s+/g, " ").trim();
+  const L = { problems: [] };
+  for (const [ref, c] of cells) if (cellText(t, c).includes("{#}")) { L.title = ref; break; }
+  if (!L.title) L.problems.push("لا توجد خانة «{#}» لرقم المرحلة في العنوان");
+  for (const [r] of [...rows].sort((a, b) => a[0] - b[0])) if (txt(`A${r}`) === "#") { L.header = r; break; }
+  if (!L.header) { L.problems.push("لا يوجد صف عناوين يبدأ بالعمود «#»"); return L; }
+  L.cols = {};
+  for (const c of kids(rows.get(L.header), "c")) { const h = txt(c.getAttribute("r")); const k = DOC_COLS.find(([, re]) => re.test(h)); if (k) L.cols[k[0]] = refCol(c.getAttribute("r")); }
+  for (const [k, l] of [["name", "الحزمة التطويرية"], ["weight", "الوزن"]]) if (!L.cols[k]) L.problems.push(`لا يوجد عمود «${l}» في صف العناوين`);
+  for (const [r] of [...rows].sort((a, b) => a[0] - b[0])) if (r > L.header && /^(الإجمالي|الاجمالي)$/.test(txt(`A${r}`))) { L.total = r; break; }
+  if (!L.total) L.problems.push("لا يوجد صف «الإجمالي» بعد الجدول");
+  else if (L.total - L.header < 2) L.problems.push("لا توجد صفوف بيانات بين العناوين والإجمالي");
+  L.signers = {};
+  for (const [r] of rows) {
+    const k = SIGNERS.find(([, , re]) => re.test(txt(`A${r}`)));
+    if (!k || L.signers[k[0]]) continue;
+    const dateCol = kids(rows.get(r), "c").map((c) => c.getAttribute("r")).find((ref) => txt(ref) === "التاريخ");
+    L.signers[k[0]] = { row: r + 1, name: txt(`A${r + 1}`), dateCol: dateCol ? refCol(dateCol) : null };
+  }
+  return L;
+}
+
+function setCell(doc, c, value) {
+  while (c.firstChild) c.removeChild(c.firstChild);
+  c.removeAttribute("t");
+  if (value === null || value === undefined || value === "") return;
+  if (typeof value === "number") { const v = doc.createElementNS(XNS, "v"); v.textContent = String(value); c.appendChild(v); return; }
+  c.setAttribute("t", "inlineStr");
+  const is = doc.createElementNS(XNS, "is"), tt = doc.createElementNS(XNS, "t");
+  tt.setAttributeNS("http://www.w3.org/XML/1998/namespace", "xml:space", "preserve");
+  tt.textContent = String(value); is.appendChild(tt); c.appendChild(is);
+}
+function ensureCell(doc, row, col) {
+  const r = row.getAttribute("r"), ref = col + r;
+  const list = kids(row, "c");
+  const had = list.find((c) => c.getAttribute("r") === ref);
+  if (had) return had;
+  const c = doc.createElementNS(XNS, "c"); c.setAttribute("r", ref);
+  const after = list.find((x) => colNum(refCol(x.getAttribute("r"))) > colNum(col));
+  row.insertBefore(c, after || null);
+  return c;
+}
+// row shifting for everything below the data block
+function shiftRef(ref, L, delta, n) {
+  return ref.replace(/(\$?)([A-Z]{1,3})(\$?)(\d+)/g, (m, d1, col, d2, row) => {
+    let r = Number(row);
+    if (r > L.lastData) r += delta; else if (r === L.lastData) r = L.firstData + n - 1;
+    return `${d1}${col}${d2}${r}`;
+  });
+}
+
+// fills the template: title, one row per package, the delivery dates and the signers
+async function buildPhaseDoc(bytes, data) {
+  const t = await openTemplate(bytes), L = t.layout, doc = t.sheet;
+  if (L.problems.length) throw new Error(L.problems.join("، "));
+  L.firstData = L.header + 1; L.lastData = L.total - 1;
+  const n = Math.max(1, data.rows.length), delta = n - (L.lastData - L.firstData + 1);
+  const sheetData = doc.getElementsByTagNameNS(XNS, "sheetData")[0];
+  const rowEls = kids(sheetData, "row");
+  const byNum = new Map(rowEls.map((r) => [Number(r.getAttribute("r")), r]));
+  const model = byNum.get(L.lastData) || byNum.get(L.firstData);
+  const anchor = rowEls.find((r) => Number(r.getAttribute("r")) > L.lastData) || null;
+  for (const r of rowEls) { const k = Number(r.getAttribute("r")); if (k >= L.firstData && k <= L.lastData) sheetData.removeChild(r); }
+  for (const r of rowEls) {
+    const k = Number(r.getAttribute("r")); if (k <= L.lastData) continue;
+    r.setAttribute("r", String(k + delta));
+    for (const c of kids(r, "c")) {
+      c.setAttribute("r", refCol(c.getAttribute("r")) + (k + delta));
+      for (const f of kids(c, "f")) { f.textContent = shiftRef(f.textContent, L, delta, n); if (f.getAttribute("ref")) f.setAttribute("ref", shiftRef(f.getAttribute("ref"), L, delta, n)); }
+      if (kids(c, "f").length) kids(c, "v").forEach((v) => c.removeChild(v));
+    }
+  }
+  const modelHt = Number(model?.getAttribute("ht")) || 16.2;
+  const nameCh = Math.max(20, (t.colWidth?.[L.cols.name] || 80) * 1.15);
+  data.rows.forEach((row, i) => {
+    const r = model.cloneNode(true), num = L.firstData + i;
+    r.setAttribute("r", String(num));
+    for (const c of kids(r, "c")) { c.setAttribute("r", refCol(c.getAttribute("r")) + num); setCell(doc, c, null); }
+    const put = (k, v) => { if (L.cols[k]) setCell(doc, ensureCell(doc, r, L.cols[k]), v); };
+    put("idx", i + 1); put("group", row.group); put("name", row.name); put("category", row.category);
+    put("weight", Number.isFinite(row.weight) ? row.weight : null); put("brd", row.brd); put("uat", row.uat);
+    const lines = String(row.name || "").split("\n").reduce((a, s) => a + Math.max(1, Math.ceil(s.length / nameCh)), 0);
+    if (lines > 1) { r.setAttribute("ht", String(Math.round(14.4 * lines * 10) / 10)); r.setAttribute("customHeight", "1"); }
+    else r.setAttribute("ht", String(modelHt));
+    sheetData.insertBefore(r, anchor);
+  });
+  // ranges that live below the data block
+  const shiftSq = (el, attr) => { const v = el.getAttribute(attr); if (v) el.setAttribute(attr, v.split(" ").map((x) => shiftRef(x, L, delta, n)).join(" ")); };
+  for (const m of doc.getElementsByTagNameNS(XNS, "mergeCell")) {
+    const [a, b] = m.getAttribute("ref").split(":");
+    if (refRow(a) >= L.firstData && refRow(b || a) <= L.lastData) { m.parentNode.removeChild(m); continue; }
+    shiftSq(m, "ref");
+  }
+  const mc = doc.getElementsByTagNameNS(XNS, "mergeCells")[0]; if (mc) mc.setAttribute("count", String(kids(mc, "mergeCell").length));
+  for (const tag of ["conditionalFormatting", "dataValidation", "hyperlink"]) for (const el of doc.getElementsByTagNameNS(XNS, tag)) shiftSq(el, tag === "hyperlink" ? "ref" : "sqref");
+  for (const b of doc.getElementsByTagNameNS(XNS, "brk")) { const id = Number(b.getAttribute("id")); if (id > L.lastData) b.setAttribute("id", String(id + delta)); }
+  const dim = doc.getElementsByTagNameNS(XNS, "dimension")[0]; if (dim) shiftSq(dim, "ref");
+  const at = (ref) => { const rr = refRow(ref), rowEl = kids(sheetData, "row").find((x) => Number(x.getAttribute("r")) === rr); return rowEl ? ensureCell(doc, rowEl, refCol(ref)) : null; };
+  const moved = (r) => r > L.lastData ? r + delta : r;
+  // title, signers and delivery dates
+  const title = at(`${refCol(L.title)}${moved(refRow(L.title))}`);
+  if (title) setCell(doc, title, cellText(t, title).replace("{#}", data.phase));
+  for (const [k] of SIGNERS) {
+    const s = L.signers[k]; if (!s) continue;
+    const row = moved(s.row);
+    if (data.signers?.[k]) { const c = at(`A${row}`); if (c) setCell(doc, c, data.signers[k]); }
+    if (k === "tetco" && s.dateCol && data.dates?.length) {
+      const c = at(`${s.dateCol}${row}`); if (c) setCell(doc, c, data.dates.join("\n"));
+      const rowEl = kids(sheetData, "row").find((x) => Number(x.getAttribute("r")) === row);
+      if (rowEl && data.dates.length > 1) { rowEl.setAttribute("ht", String(Math.round(15.9 * data.dates.length * 10) / 10)); rowEl.setAttribute("customHeight", "1"); }
+    }
+  }
+  // workbook: print area / names follow the shift; recalc on open; drop the stale calc chain
+  for (const dn of t.wb.getElementsByTagNameNS(XNS, "definedName")) dn.textContent = dn.textContent.replace(/(\$?[A-Z]{1,3}\$?\d+)/g, (ref) => shiftRef(ref, L, delta, n));
+  const calc = t.wb.getElementsByTagNameNS(XNS, "calcPr")[0];
+  if (calc) calc.setAttribute("fullCalcOnLoad", "1");
+  t.zip.file(t.sheetPath, xmlText(doc));
+  t.zip.file("xl/workbook.xml", xmlText(t.wb));
+  if (t.zip.file("xl/calcChain.xml")) {
+    t.zip.remove("xl/calcChain.xml");
+    for (const r of [...t.wbRels.getElementsByTagName("Relationship")]) if (/calcChain$/.test(r.getAttribute("Type"))) r.parentNode.removeChild(r);
+    t.zip.file("xl/_rels/workbook.xml.rels", xmlText(t.wbRels));
+    const ct = xmlDoc(await t.zip.file("[Content_Types].xml").async("string"));
+    for (const o of [...ct.getElementsByTagName("Override")]) if (o.getAttribute("PartName") === "/xl/calcChain.xml") o.parentNode.removeChild(o);
+    t.zip.file("[Content_Types].xml", xmlText(ct));
+  }
+  return t.zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+}
+
+// what goes into the document for one phase, plus the warnings shown before generating
+const dmy = (iso) => { const [y, m, d] = String(iso).split("-").map(Number); return `\u200E${d}-${m}-${y}`; };
+function phaseDocData(P, pkgs, manualDate) {
+  const subs = [...new Set(state.events.filter((e) => P.dels.includes(e.deliverable) && e.action === ACT.SUB && e.date).map((e) => e.date))].sort();
+  const dates = subs.length ? subs.map((d, i) => `${i ? "إعادة تسليم" : "تسليم"} بتاريخ ${dmy(d)}`) : manualDate ? [`تسليم بتاريخ ${dmy(manualDate)}`] : [];
+  const rows = [...pkgs].sort((a, b) => (a.no || 0) - (b.no || 0)).map((p) => ({ group: p.group || "", name: p.name || "", category: p.category || "", weight: Number.isFinite(p.weight) ? p.weight : null, brd: noDoc(p.brd) ? "لا يوجد" : p.brd, uat: noDoc(p.uat) ? "لا يوجد" : p.uat }));
+  const total = pkgs.reduce((a, p) => a + (state.dev.pk.get(p.id)?.w || 0), 0);
+  const warn = [];
+  if (total < P.target - 1e-9) warn.push(`وزن المرحلة ${devW(total)} أقل من المستهدف ${P.target}`);
+  if (total > P.cap + 1e-9) warn.push(`وزن المرحلة ${devW(total)} يتجاوز الحد الأقصى ${devW(P.cap)}`);
+  const noB = pkgs.filter((p) => noDoc(p.brd)).length, noU = pkgs.filter((p) => noDoc(p.uat)).length;
+  if (noB) warn.push(`<span class="num">${noB}</span> حزمة بلا BRD ستُكتب «لا يوجد»`);
+  if (noU) warn.push(`<span class="num">${noU}</span> حزمة بلا UAT ستُكتب «لا يوجد»`);
+  if (!subs.length && !manualDate) warn.push("لا يوجد تسليم مسجّل لمخرجات المرحلة؛ أدخل تاريخ التسليم أو اتركه فارغًا");
+  const s = state.devConfig?.signers || {};
+  return { phase: (P.ph === "1-2" ? "1 و2" : P.ph) + (P.iface === "portal" ? "" : ` – ${DEV_IFACE[P.iface]}`), rows, dates, total, warn, hasSubs: !!subs.length,
+    signers: Object.fromEntries(SIGNERS.map(([k]) => [k, (s[k] || "").trim()]).filter(([, v]) => v)) };
+}
+function phaseDocBlock(P, picked) {
+  const tpl = state.devConfig?.template, saved = P.pkgs.map((p) => p.id).sort().join(), dirty = picked.slice().sort().join() !== saved;
+  const data = phaseDocData(P, P.pkgs, state.drawer.docDate);
+  const off = !tpl ? "لم يُرفع قالب الوثيقة بعد. ارفعه من الإعدادات." : !P.pkgs.length ? "لا توجد حزم محفوظة في هذه المرحلة." : dirty ? "احفظ اختيار الحزم أولًا، ثم أنشئ الوثيقة." : "";
+  return `<div class="block doc-gen">
+    <div class="doc-gen-head"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/></svg>
+      <div><h4>وثيقة اعتماد المرحلة</h4><span class="muted">ملف Excel من القالب${tpl ? ` «${esc(tpl.name || "")}»` : ""} · <span class="num">${P.pkgs.length}</span> حزمة · وزن <span class="num">${devW(data.total)}</span></span></div></div>
+    ${off ? `<p class="muted" style="margin:0">${off}</p>` : `
+      ${data.hasSubs ? `<div class="kv"><div><span class="k">تاريخ التسليم</span><span class="v">${data.dates.map(esc).join("<br>")}</span></div></div>` : `<div class="field"><label for="docDate">تاريخ التسليم</label><input id="docDate" type="date" value="${esc(state.drawer.docDate || "")}"></div>`}
+      ${data.warn.length ? `<ul class="doc-warn">${data.warn.map((w) => `<li>${w}</li>`).join("")}</ul>` : ""}`}
+    <div class="actions"><button class="btn${data.warn.length && !off ? "" : " primary"}" type="button" data-gen-doc${off ? " disabled" : ""}>${data.warn.length && !off ? "إنشاء الوثيقة رغم التنبيهات" : "إنشاء الوثيقة"}</button></div>
+  </div>`;
+}
+async function generatePhaseDoc(btn) {
+  const P = state.dev.phases.get(state.drawer?.id); if (!P) return;
+  if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
+  if (!requireDb()) return;
+  btn.disabled = true; const label = btn.textContent; btn.textContent = "جارٍ الإنشاء…";
+  try {
+    const snap = await state.db.doc("dev/template").get();
+    const b64 = snap.exists ? snap.data()?.b64 : "";
+    if (!b64) throw new Error("لم يُرفع قالب الوثيقة بعد");
+    const data = phaseDocData(P, P.pkgs, state.drawer.docDate);
+    const out = await buildPhaseDoc(b64ToBytes(b64), data);
+    const filename = `وثيقة اعتماد مخرجات - ${DEV_IFACE[P.iface]} - ${phaseLabel(P.ph)}.xlsx`;
+    await state.downloads.save({ filename, data: new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }) });
+    toast("تم إنشاء الوثيقة");
+  } catch (e) { toast("تعذّر إنشاء الوثيقة: " + (e?.message || e), true); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+
+// settings: template upload/download and the signers' names
+function docSettingsSection() {
+  const tpl = state.devConfig?.template, s = state.devConfig?.signers || {};
+  return `<section class="section">
+    <div class="section-head"><h2>وثيقة اعتماد المراحل</h2><span class="sub">قالب Excel يُملأ بحزم المرحلة من صفحة مراحل التسليم</span></div>
+    <div class="doc-tpl">
+      <div class="doc-tpl-file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 12l6 6M15 12l-6 6"/></svg>
+        <div>${tpl ? `<strong>${esc(tpl.name || "القالب")}</strong><span class="muted">رُفع ${tpl.uploaded_at ? dateHtml(String(tpl.uploaded_at).slice(0, 10)) : ""} · <span class="num">${Math.round((tpl.size || 0) / 1024)}</span> KB</span>` : `<strong>لا يوجد قالب</strong><span class="muted">ارفع ملف Excel فيه «{#}» في العنوان وصف عناوين يبدأ بـ «#» وصف «الإجمالي»</span>`}</div></div>
+      <div class="actions"><button class="btn" type="button" data-doc-tpl-upload>${tpl ? "رفع قالب جديد" : "رفع القالب"}</button>${tpl ? `<button class="btn" type="button" data-doc-tpl-download>تنزيل القالب الحالي</button>` : ""}</div>
+      <input type="file" id="docTplFile" accept=".xlsx" hidden>
+    </div>
+    <form id="signersForm" class="form-grid" autocomplete="off">
+      ${SIGNERS.map(([k, label]) => `<div class="field"><label for="sg_${k}">${esc(label)}</label><input id="sg_${k}" name="${k}" value="${esc(s[k] || "")}" placeholder="كما في القالب"></div>`).join("")}
+      <div class="actions wide"><button class="btn primary" type="submit">حفظ أسماء المعتمدين</button></div>
+    </form>
+  </section>`;
+}
+async function uploadDocTemplate(file) {
+  if (!requireDb()) return;
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (bytes.length > 180 * 1024) throw new Error("حجم القالب أكبر من المسموح (180 KB)");
+    const t = await openTemplate(bytes);
+    if (t.layout.problems.length) throw new Error(t.layout.problems.join("، "));
+    const meta = { name: file.name, size: bytes.length, uploaded_at: new Date().toISOString() };
+    const signers = { ...(state.devConfig?.signers || {}) };
+    for (const [k] of SIGNERS) if (!signers[k] && t.layout.signers[k]?.name) signers[k] = t.layout.signers[k].name;
+    await state.db.doc("dev/template").set({ b64: bytesToB64(bytes), ...meta });
+    await state.db.doc("dev/config").set({ ...(state.devConfig || {}), template: meta, signers });
+    toast("تم رفع القالب");
+  } catch (e) { toast("تعذّر رفع القالب: " + (e?.message || e), true); }
+}
+async function downloadDocTemplate(btn) {
+  if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
+  await run(btn, async () => {
+    const snap = await state.db.doc("dev/template").get();
+    const d = snap.exists ? snap.data() : null; if (!d?.b64) throw new Error("لا يوجد قالب");
+    await state.downloads.save({ filename: d.name || "قالب وثيقة الاعتماد.xlsx", data: new Blob([b64ToBytes(d.b64)]) });
+  });
+}
+async function saveSigners(form, btn) {
+  const f = formData(form);
+  const signers = Object.fromEntries(SIGNERS.map(([k]) => [k, (f[k] || "").trim()]));
+  await run(btn, () => state.db.doc("dev/config").set({ ...(state.devConfig || {}), signers }), "تم حفظ أسماء المعتمدين");
+}
+
 /* ---- settings */
 function viewSettings() {
   const s = state.settings;
@@ -2503,7 +2793,8 @@ function viewSettings() {
     ${hol.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>المناسبة</th><th>ملاحظة</th>${ACT_TH}</tr></thead><tbody>
       ${hol.map((h) => `<tr><td>${dateHtml(h.date)}</td><td>${esc(h.name)}</td><td class="muted">${esc(h.note)}</td>${rowActions(`data-edit-hol="${h.i}"`, `data-del-hol="${h.i}"`)}</tr>`).join("")}
     </tbody></table></div>` : emptyBlock("لا توجد إجازات مسجلة", "أضف الإجازات الرسمية لاستبعادها من حساب الأيام.")}
-  </section>`;
+  </section>
+  ${docSettingsSection()}`;
 }
 
 /* ------------------------------------------------------------ drawer */
@@ -3141,6 +3432,9 @@ document.addEventListener("click", async (ev) => {
   if (ds.openPhase) return openDrawer({ kind: "phase", id: ds.openPhase });
   if (ds.goPhase) { const id = ds.goPhase; closeDrawer(); setTab("devphases"); return openDrawer({ kind: "phase", id }); }
   if ("savePhase" in ds) return savePhase(t);
+  if ("genDoc" in ds) return generatePhaseDoc(t);
+  if ("docTplUpload" in ds) return document.getElementById("docTplFile")?.click();
+  if ("docTplDownload" in ds) return downloadDocTemplate(t);
   if ("pkgImport" in ds) return document.getElementById("pkgImportFile")?.click();
   if ("applyImport" in ds) return applyImport(t);
   if ("clearPfilters" in ds) { Object.assign(state.pfilters, { iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return render(); }
@@ -3203,6 +3497,7 @@ document.addEventListener("submit", (ev) => {
   const fid = form.getAttribute("id"); // not form.id: a field named "id" would shadow it
   if (fid === "itemForm") return saveItem(form, btn);
   if (fid === "pkgForm") return savePkg(form, btn);
+  if (fid === "signersForm") return saveSigners(form, btn);
   if (fid === "delForm") return saveDeliverable(form, btn);
   if (fid === "delInfoForm") return saveDelInfo(form, btn);
   if (fid === "billingForm") return saveBilling(form, btn);
@@ -3279,6 +3574,8 @@ document.addEventListener("change", (ev) => {
     if (ph) ph.innerHTML = `<option value="">غير مربوطة بمرحلة</option><option value="${DEV_CORE}">أساسية (5.أ) — لا تدخل في الحساب</option>` + (DEV_PHASES[el.value] || []).map((x) => `<option value="${x}">${phaseLabel(x)}</option>`).join("");
     return;
   }
+  if (id === "docTplFile") { const file = el.files && el.files[0]; el.value = ""; if (file) uploadDocTemplate(file); return; }
+  if (id === "docDate" && state.drawer?.kind === "phase") { state.drawer.docDate = el.value; return renderDrawer(); }
   if (id === "pkgImportFile") {
     const file = el.files && el.files[0]; el.value = "";
     if (!file) return;
