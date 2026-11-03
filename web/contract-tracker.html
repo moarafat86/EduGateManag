@@ -2189,7 +2189,7 @@ function viewDevPkgs() {
       <td>${esc(DEV_IFACE[p.iface] || "—")}</td>
       <td>${p.stage ? pill(p.stage, DEV_STAGE_CLASS[p.stage]) : '<span class="muted">—</span>'}</td>
       <td>${esc(DEV_QUARTER[p.quarter] || "—")}</td>
-      <td class="n">${p.priority ? `<span class="num">${p.priority}</span>` : '<span class="muted">—</span>'}</td>
+      <td>${p.beneficiary ? esc(p.beneficiary) : '<span class="muted">—</span>'}</td>
       <td class="n">${k.core ? '<span class="muted" title="لا تدخل في الحساب">—</span>' : devWHtml(p.weight)}</td>
       <td>${k.core ? `<span class="flag soft">أساسية 5.أ</span>` : p.phase ? esc(phaseLabel(p.phase)) : '<span class="muted">—</span>'}</td>
       <td>${k.bill ? (BILL_ORDER.includes(k.bill) ? pill(k.bill) : `<span class="muted">${esc(k.bill)}</span>`) : '<span class="muted">—</span>'}</td>
@@ -2215,7 +2215,7 @@ function viewDevPkgs() {
       ${any ? `<button class="btn small" type="button" data-clear-pfilters>مسح الفلاتر</button>` : ""}
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.packages.length}</span> حزمة · الوزن <span class="num">${devW(sumW)}</span></span>
     </div>
-    ${list.length ? `<div class="table-wrap tall"><table><thead><tr><th class="n">#</th><th>الحزمة والمجموعة</th><th>الواجهة</th><th>مرحلة الطلب</th><th>الربع المستهدف</th><th class="n">الأولوية</th><th class="n">الوزن</th><th>مرحلة التسليم</th><th>حالة الفوترة</th><th>تنبيهات</th>${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
+    ${list.length ? `<div class="table-wrap tall"><table><thead><tr><th class="n">#</th><th>الحزمة والمجموعة</th><th>الواجهة</th><th>مرحلة الطلب</th><th>الربع المستهدف</th><th>الفئة المستفيدة</th><th class="n">الوزن</th><th>مرحلة التسليم</th><th>حالة الفوترة</th><th>تنبيهات</th>${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
       : emptyBlock(state.packages.length ? "لا توجد حزم مطابقة" : "لا توجد حزم بعد", state.packages.length ? "غيّر البحث أو عوامل التصفية." : "أضف حزمة جديدة أو استورد شيت الحزم من Excel.")}
   </section>`;
 }
