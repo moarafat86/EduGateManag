@@ -231,6 +231,9 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .dev-pick.on { background: var(--accent-soft); }
 .dev-pick .nm { min-width: 0; }
 .dev-pick .nm .sub-line { display: block; }
+.dev-docs { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px; font-size: .74rem; color: var(--ink-2); font-weight: 400; overflow-wrap: anywhere; }
+.dev-docs b { color: var(--muted); font-weight: 600; margin-inline-end: 4px; font-size: .68rem; letter-spacing: .02em; }
+.dev-docs .miss { color: var(--st-ret-fg); font-weight: 600; }
 .dev-pick input { width: 16px; height: 16px; margin: 0; }
 .dev-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
 .dev-stage { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: var(--r); background: var(--surface-2); }
@@ -2702,6 +2705,8 @@ async function savePkg(form, btn) {
 }
 
 /* ---- phase drawer: pick launched packages for a delivery phase */
+// BRD / UAT of a package on one line, «لا يوجد» flagged the same way as the review alerts
+const pkgDocsLine = (p) => `<span class="dev-docs">${[["BRD", p.brd], ["UAT", p.uat]].map(([k, v]) => `<span><b>${k}</b> ${noDoc(v) ? '<span class="miss">لا يوجد</span>' : `<bdi>${esc(String(v).trim())}</bdi>`}</span>`).join("")}</span>`;
 function drawerPhase() {
   const d = state.drawer, P = state.dev.phases.get(d.id);
   if (!P) return null;
@@ -2711,7 +2716,7 @@ function drawerPhase() {
   const total = pool.filter((p) => picked.includes(p.id)).reduce((a, p) => a + wOf(p), 0);
   const over = total > P.cap + 1e-9;
   const list = pool.map((p) => `<label class="check dev-pick${picked.includes(p.id) ? " on" : ""}"><input type="checkbox" name="phasePick" value="${esc(p.id)}" ${picked.includes(p.id) ? "checked" : ""}${P.locked ? " disabled" : ""}>
-      <span class="num">#${p.no}</span><span class="nm">${esc(p.name)}<span class="sub-line">${esc(p.group || "")} · ${esc(DEV_QUARTER[p.quarter] || "")}</span></span><strong class="num">${devW(p.weight)}</strong></label>`).join("");
+      <span class="num">#${p.no}</span><span class="nm">${esc(p.name)}<span class="sub-line">${esc(p.group || "")} · ${esc(DEV_QUARTER[p.quarter] || "")}</span>${pkgDocsLine(p)}</span><strong class="num">${devW(p.weight)}</strong></label>`).join("");
   return { title: `${DEV_IFACE[P.iface]} — ${phaseLabel(P.ph)}`, html: `
     <div class="kv">
       <div><span class="k">المخرجات المرتبطة</span><span class="v">${P.dels.map((id) => `<span class="code">${esc(id)}</span>`).join("، ") || "—"}</span></div>
