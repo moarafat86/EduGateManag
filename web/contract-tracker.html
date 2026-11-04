@@ -159,6 +159,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .doc-gen-head h4 { margin: 0 0 2px; }
 .doc-gen-head .muted { font-size: .8rem; }
 .doc-gen .actions { justify-content: flex-start; }
+.doc-sub { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--st-wait-bg); border: 1px solid color-mix(in srgb, var(--st-wait) 35%, transparent); }
+.doc-sub p { margin: 0; line-height: 1.7; }
 .doc-warn { margin: 0; padding: 10px 14px 10px 0; padding-inline-start: 28px; border-radius: 8px; background: var(--st-ret-bg); color: var(--st-ret-fg); font-size: .84rem; display: flex; flex-direction: column; gap: 4px; }
 .doc-tpl { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding: 14px 16px; border-radius: var(--r); background: var(--surface-2); margin-bottom: 16px; }
 .doc-tpl-file { display: flex; align-items: center; gap: 12px; }
@@ -2390,7 +2392,13 @@ function computeDev() {
     const ks = dels.map((id) => c.del.get(id));
     const bills = ks.map((k) => k.bill).filter(Boolean);
     const bill = bills.length ? bills.reduce((a, b) => (BILL_ORDER.indexOf(a) <= BILL_ORDER.indexOf(b) ? a : b)) : "";
-    phases.set(`${iface}:${ph}`, { iface, ph, dels, locked: ks.some((k) => k.accepted > 0), bill, target: phaseTarget(ph), cap: phaseCap(ph), pkgs: [], weight: 0 });
+    // review cycle of the phase deliverables: accepted > returned with notes > delivered (awaiting acceptance)
+    const acc = ks.some((k) => k.accepted > 0), sub = !acc && ks.some((k) => k.lastSubmit > 0);
+    const ret = sub && ks.some((k) => k.lastSubmit > 0 && k.lastReply > 0 && k.lastReply >= k.lastSubmit);
+    const flow = acc ? "acc" : ret ? "ret" : sub ? "wait" : "";
+    // picking is frozen once the phase is with the client, and reopens when it comes back with notes
+    const locked = flow === "acc" || flow === "wait";
+    phases.set(`${iface}:${ph}`, { iface, ph, dels, flow, locked, lockWhy: flow === "acc" ? "مخرج المرحلة مقبول" : flow === "wait" ? "المرحلة مسلَّمة وفي انتظار القبول" : "", bill, target: phaseTarget(ph), cap: phaseCap(ph), pkgs: [], weight: 0 });
   }
   const tot = Object.fromEntries(["portal", "app", "biz"].map((i) => [i, { count: 0, weight: 0, launched: 0, launchedN: 0, delivered: 0, billed: 0, pool: 0, poolN: 0, byStage: {}, byQuarter: {} }]));
   const pk = new Map(), review = [];
@@ -2412,7 +2420,7 @@ function computeDev() {
     if (phase && !launched) flags.push("مربوطة بمرحلة ولم تُطلق");
     const counted = !core && (p.iface === "portal" || p.iface === "app");
     const bill = core ? "" : phase ? (phase.bill || "لم يُسلَّم المخرج بعد") : launched && counted ? "لم تُسلَّم بعد" : "";
-    const k = { flags, missing, core, phase, launched, counted, bill, locked: !!phase?.locked, w: w || 0 };
+    const k = { flags, missing, core, phase, launched, counted, bill, locked: !!phase?.locked, lockWhy: phase?.lockWhy || "", w: w || 0 };
     pk.set(p.id, k);
     if (flags.length) review.push(p);
     if (phase) { phase.pkgs.push(p); phase.weight += k.w; }
@@ -2518,12 +2526,12 @@ function viewDevPkgs() {
   const sumW = list.reduce((a, p) => a + (D.pk.get(p.id).core ? 0 : D.pk.get(p.id).w), 0);
   const ms = (key, label, all, opts) => multiSelect(key, label, all, opts, "pfilters");
   const phaseOpts = [["pool", "مطلقة ولم تُسلَّم"], ["none", "غير مطلقة"], [DEV_CORE, "أساسية (5.أ)"], ...[...new Set([...DEV_PHASES.portal, ...DEV_PHASES.app])].map((ph) => [ph, phaseLabel(ph)])];
-  const flagOpts = [["review", "تحتاج إلى مراجعة"], ["بلا وزن", "بلا وزن"], ["ليست خدمة", "ليست خدمة"], ["لا يوجد BRD", "لا يوجد BRD"], ["لا يوجد UAT", "لا يوجد UAT"], ["locked", "مقفلة (مخرجها مقبول)"]];
+  const flagOpts = [["review", "تحتاج إلى مراجعة"], ["بلا وزن", "بلا وزن"], ["ليست خدمة", "ليست خدمة"], ["لا يوجد BRD", "لا يوجد BRD"], ["لا يوجد UAT", "لا يوجد UAT"], ["locked", "مقفلة (مسلَّمة أو مقبولة)"]];
   const billOpts = [["لم تُسلَّم بعد", "لم تُسلَّم بعد"], ["لم يُسلَّم المخرج بعد", "لم يُسلَّم المخرج بعد"], ...BILL_ORDER.map((x) => [x, x]), ["—", "—"]];
   const any = ["iface", "stage", "quarter", "phase", "benef", "cat", "prio", "bill", "flag"].some((k) => f[k].length);
   const rows = list.map((p) => {
     const k = D.pk.get(p.id);
-    const flags = [k.locked ? `<span class="flag soft" title="مخرج المرحلة مقبول">مقفلة</span>` : "", ...k.flags.map((x) => `<span class="flag">${esc(x)}</span>`)].join(" ");
+    const flags = [k.locked ? `<span class="flag soft" title="${esc(k.lockWhy)}">مقفلة</span>` : "", ...k.flags.map((x) => `<span class="flag">${esc(x)}</span>`)].join(" ");
     return `<tr class="clickable" tabindex="0" data-open-pkg="${esc(p.id)}">
       <td class="n"><span class="num">${p.no ?? ""}</span></td>
       <td><div class="desc strong">${esc(p.name)}</div><div class="sub-line">${esc(p.group || "")}</div></td>
@@ -2562,14 +2570,16 @@ function viewDevPkgs() {
 }
 
 // delivery-phase state, used for the card colour, the chip and the overview rail
+// a phase is ready once its launched packages reach the target weight; after that the review log decides
 function phaseState(P) {
-  const ks = P.dels.map((id) => state.calc.del.get(id)).filter(Boolean);
-  if (P.locked) return { key: "acc", label: "مقبولة · مقفلة", color: "--st-acc" };
-  if (ks.length && ks.every((k) => k.exec === ST.DONE)) return { key: "wait", label: "مسلَّمة", color: "--st-wait" };
+  if (P.flow === "acc") return { key: "acc", label: "مقبولة · مقفلة", color: "--st-acc" };
+  if (P.flow === "wait") return { key: "wait", label: "مسلَّمة · في انتظار القبول", color: "--st-wait" };
+  if (P.flow === "ret") return { key: "ret", label: "مُعادة بملاحظات", color: "--st-ret" };
+  if (P.pkgs.length && P.weight >= P.target - 1e-9) return { key: "ready", label: "جاهزة للتسليم", color: "--st-certw" };
   if (P.pkgs.length) return { key: "prog", label: "قيد التجهيز", color: "--st-prog" };
   return { key: "new", label: "لم تبدأ", color: "--st-new" };
 }
-const PHASE_LEGEND = [["acc", "مقبولة · مقفلة", "--st-acc"], ["wait", "مسلَّمة", "--st-wait"], ["prog", "قيد التجهيز", "--st-prog"], ["new", "لم تبدأ", "--st-new"]];
+const PHASE_LEGEND = [["new", "لم تبدأ", "--st-new"], ["prog", "قيد التجهيز", "--st-prog"], ["ready", "جاهزة للتسليم", "--st-certw"], ["wait", "مسلَّمة · في انتظار القبول", "--st-wait"], ["ret", "مُعادة بملاحظات", "--st-ret"], ["acc", "مقبولة · مقفلة", "--st-acc"]];
 const phaseNum = (ph) => ph === "1-2" ? "1 و2" : ph;
 function phaseRing(v, target, color) {
   const r = 27, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, v / target));
@@ -2601,7 +2611,7 @@ function phaseCard(P) {
 function phaseBlock(iface) {
   const D = state.dev, t = D.tot[iface], target = DEV_TARGET[iface];
   const list = DEV_PHASES[iface].map((ph) => D.phases.get(`${iface}:${ph}`));
-  const accepted = list.filter((P) => P.locked).length, delivered = list.filter((P) => ["acc", "wait"].includes(phaseState(P).key)).length;
+  const accepted = list.filter((P) => P.flow === "acc").length, delivered = list.filter((P) => P.flow).length;
   const kpi = (label, value, sub, attrs = "") => `<${attrs ? "button type=\"button\"" : "div"} class="ph-kpi"${attrs}><span class="l">${label}</span><span class="v">${value}</span><span class="s">${sub}</span></${attrs ? "button" : "div"}>`;
   const rail = list.map((P) => {
     const st = phaseState(P), f = Math.min(1, P.weight / P.target);
@@ -2645,7 +2655,7 @@ function drawerPkg() {
       <div><span class="k">حالة الفوترة</span><span class="v">${k.bill ? (BILL_ORDER.includes(k.bill) ? pill(k.bill) : esc(k.bill)) : "—"}</span></div>
     </div>${k.flags.length ? `<div class="notice">تحتاج إلى مراجعة: ${k.flags.map(esc).join("، ")}${k.missing.length ? ` · حقول ناقصة: ${k.missing.map(esc).join("، ")}` : ""}</div>` : k.missing.length ? `<div class="notice">حقول ناقصة: ${k.missing.map(esc).join("، ")}</div>` : ""}` : "";
   return { title: p ? `الحزمة #${p.no}` : "حزمة تطويرية جديدة", titleHtml: p ? `<span class="code">#${esc(p.no)}</span> ${p.stage ? pill(p.stage, DEV_STAGE_CLASS[p.stage]) : ""} ${locked ? `<span class="flag soft">مقفلة</span>` : ""}` : "", html: `
-    ${locked ? `<div class="notice">هذه الحزمة ضمن ${esc(phaseLabel(p.phase))} ومخرجها مقبول، فلا يمكن تعديلها أو حذفها.</div>` : ""}
+    ${locked ? `<div class="notice">هذه الحزمة ضمن ${esc(phaseLabel(p.phase))} (${esc(k.lockWhy)})، فلا يمكن تعديلها أو حذفها.</div>` : ""}
     ${info}
     <form id="pkgForm" class="form-grid" autocomplete="off" novalidate>
       <div class="form-group">بيانات الحزمة · جميع الحقول إلزامية</div>
@@ -2678,7 +2688,7 @@ function phaseProblem(p, phase, extraWeight = 0) {
   if (!phase || phase === DEV_CORE) return "";
   const P = state.dev.phases.get(`${p.iface}:${phase}`);
   if (!P) return "مرحلة التسليم لا تخص هذه الواجهة.";
-  if (P.locked) return `${phaseLabel(phase)} مقفلة لأن مخرجها مقبول.`;
+  if (P.locked) return `${phaseLabel(phase)} مقفلة: ${P.lockWhy}.`;
   if (p.stage !== DEV_LAUNCHED) return "لا تُربط بمرحلة تسليم إلا الحزم المطلقة.";
   const others = P.pkgs.filter((x) => x.id !== p.id).reduce((a, x) => a + (state.dev.pk.get(x.id)?.w || 0), 0);
   if (others + (Number(p.weight) || 0) + extraWeight > P.cap + 1e-9) return `يتجاوز وزن ${phaseLabel(phase)} الحد الأقصى ${devW(P.cap)} (الحالي ${devW(others)}).`;
@@ -2724,7 +2734,7 @@ function drawerPhase() {
       <div><span class="k">الوزن المختار</span><span class="v ${over ? "red" : ""}"><span dir="ltr">${devW(total)} / ${P.target}</span></span></div>
     </div>
     <div class="meter"><span style="width:${Math.min(100, (total / P.target) * 100)}%;background:var(${over ? "--st-late" : total >= P.target - 1e-9 ? "--st-acc" : "--st-wait"})"></span></div>
-    ${P.locked ? `<div class="notice">المرحلة مقفلة لأن مخرجها مقبول؛ تُعرض حزمها للاطلاع فقط.</div>` : over ? `<div class="notice">الوزن المختار يتجاوز الحد الأقصى ${devW(P.cap)}. أزل بعض الحزم.</div>` : total < P.target - 1e-9 ? `<p class="muted" style="margin:0">ناقص ${devW(P.target - total)} للوصول إلى ${P.target}. الحد الأقصى ${devW(P.cap)}.</p>` : ""}
+    ${P.locked ? `<div class="notice">المرحلة مقفلة (${esc(P.lockWhy)})؛ تُعرض حزمها للاطلاع فقط.${P.flow === "wait" ? " تُفتح للتعديل إذا رُدّت بملاحظات." : ""}</div>` : over ? `<div class="notice">الوزن المختار يتجاوز الحد الأقصى ${devW(P.cap)}. أزل بعض الحزم.</div>` : total < P.target - 1e-9 ? `<p class="muted" style="margin:0">ناقص ${devW(P.target - total)} للوصول إلى ${P.target}. الحد الأقصى ${devW(P.cap)}.</p>` : ""}
     ${phaseDocBlock(P, picked)}
     <div class="block"><h4>الحزم المطلقة المتاحة لهذه المرحلة (<span class="num">${pool.length}</span>)</h4>
       ${pool.length ? `<div class="dev-picklist">${list}</div>` : `<span class="muted">لا توجد حزم مطلقة غير مسلَّمة لهذه الواجهة.</span>`}</div>
@@ -3014,6 +3024,7 @@ async function buildPhaseDoc(bytes, data) {
 // what goes into the document for one phase, plus the warnings shown before generating
 const dmy = (iso) => { const [y, m, d] = String(iso).split("-").map(Number); return `\u200E${d}-${m}-${y}`; };
 function phaseDocData(P, pkgs, manualDate) {
+  manualDate = isIso(manualDate) ? manualDate : todayIso();
   const subs = [...new Set(state.events.filter((e) => P.dels.includes(e.deliverable) && e.action === ACT.SUB && e.date).map((e) => e.date))].sort();
   const dates = subs.length ? subs.map((d, i) => `${i ? "إعادة تسليم" : "تسليم"} بتاريخ ${dmy(d)}`) : manualDate ? [`تسليم بتاريخ ${dmy(manualDate)}`] : [];
   const rows = [...pkgs].sort((a, b) => (a.no || 0) - (b.no || 0)).map((p) => ({ group: p.group || "", name: p.name || "", category: p.category || "", weight: Number.isFinite(p.weight) ? p.weight : null, brd: noDoc(p.brd) ? "لا يوجد" : p.brd, uat: noDoc(p.uat) ? "لا يوجد" : p.uat }));
@@ -3024,7 +3035,6 @@ function phaseDocData(P, pkgs, manualDate) {
   const noB = pkgs.filter((p) => noDoc(p.brd)).length, noU = pkgs.filter((p) => noDoc(p.uat)).length;
   if (noB) warn.push(`<span class="num">${noB}</span> حزمة بلا BRD ستُكتب «لا يوجد»`);
   if (noU) warn.push(`<span class="num">${noU}</span> حزمة بلا UAT ستُكتب «لا يوجد»`);
-  if (!subs.length && !manualDate) warn.push("لا يوجد تسليم مسجّل لمخرجات المرحلة؛ أدخل تاريخ التسليم أو اتركه فارغًا");
   const s = state.devConfig?.signers || {};
   return { phase: (P.ph === "1-2" ? "1 و2" : P.ph) + (P.iface === "portal" ? "" : ` – ${DEV_IFACE[P.iface]}`), rows, dates, total, warn, hasSubs: !!subs.length,
     signers: Object.fromEntries(SIGNERS.map(([k]) => [k, (s[k] || "").trim()]).filter(([, v]) => v)) };
@@ -3036,11 +3046,35 @@ function phaseDocBlock(P, picked) {
   return `<div class="block doc-gen">
     <div class="doc-gen-head"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/></svg>
       <div><h4>وثيقة اعتماد المرحلة</h4><span class="muted">ملف Excel من القالب${tpl ? ` «${esc(tpl.name || "")}»` : ""} · <span class="num">${P.pkgs.length}</span> حزمة · وزن <span class="num">${devW(data.total)}</span></span></div></div>
-    ${off ? `<p class="muted" style="margin:0">${off}</p>` : `
-      ${data.hasSubs ? `<div class="kv"><div><span class="k">تاريخ التسليم</span><span class="v">${data.dates.map(esc).join("<br>")}</span></div></div>` : `<div class="field"><label for="docDate">تاريخ التسليم</label><input id="docDate" type="date" value="${esc(state.drawer.docDate || "")}"></div>`}
-      ${data.warn.length ? `<ul class="doc-warn">${data.warn.map((w) => `<li>${w}</li>`).join("")}</ul>` : ""}`}
-    <div class="actions"><button class="btn${data.warn.length && !off ? "" : " primary"}" type="button" data-gen-doc${off ? " disabled" : ""}>${data.warn.length && !off ? "إنشاء الوثيقة رغم التنبيهات" : "إنشاء الوثيقة"}</button></div>
+    ${data.hasSubs ? `<div class="kv"><div><span class="k">تاريخ التسليم</span><span class="v">${data.dates.map(esc).join("<br>")}</span></div></div>`
+      : P.pkgs.length && !dirty ? `<div class="field"><label for="docDate">تاريخ التسليم</label><input id="docDate" type="date" value="${esc(isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso())}"><span class="hint">يُكتب في الوثيقة ويُسجَّل به التسليم</span></div>` : ""}
+    ${off ? `<p class="muted" style="margin:0">${off}</p>` : data.warn.length ? `<ul class="doc-warn">${data.warn.map((w) => `<li>${w}</li>`).join("")}</ul>` : ""}
+    <div class="actions"><button class="btn${data.warn.length && !off ? "" : " primary"}" type="button" data-gen-doc${off ? " disabled" : ""}>${data.warn.length && !off ? "إنشاء الوثيقة رغم التنبيهات" : "إنشاء الوثيقة"}</button>${phaseSubmitButton(P, dirty)}</div>
+    ${phaseSubmitConfirm(P)}
   </div>`;
+}
+// only a ready phase (target weight reached, not yet delivered) can be recorded as delivered from here
+const phaseCanSubmit = (P, dirty) => phaseState(P).key === "ready" && P.dels.length > 0 && !dirty;
+const phaseSubmitButton = (P, dirty) => phaseState(P).key === "ready"
+  ? `<button class="btn" type="button" data-ask-sub${phaseCanSubmit(P, dirty) ? "" : " disabled"} title="${P.dels.length ? (dirty ? "احفظ اختيار الحزم أولًا" : "") : "المرحلة غير مربوطة بمخرجات"}">تسجيل التسليم</button>` : "";
+function phaseSubmitConfirm(P) {
+  if (!state.drawer.confirmSub || phaseState(P).key !== "ready") return "";
+  const date = isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso();
+  return `<div class="doc-sub" role="alert"><p>سيُسجَّل «تسليم» بتاريخ <span class="date">${esc(date)}</span> على ${P.dels.map((id) => `<span class="code">${esc(id)}</span>`).join(" و")}، وتصبح حالتها التنفيذية «تم» وحالة الفوترة «في انتظار القبول»، وتُقفل حزم المرحلة.</p>
+    <div class="actions"><button class="btn primary" type="button" data-confirm-sub>تأكيد التسليم</button><button class="btn" type="button" data-cancel-sub>إلغاء</button></div></div>`;
+}
+async function recordPhaseSubmission(btn) {
+  const P = state.dev.phases.get(state.drawer?.id); if (!P || phaseState(P).key !== "ready") return;
+  const date = isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso();
+  const note = `تسليم ${phaseLabel(P.ph)} — ${DEV_IFACE[P.iface]}`;
+  const ok = await run(btn, async () => {
+    for (const id of P.dels) {
+      const prev = state.deliverables.find((x) => x.id === id); if (!prev) continue;
+      if (prev.work_status !== ST.DONE) { const { id: _omit, ...rest } = prev; await state.db.collection("deliverables").doc(id).set({ ...rest, work_status: ST.DONE }); }
+      await state.db.collection("events").add({ deliverable: id, action: ACT.SUB, date, notes: note });
+    }
+  }, `سُجّل تسليم ${phaseLabel(P.ph)}`);
+  if (ok) { state.drawer.confirmSub = false; renderDrawer(); }
 }
 async function generatePhaseDoc(btn) {
   const P = state.dev.phases.get(state.drawer?.id); if (!P) return;
@@ -3779,6 +3813,9 @@ document.addEventListener("click", async (ev) => {
   if (ds.goPhase) { const id = ds.goPhase; closeDrawer(); setTab("devphases"); return openDrawer({ kind: "phase", id }); }
   if ("savePhase" in ds) return savePhase(t);
   if ("genDoc" in ds) return generatePhaseDoc(t);
+  if ("askSub" in ds) { state.drawer.confirmSub = true; return renderDrawer(); }
+  if ("cancelSub" in ds) { state.drawer.confirmSub = false; return renderDrawer(); }
+  if ("confirmSub" in ds) return recordPhaseSubmission(t);
   if ("docTplUpload" in ds) return document.getElementById("docTplFile")?.click();
   if ("docTplDownload" in ds) return downloadDocTemplate(t);
   if ("pkgImport" in ds) return document.getElementById("pkgImportFile")?.click();
