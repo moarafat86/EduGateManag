@@ -2551,6 +2551,7 @@ function viewDevPkgs() {
   }).join("");
   return `<section class="section">
     <div class="section-head"><h2>الحزم التطويرية</h2><div class="actions">
+      <button class="btn" type="button" data-pkg-export${list.length ? "" : " disabled"} title="يُصدَّر ما يظهر في الجدول بعد البحث والفلاتر">تصدير Excel</button>
       <button class="btn" type="button" data-pkg-import>استيراد من Excel</button>
       <button class="btn primary" type="button" data-new-pkg>+ حزمة جديدة</button></div></div>
     <input type="file" id="pkgImportFile" accept=".xlsx" hidden>
@@ -2761,7 +2762,7 @@ const DEV_HEADERS = { "#": "no", "الأولوية": "priority", "الربع ا�
   "الفوترة والتسليم": "phaseB", "الحزمة التطويرية": "name", "نوع الخدمة": "type", "تصنيف الخدمة": "category", "الفئة المستفيدة": "beneficiary", "مرحلة الطلب": "stage",
   "الاعتمادية": "dependency", "الواجهة": "iface", "النظام المستهدف للاغلاق": "system", "النظام المستهدف للإغلاق": "system", "Actual": "weight", "الوزن": "weight", "BRD No": "brd", "UAT No": "uat", "Column2": "mark" };
 const QUARTER_IN = { "الاطلاق التجريبي": "pilot", "الإطلاق التجريبي": "pilot", "الرابع25": "2025Q4", "الاول26": "2026Q1", "الثاني26": "2026Q2", "الثالث26": "2026Q3", "الرابع26": "2026Q4",
-  "الاول27": "2027Q1", "الثاني27": "2027Q2", "الثالث27": "2027Q3", "الرابع27": "2027Q4" };
+  "الاول27": "2027Q1", "الثاني27": "2027Q2", "الثالث27": "2027Q3", "الرابع27": "2027Q4", ...Object.fromEntries(DEV_QUARTERS.map(([code, label]) => [label, code])) };
 const normTxt = (v) => v === null || v === undefined ? "" : String(typeof v === "object" && v.richText ? v.richText.map((r) => r.text).join("") : typeof v === "object" && "result" in v ? v.result : v).replace(/[​‎‏]/g, "").replace(/\s+/g, " ").trim();
 function normalizePkg(r) {
   const t = (k) => normTxt(r[k]);
@@ -3640,6 +3641,40 @@ const CR_COLS = [{ h: "رقم الطلب", k: "code", w: 10 }, { h: "العنو�
   { h: "تاريخ القرار", k: "decision", w: 12, f: FMT.D }, { h: "البنود", k: "items", w: 14 }, { h: "المخرجات", k: "dels", w: 30, wrap: true }, { h: "الأثر المالي (ريال)", k: "value", w: 15, f: FMT.M },
   { h: "الأثر في البنود", k: "impact", w: 44, wrap: true }, { h: "ملاحظات", k: "notes", w: 30, wrap: true }];
 
+// columns follow the import sheet, so an exported file can be edited and imported back;
+// the last three are computed by the system and the import ignores them
+const PKG_EXPORT_COLS = [
+  { h: "#", k: "no", w: 7 }, { h: "الأولوية", k: "priority", w: 9 }, { h: "الربع المستهدف", k: "quarter", w: 17 }, { h: "التواجد في النظام التكاملي", k: "presence", w: 16, wrap: true },
+  { h: "المجموعة", k: "group", w: 18, wrap: true }, { h: "رقم مرحلة المخرج", k: "phaseA", w: 11 }, { h: "الفوترة والتسليم", k: "phaseB", w: 11 },
+  { h: "الحزمة التطويرية", k: "name", w: 46, wrap: true }, { h: "نوع الخدمة", k: "type", w: 15 }, { h: "تصنيف الخدمة", k: "category", w: 17 }, { h: "الفئة المستفيدة", k: "beneficiary", w: 16 },
+  { h: "مرحلة الطلب", k: "stage", w: 15 }, { h: "الاعتمادية", k: "dependency", w: 26, wrap: true }, { h: "الواجهة", k: "iface", w: 16 }, { h: "النظام المستهدف للإغلاق", k: "system", w: 16 },
+  { h: "الوزن", k: "weight", w: 8, f: "0.0" }, { h: "BRD No", k: "brd", w: 20, wrap: true }, { h: "UAT No", k: "uat", w: 30, wrap: true },
+  { h: "مرحلة التسليم الحالية", k: "phaseNow", w: 26, wrap: true }, { h: "حالة الفوترة", k: "bill", w: 20 }, { h: "التنبيهات", k: "flags", w: 32, wrap: true }];
+function pkgExportRow(p) {
+  const k = state.dev.pk.get(p.id) || { flags: [], missing: [] };
+  const ph = p.phase || "";
+  const phaseA = ph === DEV_CORE ? "CORE" : ph === "1-2" ? "1و2" : ph, phaseB = ph === DEV_CORE ? "0" : ph === "1-2" ? "12" : ph;
+  const phaseNow = k.core ? "أساسية (5.أ)" : k.phase ? `${phaseLabel(ph)} — ${phaseState(k.phase).label}` : k.launched ? "مطلقة ولم تُربط بمرحلة" : "";
+  const flags = [...(k.locked ? [`مقفلة (${k.lockWhy})`] : []), ...k.flags, ...(k.missing.length ? [`حقول ناقصة: ${k.missing.join("، ")}`] : [])].join("، ");
+  return { no: p.no ?? null, priority: p.priority ?? null, quarter: DEV_QUARTER[p.quarter] || "", presence: p.presence || "", group: p.group || "", phaseA, phaseB,
+    name: p.name || "", type: p.type || "", category: p.category || "", beneficiary: p.beneficiary || "", stage: p.stage || "", dependency: p.dependency || "",
+    iface: DEV_IFACE[p.iface] || "", system: p.system || "", weight: Number.isFinite(p.weight) ? p.weight : null, brd: p.brd || "", uat: p.uat || "",
+    phaseNow, bill: k.bill || "", flags };
+}
+function exportPkgsExcel(btn) {
+  return withExcel(btn, async () => {
+    const list = filteredPackages(), D = state.dev;
+    const sumW = list.reduce((a, p) => a + (D.pk.get(p.id)?.core ? 0 : D.pk.get(p.id)?.w || 0), 0);
+    const wb = new ExcelJS.Workbook();
+    wb.creator = state.settings.project_name || "";
+    const ws = addSheet(wb, "الحزم التطويرية", PKG_EXPORT_COLS, list.map(pkgExportRow), { total: { name: `الإجمالي: ${list.length} حزمة (الوزن دون الأساسية 5.أ)`, weight: Math.round(sumW * 10) / 10 } });
+    // the computed columns read as system output, not as input
+    const first = PKG_EXPORT_COLS.findIndex((c) => c.k === "phaseNow") + 1;
+    for (let c = first; c <= PKG_EXPORT_COLS.length; c++) ws.getRow(1).getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF5B6E73" } };
+    const filtered = list.length !== state.packages.length;
+    return [wb, `الحزم_التطويرية${filtered ? "_مفلترة" : ""}_${todayIso()}.xlsx`];
+  });
+}
 async function withExcel(btn, fn) {
   if (!window.ExcelJS) { toast("تعذّر تحميل مكتبة Excel؛ يُرجى تحديث الصفحة.", true); return; }
   if (!state.downloads) { toast("التنزيل غير متاح في هذا العرض.", true); return; }
@@ -3827,6 +3862,7 @@ document.addEventListener("click", async (ev) => {
   if ("docTplUpload" in ds) return document.getElementById("docTplFile")?.click();
   if ("docTplDownload" in ds) return downloadDocTemplate(t);
   if ("pkgImport" in ds) return document.getElementById("pkgImportFile")?.click();
+  if ("pkgExport" in ds) return exportPkgsExcel(t);
   if ("applyImport" in ds) return applyImport(t);
   if ("clearPfilters" in ds) { Object.assign(state.pfilters, { iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return render(); }
   if (ds.pfilterStage || ds.pfilterQuarter || ds.pfilterFlag || ds.pfilterBenef || ds.pfilterPhase) {
