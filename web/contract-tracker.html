@@ -139,6 +139,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dev-big strong { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1.1; }
 .dev-big span { color: var(--muted); }
 .dev-lines { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.dev-lines > div.wide { grid-column: 1 / -1; }
 .dev-lines > div { background: var(--surface-2); border-radius: var(--r); padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
 .dev-lines .k { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 7px; }
 .dev-lines .k i { width: 9px; height: 9px; border-radius: 50%; }
@@ -2400,7 +2401,7 @@ function computeDev() {
     const locked = flow === "acc" || flow === "wait";
     phases.set(`${iface}:${ph}`, { iface, ph, dels, flow, locked, lockWhy: flow === "acc" ? "مخرج المرحلة مقبول" : flow === "wait" ? "المرحلة مسلَّمة وفي انتظار القبول" : "", bill, target: phaseTarget(ph), cap: phaseCap(ph), pkgs: [], weight: 0 });
   }
-  const tot = Object.fromEntries(["portal", "app", "biz"].map((i) => [i, { count: 0, weight: 0, launched: 0, launchedN: 0, delivered: 0, billed: 0, pool: 0, poolN: 0, byStage: {}, byQuarter: {} }]));
+  const tot = Object.fromEntries(["portal", "app", "biz"].map((i) => [i, { count: 0, weight: 0, launched: 0, launchedN: 0, delivered: 0, deliveredN: 0, staged: 0, stagedN: 0, billed: 0, pool: 0, poolN: 0, byStage: {}, byQuarter: {} }]));
   const pk = new Map(), review = [];
   for (const p of state.packages) {
     const flags = [];
@@ -2430,7 +2431,9 @@ function computeDev() {
       t.byStage[p.stage] = (t.byStage[p.stage] || 0) + k.w;
       t.byQuarter[p.quarter || ""] = (t.byQuarter[p.quarter || ""] || 0) + k.w;
       if (launched) { t.launched += k.w; t.launchedN++; }
-      if (phase) { t.delivered += k.w; if (isBilledState(phase.bill)) t.billed += k.w; }
+      // delivered = the phase is with the client or accepted; a phase back with notes counts as not delivered yet
+      if (phase && (phase.flow === "wait" || phase.flow === "acc")) { t.delivered += k.w; t.deliveredN++; if (isBilledState(phase.bill)) t.billed += k.w; }
+      else if (phase) { t.staged += k.w; t.stagedN++; }
       else if (launched) { t.pool += k.w; t.poolN++; }
     }
   }
@@ -2446,10 +2449,11 @@ function devCard(iface) {
     <div class="dev-big"><strong class="num">${devW(t.launched)}</strong><span>من <span class="num">${target}</span> وزن مطلق · ${pct(t.launched / target)}</span></div>
     ${bar(t.launched, "--st-acc")}
     <div class="dev-lines">
-      <div><span class="k"><i style="background:var(--st-wait)"></i>مسلَّم في مراحل التسليم</span><span class="v">${devWHtml(t.delivered)} · ${pct(t.delivered / target)}</span></div>
+      <div><span class="k"><i style="background:var(--st-wait)"></i>مسلَّم للعميل</span><span class="v">${devWHtml(t.delivered)} · ${pct(t.delivered / target)}</span></div>
+      <div><span class="k"><i style="background:var(--st-certw)"></i>في مراحل لم تُسلَّم بعد</span><span class="v">${devWHtml(t.staged)} · <span class="num">${t.stagedN}</span> حزمة</span></div>
+      <div><span class="k"><i style="background:var(--st-prog)"></i>مطلق ولم يُربط بمرحلة</span><span class="v">${devWHtml(t.pool)} · <span class="num">${t.poolN}</span> حزمة</span></div>
       <div><span class="k"><i style="background:var(--st-inv)"></i>مفوتر</span><span class="v">${devWHtml(t.billed)} · ${pct(t.billed / target)}</span></div>
-      <div><span class="k"><i style="background:var(--st-prog)"></i>مطلق ولم يُسلَّم بعد</span><span class="v">${devWHtml(t.pool)} · <span class="num">${t.poolN}</span> حزمة</span></div>
-      <div><span class="k"><i style="background:var(--st-new)"></i>الوزن الكلي المحصور</span><span class="v">${devWHtml(t.weight)} · <span class="num">${t.count}</span> حزمة</span></div>
+      <div class="wide"><span class="k"><i style="background:var(--st-new)"></i>الوزن الكلي المحصور</span><span class="v">${devWHtml(t.weight)} · <span class="num">${t.count}</span> حزمة</span></div>
     </div></section>`;
 }
 // a combined beneficiary counts once in each of its categories in the statistics
@@ -2525,7 +2529,7 @@ function viewDevPkgs() {
   const f = state.pfilters, D = state.dev, list = filteredPackages();
   const sumW = list.reduce((a, p) => a + (D.pk.get(p.id).core ? 0 : D.pk.get(p.id).w), 0);
   const ms = (key, label, all, opts) => multiSelect(key, label, all, opts, "pfilters");
-  const phaseOpts = [["pool", "مطلقة ولم تُسلَّم"], ["none", "غير مطلقة"], [DEV_CORE, "أساسية (5.أ)"], ...[...new Set([...DEV_PHASES.portal, ...DEV_PHASES.app])].map((ph) => [ph, phaseLabel(ph)])];
+  const phaseOpts = [["pool", "مطلقة ولم تُربط بمرحلة"], ["none", "غير مطلقة"], [DEV_CORE, "أساسية (5.أ)"], ...[...new Set([...DEV_PHASES.portal, ...DEV_PHASES.app])].map((ph) => [ph, phaseLabel(ph)])];
   const flagOpts = [["review", "تحتاج إلى مراجعة"], ["بلا وزن", "بلا وزن"], ["ليست خدمة", "ليست خدمة"], ["لا يوجد BRD", "لا يوجد BRD"], ["لا يوجد UAT", "لا يوجد UAT"], ["locked", "مقفلة (مسلَّمة أو مقبولة)"]];
   const billOpts = [["لم تُسلَّم بعد", "لم تُسلَّم بعد"], ["لم يُسلَّم المخرج بعد", "لم يُسلَّم المخرج بعد"], ...BILL_ORDER.map((x) => [x, x]), ["—", "—"]];
   const any = ["iface", "stage", "quarter", "phase", "benef", "cat", "prio", "bill", "flag"].some((k) => f[k].length);
@@ -2621,10 +2625,10 @@ function phaseBlock(iface) {
   return `<section class="section ph-block">
     <div class="section-head"><h2>${DEV_IFACE[iface]}</h2><span class="sub">المستهدف التعاقدي <span class="num">${target}</span> وزن في <span class="num">${list.length}</span> ${list.length > 2 ? "مراحل" : "مرحلة"}</span></div>
     <div class="ph-kpis">
-      ${kpi("الوزن المسلَّم في المراحل", `<span dir="ltr">${devWHtml(t.delivered)}<small class="num"> / ${target}</small></span>`, pct(t.delivered / target))}
+      ${kpi("الوزن المسلَّم للعميل", `<span dir="ltr">${devWHtml(t.delivered)}<small class="num"> / ${target}</small></span>`, `${pct(t.delivered / target)} · في مراحل لم تُسلَّم بعد ${devWHtml(t.staged)}`)}
       ${kpi("المراحل المسلَّمة", `<span dir="ltr"><span class="num">${delivered}</span><small class="num"> / ${list.length}</small></span>`, `منها <span class="num">${accepted}</span> مقبولة ومقفلة`)}
       ${kpi("المفوتر", devWHtml(t.billed), pct(t.billed / target))}
-      ${kpi("مطلق ولم يُسلَّم بعد", devWHtml(t.pool), `<span class="num">${t.poolN}</span> حزمة متاحة للربط ←`, ` data-pfilter-phase="pool" data-pfilter-iface="${iface}"`)}
+      ${kpi("مطلق ولم يُربط بمرحلة", devWHtml(t.pool), `<span class="num">${t.poolN}</span> حزمة متاحة للربط ←`, ` data-pfilter-phase="pool" data-pfilter-iface="${iface}"`)}
     </div>
     <div class="ph-rail" role="group" aria-label="تقدم مراحل ${esc(DEV_IFACE[iface])}">${rail}</div>
     <div class="ph-cards" style="--cols:${list.length % 3 === 0 ? 3 : 4}">${list.map(phaseCard).join("")}</div>
