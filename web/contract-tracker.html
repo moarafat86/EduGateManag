@@ -3026,7 +3026,9 @@ const dmy = (iso) => { const [y, m, d] = String(iso).split("-").map(Number); ret
 function phaseDocData(P, pkgs, manualDate) {
   manualDate = isIso(manualDate) ? manualDate : todayIso();
   const subs = [...new Set(state.events.filter((e) => P.dels.includes(e.deliverable) && e.action === ACT.SUB && e.date).map((e) => e.date))].sort();
-  const dates = subs.length ? subs.map((d, i) => `${i ? "إعادة تسليم" : "تسليم"} بتاريخ ${dmy(d)}`) : manualDate ? [`تسليم بتاريخ ${dmy(manualDate)}`] : [];
+  // a phase back with notes is about to be re-delivered on the chosen date, so the document lists it too
+  const all = P.flow === "ret" && !subs.includes(manualDate) ? [...subs, manualDate] : subs;
+  const dates = all.length ? all.map((d, i) => `${i ? "إعادة تسليم" : "تسليم"} بتاريخ ${dmy(d)}`) : [`تسليم بتاريخ ${dmy(manualDate)}`];
   const rows = [...pkgs].sort((a, b) => (a.no || 0) - (b.no || 0)).map((p) => ({ group: p.group || "", name: p.name || "", category: p.category || "", weight: Number.isFinite(p.weight) ? p.weight : null, brd: noDoc(p.brd) ? "لا يوجد" : p.brd, uat: noDoc(p.uat) ? "لا يوجد" : p.uat }));
   const total = pkgs.reduce((a, p) => a + (state.dev.pk.get(p.id)?.w || 0), 0);
   const warn = [];
@@ -3046,34 +3048,36 @@ function phaseDocBlock(P, picked) {
   return `<div class="block doc-gen">
     <div class="doc-gen-head"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/></svg>
       <div><h4>وثيقة اعتماد المرحلة</h4><span class="muted">ملف Excel من القالب${tpl ? ` «${esc(tpl.name || "")}»` : ""} · <span class="num">${P.pkgs.length}</span> حزمة · وزن <span class="num">${devW(data.total)}</span></span></div></div>
-    ${data.hasSubs ? `<div class="kv"><div><span class="k">تاريخ التسليم</span><span class="v">${data.dates.map(esc).join("<br>")}</span></div></div>`
-      : P.pkgs.length && !dirty ? `<div class="field"><label for="docDate">تاريخ التسليم</label><input id="docDate" type="date" value="${esc(isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso())}"><span class="hint">يُكتب في الوثيقة ويُسجَّل به التسليم</span></div>` : ""}
+    ${data.hasSubs ? `<div class="kv"><div><span class="k">${P.flow === "ret" ? "التسليمات في الوثيقة" : "تاريخ التسليم"}</span><span class="v">${data.dates.map(esc).join("<br>")}</span></div></div>` : ""}
+    ${(!data.hasSubs || P.flow === "ret") && P.pkgs.length && !dirty ? `<div class="field"><label for="docDate">${P.flow === "ret" ? "تاريخ إعادة التسليم" : "تاريخ التسليم"}</label><input id="docDate" type="date" value="${esc(isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso())}"><span class="hint">يُكتب في الوثيقة ويُسجَّل به التسليم</span></div>` : ""}
     ${off ? `<p class="muted" style="margin:0">${off}</p>` : data.warn.length ? `<ul class="doc-warn">${data.warn.map((w) => `<li>${w}</li>`).join("")}</ul>` : ""}
     <div class="actions"><button class="btn${data.warn.length && !off ? "" : " primary"}" type="button" data-gen-doc${off ? " disabled" : ""}>${data.warn.length && !off ? "إنشاء الوثيقة رغم التنبيهات" : "إنشاء الوثيقة"}</button>${phaseSubmitButton(P, dirty)}</div>
     ${phaseSubmitConfirm(P)}
   </div>`;
 }
-// only a ready phase (target weight reached, not yet delivered) can be recorded as delivered from here
-const phaseCanSubmit = (P, dirty) => phaseState(P).key === "ready" && P.dels.length > 0 && !dirty;
-const phaseSubmitButton = (P, dirty) => phaseState(P).key === "ready"
-  ? `<button class="btn" type="button" data-ask-sub${phaseCanSubmit(P, dirty) ? "" : " disabled"} title="${P.dels.length ? (dirty ? "احفظ اختيار الحزم أولًا" : "") : "المرحلة غير مربوطة بمخرجات"}">تسجيل التسليم</button>` : "";
+// a ready phase is delivered from here, and a phase returned with notes is re-delivered the same way
+const phaseSubmittable = (P) => ["ready", "ret"].includes(phaseState(P).key);
+const phaseSubmitBlock = (P, dirty) => !P.dels.length ? "المرحلة غير مربوطة بمخرجات" : dirty ? "احفظ اختيار الحزم أولًا" : P.weight < P.target - 1e-9 ? `وزن المرحلة أقل من ${P.target}` : P.weight > P.cap + 1e-9 ? `وزن المرحلة يتجاوز ${devW(P.cap)}` : "";
+const phaseSubmitButton = (P, dirty) => phaseSubmittable(P)
+  ? `<button class="btn" type="button" data-ask-sub${phaseSubmitBlock(P, dirty) ? " disabled" : ""} title="${esc(phaseSubmitBlock(P, dirty))}">${P.flow === "ret" ? "تسجيل إعادة التسليم" : "تسجيل التسليم"}</button>` : "";
 function phaseSubmitConfirm(P) {
-  if (!state.drawer.confirmSub || phaseState(P).key !== "ready") return "";
+  if (!state.drawer.confirmSub || !phaseSubmittable(P)) return "";
   const date = isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso();
-  return `<div class="doc-sub" role="alert"><p>سيُسجَّل «تسليم» بتاريخ <span class="date">${esc(date)}</span> على ${P.dels.map((id) => `<span class="code">${esc(id)}</span>`).join(" و")}، وتصبح حالتها التنفيذية «تم» وحالة الفوترة «في انتظار القبول»، وتُقفل حزم المرحلة.</p>
+  return `<div class="doc-sub" role="alert"><p>سيُسجَّل «تسليم»${P.flow === "ret" ? " (إعادة تسليم بعد الملاحظات)" : ""} بتاريخ <span class="date">${esc(date)}</span> على ${P.dels.map((id) => `<span class="code">${esc(id)}</span>`).join(" و")}، وتصبح حالتها التنفيذية «تم» وحالة الفوترة «في انتظار القبول»، وتُقفل حزم المرحلة.</p>
     <div class="actions"><button class="btn primary" type="button" data-confirm-sub>تأكيد التسليم</button><button class="btn" type="button" data-cancel-sub>إلغاء</button></div></div>`;
 }
 async function recordPhaseSubmission(btn) {
-  const P = state.dev.phases.get(state.drawer?.id); if (!P || phaseState(P).key !== "ready") return;
+  const P = state.dev.phases.get(state.drawer?.id); if (!P || !phaseSubmittable(P) || phaseSubmitBlock(P, false)) return;
   const date = isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso();
-  const note = `تسليم ${phaseLabel(P.ph)} — ${DEV_IFACE[P.iface]}`;
+  const again = P.flow === "ret";
+  const note = `${again ? "إعادة تسليم" : "تسليم"} ${phaseLabel(P.ph)} — ${DEV_IFACE[P.iface]}`;
   const ok = await run(btn, async () => {
     for (const id of P.dels) {
       const prev = state.deliverables.find((x) => x.id === id); if (!prev) continue;
       if (prev.work_status !== ST.DONE) { const { id: _omit, ...rest } = prev; await state.db.collection("deliverables").doc(id).set({ ...rest, work_status: ST.DONE }); }
       await state.db.collection("events").add({ deliverable: id, action: ACT.SUB, date, notes: note });
     }
-  }, `سُجّل تسليم ${phaseLabel(P.ph)}`);
+  }, `سُجّل ${again ? "إعادة تسليم" : "تسليم"} ${phaseLabel(P.ph)}`);
   if (ok) { state.drawer.confirmSub = false; renderDrawer(); }
 }
 async function generatePhaseDoc(btn) {
