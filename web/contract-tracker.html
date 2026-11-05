@@ -234,8 +234,39 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .dev-pick.on { background: var(--accent-soft); }
 .dev-pick .nm { min-width: 0; }
 .dev-pick .nm .sub-line { display: block; }
+.ap-chip { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 99px; background: var(--st-acc-bg); color: var(--st-acc-fg); font: inherit; font-size: .74rem; border: 0; line-height: 1.6; }
+.ap-chip b { font-size: .64rem; letter-spacing: .02em; opacity: .8; margin: 0; color: inherit; }
+.ap-chip.none { background: var(--surface-2); color: var(--muted); }
+.ap-chip.off { background: var(--st-late-bg); color: var(--st-late-fg); font-weight: 600; cursor: pointer; outline: 1px dashed color-mix(in srgb, var(--st-late) 60%, transparent); }
+.ap-chip.off:hover { outline-style: solid; }
+.ap-wrap { position: relative; display: inline-flex; }
+.ap-pop { position: absolute; top: calc(100% + 6px); inset-inline-start: 0; z-index: 6; width: 270px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 6px; font-size: .82rem; font-weight: 400; white-space: normal; cursor: default; }
+.ap-pop b { font-size: .88rem; }
+.ap-pop-n { display: block; direction: ltr; text-align: right; font-weight: 600; color: var(--st-late-fg); overflow-wrap: anywhere; }
+.ap-pop-a { display: flex; gap: 8px; margin-top: 4px; }
+.ap-block { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; background: var(--st-late-bg); color: var(--st-late-fg); }
+.ap-block > svg { flex: none; margin-top: 3px; }
+.ap-block > div { display: flex; flex-direction: column; gap: 4px; font-size: .86rem; overflow-wrap: anywhere; }
+.ap-block .m { opacity: .85; }
+.ap-link { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; font-weight: 600; }
+.ap-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.ap-kpi { background: var(--surface); border-radius: var(--r-lg); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow); }
+.ap-kpi .k { color: var(--muted); font-size: .8rem; font-weight: 600; }
+.ap-kpi strong { font-size: 1.6rem; font-weight: 700; }
+.ap-kpi .s { font-size: .84rem; color: var(--ink-2); }
+.ap-kpi.note { background: var(--surface-2); box-shadow: none; justify-content: center; grid-column: span 2; }
+.ap-kpis .ok, .section-head .ok { color: var(--st-acc-fg); }
+.ap-kpis .red, .section-head .red { color: var(--st-late-fg); }
+.ap-name { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; overflow-wrap: anywhere; }
+.ap-table tr.ap-off td { background: var(--st-late-bg) !important; }
+.ap-table tr.ap-off .ap-name { color: var(--st-late-fg); }
+.ap-box { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: .84rem; color: var(--st-late-fg); cursor: pointer; white-space: nowrap; }
+.ap-box input { width: 17px; height: 17px; accent-color: var(--st-acc); margin: 0; }
+.ap-box.on { color: var(--st-acc-fg); }
+.ap-box.locked { cursor: default; }
+.ap-date { font: inherit; font-size: .82rem; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
 .dev-docs { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px; font-size: .74rem; color: var(--ink-2); font-weight: 400; overflow-wrap: anywhere; }
-.dev-docs b { color: var(--muted); font-weight: 600; margin-inline-end: 4px; font-size: .68rem; letter-spacing: .02em; }
+.dev-docs { align-items: center; }
 .dev-docs .miss { color: var(--st-ret-fg); font-weight: 600; }
 .dev-pick input { width: 16px; height: 16px; margin: 0; }
 .dev-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
@@ -535,6 +566,7 @@ h4 { margin: 0; font-size: .98rem; font-weight: 700; }
   .hero-sub { justify-content: center; }
   .ring-legend { width: 100%; text-align: start; }
 }
+@media (max-width: 640px) { .ap-kpi.note { grid-column: auto; } }
 @media (max-width: 640px) { .hol-add { grid-template-columns: 1fr 1fr; } .kpi .value { font-size: 1.3rem; } .donut-wrap { justify-content: center; } .page-head h1 { font-size: 1.25rem; } .section { padding: 18px 16px; } }
 @media (prefers-reduced-motion: no-preference) {
   .drawer { animation: sheet .28s cubic-bezier(.2, .8, .2, 1); }
@@ -919,13 +951,13 @@ const DEFAULT_SETTINGS = {
 const TABS = [
   ["dashboard", "لوحة المتابعة"], ["items", "البنود"], ["deliverables", "المخرجات"], ["log", "سجل المراجعات"],
   ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["reports", "التقارير"],
-  ["dev", "لوحة التطوير"], ["devpkgs", "الحزم التطويرية"], ["devphases", "مراحل التسليم"], ["settings", "الإعدادات"],
+  ["dev", "لوحة التطوير"], ["devpkgs", "الحزم التطويرية"], ["devphases", "مراحل التسليم"], ["devdocs", "اعتماد الوثائق"], ["settings", "الإعدادات"],
 ];
 const TAB_KEYS = TABS.map((t) => t[0]);
 // the sidebar groups pages into modules; settings serve the whole project
 const MODULES = [
   { key: "contract", label: "إدارة بنود العقد", tabs: ["dashboard", "items", "deliverables", "log", "issues", "crs", "report", "reports"] },
-  { key: "dev", label: "أعمال التطوير", tabs: ["dev", "devpkgs", "devphases"] },
+  { key: "dev", label: "أعمال التطوير", tabs: ["dev", "devpkgs", "devphases", "devdocs"] },
 ];
 const NAV_FREE = ["settings"];
 const ICON_PATHS = {
@@ -939,6 +971,7 @@ const ICON_PATHS = {
   dev: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
   devpkgs: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
   devphases: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+  devdocs: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14l2 2 4-4"/>',
   mod_contract: '<path d="M8 3h8l4 4v14H4V3h4z"/><path d="M9 11h6M9 15h6M9 7h2"/>',
   mod_dev: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
   reports: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 12h7M9 15.5h7M9 19h4"/>',
@@ -954,7 +987,7 @@ const SAR = `<svg class="sar" viewBox="40 0 1145 1270" role="img" aria-label="ر
 const state = {
   db: null, downloads: null,
   ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false, packages: false, devconfig: false },
-  packages: [], devConfig: null, dev: null,
+  packages: [], devConfig: null, dev: null, devDocs: [], docsView: { q: "", show: "all" },
   pfilters: { q: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
@@ -1211,7 +1244,7 @@ function render() {
   const loading = !Object.values(state.ready).every(Boolean) && !state.offline;
   let html = state.offline ? `<div class="notice">تعذّر الوصول إلى تخزين البيانات. افتح الصفحة من claude.ai بعد تسجيل الدخول لعرض بيانات العقد وتعديلها.</div>` : "";
   if (loading) html += `<div class="skel" style="height:280px" aria-label="جارٍ تحميل بيانات العقد"></div><div class="kpis"><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:110px"></div></div>`;
-  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, reports: viewReports, dev: viewDev, devpkgs: viewDevPkgs, devphases: viewDevPhases, settings: viewSettings })[state.tab]();
+  else html += ({ dashboard: viewDashboard, items: viewItems, deliverables: viewDeliverables, log: viewLog, issues: viewIssues, crs: viewCrs, report: viewReport, reports: viewReports, dev: viewDev, devpkgs: viewDevPkgs, devphases: viewDevPhases, devdocs: viewDevDocs, settings: viewSettings })[state.tab]();
   // a data refresh keeps the place in long tables; only a page switch animates
   const samePage = state.lastTab === state.tab;
   const keep = samePage ? [...view.querySelectorAll(".table-wrap.tall")].map((w) => [w.scrollTop, w.scrollLeft]) : [];
@@ -2381,7 +2414,7 @@ const PKG_REQUIRED = [["name", "اسم الحزمة"], ["iface", "الواجهة
   ["presence", "التواجد في النظام التكاملي"], ["group", "المجموعة"], ["type", "نوع الخدمة"], ["category", "تصنيف الخدمة"], ["beneficiary", "الفئة المستفيدة"],
   ["system", "النظام المستهدف للإغلاق"]];
 // BRD / UAT may be left empty, but an empty value or a "none" placeholder raises an alert
-const NO_DOC_RE = /^(?:لا\s*يوجد|لا\s*توجد|لايوجد|غير\s*موجود|-+|—|[؟?]+|no|none|n\/?a|not\s*exist(?:s)?|no\s+(?:brd|uat)\b.*)$/i;
+const NO_DOC_RE = /^(?:لا\s*يوجد|لا\s*توجد|لايوجد|غير\s*موجود|-+|—|[؟?]+|no|none|n\/?a|not\s*exist(?:s)?|no\s+(?:brd|uat)\b.*|(?:يحتاج|تحتاج)\s*وصف.*)$/i;
 const noDoc = (v) => { const t = String(v ?? "").trim(); return !t || NO_DOC_RE.test(t); };
 
 function computeDev() {
@@ -2437,7 +2470,39 @@ function computeDev() {
       else if (launched) { t.pool += k.w; t.poolN++; }
     }
   }
-  state.dev = { phases, tot, pk, review };
+  // documents: approved by hand (dev/docs) or implied by a phase that has gone to the client
+  const docs = new Map(), approvals = new Map((state.devDocs || []).map((a) => [docKey(a.kind, a.name), a]));
+  for (const p of state.packages) {
+    const k = pk.get(p.id), P = k.phase;
+    k.docs = {};
+    for (const kind of ["brd", "uat"]) {
+      if (noDoc(p[kind])) { k.docs[kind] = ""; continue; }
+      const name = docName(p[kind]), key = docKey(kind, name);
+      let d = docs.get(key);
+      if (!d) docs.set(key, d = { key, kind, name, pkgs: [], phases: new Map(), implied: "" });
+      d.pkgs.push(p.id);
+      if (P) { d.phases.set(`${P.iface}:${P.ph}`, P); if (P.flow && !d.implied) d.implied = `${phaseLabel(P.ph)} — ${DEV_IFACE[P.iface]}`; }
+      k.docs[kind] = key;
+    }
+  }
+  for (const d of docs.values()) { d.manual = approvals.get(d.key) || null; d.ok = !!d.implied || !!d.manual; }
+  state.dev = { phases, tot, pk, review, docs };
+}
+const docName = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
+const docKey = (kind, name) => `${kind}|${docName(name)}`;
+const DOC_KIND = { brd: "BRD", uat: "UAT" };
+// documents of the saved phase packages that still wait for approval
+function phaseDocsPending(P) {
+  const out = new Map();
+  for (const p of P.pkgs) { const k = state.dev.pk.get(p.id); for (const kind of ["brd", "uat"]) { const d = k?.docs?.[kind] && state.dev.docs.get(k.docs[kind]); if (d && !d.ok) out.set(d.key, d); } }
+  return [...out.values()];
+}
+async function setDocApproval(key, on, date) {
+  if (!requireDb()) return false;
+  const [kind, ...rest] = key.split("|"), name = rest.join("|");
+  const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
+  if (on) list.push({ kind, name, date: isIso(date) ? date : todayIso() });
+  return run(null, () => state.db.doc("dev/docs").set({ list }), on ? `اعتُمدت ${DOC_KIND[kind]} «${name}»` : `أُلغي اعتماد «${name}»`);
 }
 
 /* ---- pages */
@@ -2643,6 +2708,33 @@ function viewDevPhases() {
   ${phaseBlock("portal")}${phaseBlock("app")}`;
 }
 
+/* ---- BRD / UAT approval */
+function viewDevDocs() {
+  const all = [...state.dev.docs.values()], v = state.docsView, q = v.q.trim().toLowerCase();
+  const pass = (d) => (v.show === "all" || (v.show === "off" ? !d.ok : d.ok)) && (!q || d.name.toLowerCase().includes(q));
+  const phTxt = (d) => [...d.phases.values()].sort((a, b) => a.iface.localeCompare(b.iface) || DEV_PHASES[a.iface].indexOf(a.ph) - DEV_PHASES[b.iface].indexOf(b.ph)).map((P) => `${P.iface === "app" ? "التطبيق" : "البوابة"} ${phaseNum(P.ph)}`).join("، ");
+  const kpi = (kind) => { const L = all.filter((d) => d.kind === kind), ok = L.filter((d) => d.ok).length;
+    return `<div class="ap-kpi"><span class="k">وثائق ${DOC_KIND[kind]}</span><strong class="num">${L.length}</strong><span class="s"><b class="ok num">${ok}</b> معتمدة · <b class="red num">${L.length - ok}</b> غير معتمدة</span></div>`; };
+  const table = (kind) => {
+    const L = all.filter((d) => d.kind === kind), rows = L.filter(pass).sort((a, b) => (a.ok - b.ok) || (b.pkgs.length - a.pkgs.length) || a.name.localeCompare(b.name));
+    const ok = L.filter((d) => d.ok).length;
+    const tr = rows.map((d) => {
+      const box = d.implied ? `<label class="ap-box on locked" title="${esc(d.implied)}"><input type="checkbox" checked disabled><span>معتمدة ضمنًا</span></label>`
+        : `<label class="ap-box${d.ok ? " on" : ""}"><input type="checkbox" name="docApprove" value="${esc(d.key)}"${d.ok ? " checked" : ""}><span>${d.ok ? "معتمدة" : "غير معتمدة"}</span></label>`;
+      const date = d.implied ? `<span class="muted">${esc(d.implied)} · مقفلة</span>` : d.manual ? `<input class="ap-date" type="date" name="apDate" data-key="${esc(d.key)}" value="${esc(d.manual.date || "")}" aria-label="تاريخ الاعتماد">` : '<span class="muted">—</span>';
+      return `<tr class="${d.ok ? "" : "ap-off"}"><td><span class="ap-name">${d.ok ? "" : AP_WARN}<bdi>${esc(d.name)}</bdi></span></td><td class="n"><span class="num">${d.pkgs.length}</span></td>
+        <td>${phTxt(d) || '<span class="muted">غير مربوطة بمرحلة</span>'}</td><td>${box}</td><td>${date}</td></tr>`;
+    }).join("");
+    return `<section class="section"><div class="section-head"><h2>وثائق ${DOC_KIND[kind]}</h2><span class="sub"><span class="num">${L.length}</span> وثيقة · <span class="ok num">${ok}</span> معتمدة · <span class="red num">${L.length - ok}</span> غير معتمدة</span></div>
+      ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr><th>الوثيقة</th><th class="n">الحزم</th><th>مراحل التسليم</th><th>الاعتماد</th><th>تاريخ الاعتماد</th></tr></thead><tbody>${tr}</tbody></table></div>`
+        : `<p class="muted" style="margin:0">لا توجد وثائق مطابقة.</p>`}</section>`;
+  };
+  const seg = [["all", "الكل"], ["off", "غير المعتمدة"], ["on", "المعتمدة"]].map(([k, l]) => `<button type="button" data-docs-show="${k}" aria-pressed="${v.show === k}">${l}</button>`).join("");
+  return `<div class="ap-kpis">${kpi("brd")}${kpi("uat")}<div class="ap-kpi note"><span class="k">الاعتماد الضمني</span><span class="s">الوثائق المستخدمة في مرحلة سُلِّمت للعميل (مسلَّمة أو مُعادة بملاحظات أو مقبولة) تُعدّ معتمدة تلقائيًا ولا تحتاج إلى إجراء. اعتماد الوثيقة يسري على كل الحزم التي تستخدمها.</span></div></div>
+    <div class="filters"><input id="dQ" type="search" placeholder="ابحث باسم الوثيقة" value="${esc(v.q)}" aria-label="بحث"><div class="seg" role="group" aria-label="عرض">${seg}</div></div>
+    ${table("brd")}${table("uat")}`;
+}
+
 /* ---- package drawer */
 function drawerPkg() {
   const d = state.drawer, p = d.id ? state.packages.find((x) => x.id === d.id) : null;
@@ -2721,7 +2813,18 @@ async function savePkg(form, btn) {
 
 /* ---- phase drawer: pick launched packages for a delivery phase */
 // BRD / UAT of a package on one line, «لا يوجد» flagged the same way as the review alerts
-const pkgDocsLine = (p) => `<span class="dev-docs">${[["BRD", p.brd], ["UAT", p.uat]].map(([k, v]) => `<span><b>${k}</b> ${noDoc(v) ? '<span class="miss">لا يوجد</span>' : `<bdi>${esc(String(v).trim())}</bdi>`}</span>`).join("")}</span>`;
+const AP_CHECK = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const AP_WARN = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 8v5M12 16.5v.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+function pkgDocsLine(p) {
+  const k = state.dev.pk.get(p.id), dr = state.drawer;
+  return `<span class="dev-docs">${["brd", "uat"].map((kind) => {
+    const L = DOC_KIND[kind], d = k?.docs?.[kind] && state.dev.docs.get(k.docs[kind]);
+    if (!d) return `<span class="ap-chip none"><b>${L}</b> <span class="miss">لا يوجد</span></span>`;
+    if (d.ok) return `<span class="ap-chip" title="${esc(d.implied ? "معتمدة ضمنًا: " + d.implied : "معتمدة")}"><b>${L}</b> <bdi>${esc(d.name)}</bdi>${AP_CHECK}</span>`;
+    const at = `${p.id}|${kind}`, open = dr?.approveAt === at;
+    return `<span class="ap-wrap"><button type="button" class="ap-chip off" data-ask-approve="${esc(d.key)}" data-at="${esc(at)}" title="غير معتمدة — اضغط للاعتماد"><b>${L}</b> <bdi>${esc(d.name)}</bdi></button>${open ? `<span class="ap-pop" role="dialog" aria-label="اعتماد الوثيقة"><b>اعتماد وثيقة ${L}؟</b><bdi class="ap-pop-n">${esc(d.name)}</bdi><span>تُعتمد في كل الحزم التي تستخدمها (<span class="num">${d.pkgs.length}</span> حزمة).</span><span class="ap-pop-a"><button class="btn primary small" type="button" data-approve-doc="${esc(d.key)}">اعتماد</button><button class="btn small" type="button" data-cancel-approve>إلغاء</button></span></span>` : ""}</span>`;
+  }).join("")}</span>`;
+}
 function drawerPhase() {
   const d = state.drawer, P = state.dev.phases.get(d.id);
   if (!P) return null;
@@ -3048,21 +3151,24 @@ function phaseDocData(P, pkgs, manualDate) {
 }
 function phaseDocBlock(P, picked) {
   const tpl = state.devConfig?.template, saved = P.pkgs.map((p) => p.id).sort().join(), dirty = picked.slice().sort().join() !== saved;
-  const data = phaseDocData(P, P.pkgs, state.drawer.docDate);
+  const data = phaseDocData(P, P.pkgs, state.drawer.docDate), pending = dirty ? [] : phaseDocsPending(P);
   const off = !tpl ? "لم يُرفع قالب الوثيقة بعد. ارفعه من الإعدادات." : !P.pkgs.length ? "لا توجد حزم محفوظة في هذه المرحلة." : dirty ? "احفظ اختيار الحزم أولًا، ثم أنشئ الوثيقة." : "";
   return `<div class="block doc-gen">
     <div class="doc-gen-head"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/></svg>
       <div><h4>وثيقة اعتماد المرحلة</h4><span class="muted">ملف Excel من القالب${tpl ? ` «${esc(tpl.name || "")}»` : ""} · <span class="num">${P.pkgs.length}</span> حزمة · وزن <span class="num">${devW(data.total)}</span></span></div></div>
     ${data.hasSubs ? `<div class="kv"><div><span class="k">${P.flow === "ret" ? "التسليمات في الوثيقة" : "تاريخ التسليم"}</span><span class="v">${data.dates.map(esc).join("<br>")}</span></div></div>` : ""}
     ${(!data.hasSubs || P.flow === "ret") && P.pkgs.length && !dirty ? `<div class="field"><label for="docDate">${P.flow === "ret" ? "تاريخ إعادة التسليم" : "تاريخ التسليم"}</label><input id="docDate" type="date" value="${esc(isIso(state.drawer.docDate) ? state.drawer.docDate : todayIso())}"><span class="hint">يُكتب في الوثيقة ويُسجَّل به التسليم</span></div>` : ""}
+    ${pending.length ? `<div class="ap-block">${AP_WARN}<div><b>لا يمكن إنشاء الوثيقة ولا تسجيل التسليم قبل اعتماد كل وثائق المرحلة.</b>
+      <span>غير معتمدة: ${pending.map((d) => `<bdi>${esc(d.name)}</bdi> <small>(${DOC_KIND[d.kind]})</small>`).join("، ")}</span>
+      <span class="m">اضغط على الوثيقة الحمراء في القائمة لاعتمادها، أو افتح <button type="button" class="ap-link" data-go-docs>صفحة اعتماد الوثائق</button>.</span></div></div>` : ""}
     ${off ? `<p class="muted" style="margin:0">${off}</p>` : data.warn.length ? `<ul class="doc-warn">${data.warn.map((w) => `<li>${w}</li>`).join("")}</ul>` : ""}
-    <div class="actions"><button class="btn${data.warn.length && !off ? "" : " primary"}" type="button" data-gen-doc${off ? " disabled" : ""}>${data.warn.length && !off ? "إنشاء الوثيقة رغم التنبيهات" : "إنشاء الوثيقة"}</button>${phaseSubmitButton(P, dirty)}</div>
+    <div class="actions"><button class="btn${data.warn.length && !off ? "" : " primary"}" type="button" data-gen-doc${off || pending.length ? " disabled" : ""}>${data.warn.length && !off && !pending.length ? "إنشاء الوثيقة رغم التنبيهات" : "إنشاء الوثيقة"}</button>${phaseSubmitButton(P, dirty)}</div>
     ${phaseSubmitConfirm(P)}
   </div>`;
 }
 // a ready phase is delivered from here, and a phase returned with notes is re-delivered the same way
 const phaseSubmittable = (P) => ["ready", "ret"].includes(phaseState(P).key);
-const phaseSubmitBlock = (P, dirty) => !P.dels.length ? "المرحلة غير مربوطة بمخرجات" : dirty ? "احفظ اختيار الحزم أولًا" : P.weight < P.target - 1e-9 ? `وزن المرحلة أقل من ${P.target}` : P.weight > P.cap + 1e-9 ? `وزن المرحلة يتجاوز ${devW(P.cap)}` : "";
+const phaseSubmitBlock = (P, dirty) => !P.dels.length ? "المرحلة غير مربوطة بمخرجات" : dirty ? "احفظ اختيار الحزم أولًا" : phaseDocsPending(P).length ? "وثائق المرحلة غير معتمدة كلها" : P.weight < P.target - 1e-9 ? `وزن المرحلة أقل من ${P.target}` : P.weight > P.cap + 1e-9 ? `وزن المرحلة يتجاوز ${devW(P.cap)}` : "";
 const phaseSubmitButton = (P, dirty) => phaseSubmittable(P)
   ? `<button class="btn" type="button" data-ask-sub${phaseSubmitBlock(P, dirty) ? " disabled" : ""} title="${esc(phaseSubmitBlock(P, dirty))}">${P.flow === "ret" ? "تسجيل إعادة التسليم" : "تسجيل التسليم"}</button>` : "";
 function phaseSubmitConfirm(P) {
@@ -3094,6 +3200,7 @@ async function generatePhaseDoc(btn) {
     const snap = await state.db.doc("dev/template").get();
     const b64 = snap.exists ? snap.data()?.b64 : "";
     if (!b64) throw new Error("لم يُرفع قالب الوثيقة بعد");
+    if (phaseDocsPending(P).length) throw new Error("اعتمد كل وثائق المرحلة أولًا");
     const data = phaseDocData(P, P.pkgs, state.drawer.docDate);
     const out = await buildPhaseDoc(b64ToBytes(b64), data);
     const filename = `وثيقة اعتماد مخرجات - ${DEV_IFACE[P.iface]} - ${phaseLabel(P.ph)}.xlsx`;
@@ -3856,6 +3963,11 @@ document.addEventListener("click", async (ev) => {
   if (ds.goPhase) { const id = ds.goPhase; closeDrawer(); setTab("devphases"); return openDrawer({ kind: "phase", id }); }
   if ("savePhase" in ds) return savePhase(t);
   if ("genDoc" in ds) return generatePhaseDoc(t);
+  if (ds.askApprove) { state.drawer.approveAt = ds.at; return renderDrawer(); }
+  if ("cancelApprove" in ds) { state.drawer.approveAt = null; return renderDrawer(); }
+  if (ds.approveDoc) { t.disabled = true; if (await setDocApproval(ds.approveDoc, true)) { if (state.drawer) state.drawer.approveAt = null; } t.disabled = false; return state.drawer ? renderDrawer() : render(); }
+  if ("goDocs" in ds) { closeDrawer(); state.docsView.show = "off"; return setTab("devdocs"); }
+  if (ds.docsShow) { state.docsView.show = ds.docsShow; return render(); }
   if ("askSub" in ds) { state.drawer.confirmSub = true; return renderDrawer(); }
   if ("cancelSub" in ds) { state.drawer.confirmSub = false; return renderDrawer(); }
   if ("confirmSub" in ds) return recordPhaseSubmission(t);
@@ -3973,7 +4085,7 @@ document.addEventListener("mouseout", (ev) => {
 });
 
 let inputTimer;
-const SEARCH = { pQ: (v) => (state.pfilters.q = v), fQ: (v) => (state.filters.q = v), lQ: (v) => (state.logFilters.q = v), iQ: (v) => (state.issueFilters.q = v) };
+const SEARCH = { dQ: (v) => (state.docsView.q = v), pQ: (v) => (state.pfilters.q = v), fQ: (v) => (state.filters.q = v), lQ: (v) => (state.logFilters.q = v), iQ: (v) => (state.issueFilters.q = v) };
 document.addEventListener("input", (ev) => {
   const id = ev.target.id;
   if (!SEARCH[id]) return;
@@ -3993,6 +4105,8 @@ document.addEventListener("change", (ev) => {
     state.openMsel = `${scope}.${key}`;
     return render();
   }
+  if (el.name === "docApprove") { const key = el.value; el.disabled = true; setDocApproval(key, el.checked).finally(() => { el.disabled = false; }); return; }
+  if (el.name === "apDate" && isIso(el.value)) { setDocApproval(el.dataset.key, true, el.value); return; }
   if (el.name === "phasePick" && state.drawer?.kind === "phase") {
     state.drawer.picked = [...document.querySelectorAll('input[name="phasePick"]:checked')].map((x) => x.value);
     return renderDrawer();
@@ -4064,6 +4178,10 @@ async function boot() {
   db.doc("contract/settings").onSnapshot((snap) => {
     state.settings = { ...DEFAULT_SETTINGS, ...(snap.exists ? snap.data() : {}) };
     state.ready.settings = true; scheduleRender();
+  }, onErr);
+  db.doc("dev/docs").onSnapshot((snap) => {
+    state.devDocs = (snap.exists ? snap.data()?.list : null) || [];
+    scheduleRender();
   }, onErr);
   db.doc("dev/config").onSnapshot((snap) => {
     state.devConfig = snap.exists ? snap.data() : null;
