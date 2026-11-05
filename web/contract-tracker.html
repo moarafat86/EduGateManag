@@ -292,6 +292,7 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .dc-rename { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .dc-rename input { min-width: min(100%, 260px); border-color: var(--accent); }
 .row-btn.danger { color: var(--st-late-fg); }
+.dc-confirm { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; font-size: .8rem; color: var(--st-late-fg); white-space: normal; max-width: 260px; }
 .dc-doc { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; min-width: 170px; max-width: 240px; overflow-wrap: anywhere; line-height: 1.35; }
 .dc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .dc-dot.r { background: var(--st-late); } .dc-dot.a { background: var(--st-ret); } .dc-dot.g { background: var(--st-acc); }
@@ -2538,12 +2539,16 @@ function computeDev() {
     d.status = d.implied ? "ok" : d.manual ? (DOC_STATUS[d.manual.status] ? d.manual.status : "ok") : "new";
     d.ok = d.status === "ok";
     d.lockedPkgs = d.pkgs.some((id) => pk.get(id)?.locked);
+    // frozen = used by a locked package outside the phases whose documents stay editable
+    d.frozen = d.pkgs.some((id) => { const k = pk.get(id); return k?.locked && !(k.phase && DOC_EDIT_OPEN.has(`${k.phase.iface}:${k.phase.ph}`)); });
   }
   state.dev = { phases, tot, pk, review, docs };
 }
 const docName = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
 const docKey = (kind, name) => `${kind}|${docName(name)}`;
 const DOC_KIND = { brd: "BRD", uat: "UAT" };
+// delivered phases whose documents may still be renamed or deleted (on request: portal phase 5)
+const DOC_EDIT_OPEN = new Set(["portal:5"]);
 const DOC_STATUS = { new: "لم تُكتب", written: "تمت الكتابة", ok: "معتمدة" };
 const DOC_DOT = { new: "r", written: "a", ok: "g" };
 const docsOfKind = (kind) => [...state.dev.docs.values()].filter((d) => d.kind === kind).sort((a, b) => a.name.localeCompare(b.name));
@@ -2583,7 +2588,7 @@ async function renameDoc(key, raw) {
   const d = state.dev.docs.get(key); if (!d || !requireDb()) return false;
   const name = docName(raw);
   if (name === d.name) return true;
-  if (d.lockedPkgs) { toast("الوثيقة مستخدمة في حزم مقفلة؛ لا يتغير اسمها.", true); return false; }
+  if (d.frozen) { toast("الوثيقة مستخدمة في مرحلة مقبولة؛ لا يتغير اسمها.", true); return false; }
   const err = docNameProblem(d.kind, name, key);
   if (err) { toast(err, true); return false; }
   const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
@@ -2594,10 +2599,16 @@ async function renameDoc(key, raw) {
     for (const p of pkgs) { const { id, ...rest } = p; await state.db.collection("packages").doc(id).set({ ...rest, [d.kind]: name }); }
   }, `تغيّر الاسم إلى «${name}» في ${pkgs.length} حزمة`);
 }
+// deleting a document in use empties its field («لا يوجد») on every package that uses it
 async function deleteDoc(key) {
   const d = state.dev.docs.get(key); if (!d || !requireDb()) return false;
-  if (d.pkgs.length) { toast("لا تُحذف وثيقة مرتبطة بحزم.", true); return false; }
-  return saveRegister((state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key), `حُذفت «${d.name}»`);
+  if (d.frozen) { toast("الوثيقة مستخدمة في مرحلة مقبولة؛ لا تُحذف.", true); return false; }
+  const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
+  const pkgs = state.packages.filter((p) => d.pkgs.includes(p.id));
+  return run(null, async () => {
+    for (const p of pkgs) { const { id, [d.kind]: _drop, ...rest } = p; await state.db.collection("packages").doc(id).set(rest); }
+    await state.db.doc("dev/docs").set({ list });
+  }, pkgs.length ? `حُذفت «${d.name}» وأصبحت ${DOC_KIND[d.kind]} «لا يوجد» في ${pkgs.length} حزمة` : `حُذفت «${d.name}»`);
 }
 
 /* ---- pages */
@@ -2873,14 +2884,15 @@ function viewDevDocs() {
     : `<div class="dc-seg" role="group" aria-label="حالة الوثيقة">${Object.entries(DOC_STATUS).map(([k, l]) => `<button type="button" class="${k}${d.status === k ? " on" : ""}" data-doc-status="${k}" data-key="${esc(d.key)}" aria-pressed="${d.status === k}">${l}</button>`).join("")}</div>`;
   const nameCell = (d) => v.renaming === d.key
     ? `<span class="dc-rename"><input data-rename-input="${esc(d.key)}" value="${esc(v.draft ?? d.name)}" aria-label="الاسم الجديد"><button class="btn primary small" type="button" data-rename-save="${esc(d.key)}">حفظ</button><button class="btn small" type="button" data-rename-cancel>إلغاء</button></span><span class="ap-why">يتغير الاسم في كل الحزم المرتبطة (<span class="num">${d.pkgs.length}</span> حزمة)</span>`
-    : `<span class="ap-name">${d.status === "new" ? AP_WARN : ""}<bdi>${esc(d.name)}</bdi>${d.lockedPkgs ? "" : `<button type="button" class="dc-pen" data-rename="${esc(d.key)}" title="تعديل الاسم" aria-label="تعديل الاسم">${ICON_EDIT}</button>`}</span>`;
+    : `<span class="ap-name">${d.status === "new" ? AP_WARN : ""}<bdi>${esc(d.name)}</bdi>${d.frozen ? "" : `<button type="button" class="dc-pen" data-rename="${esc(d.key)}" title="تعديل الاسم" aria-label="تعديل الاسم">${ICON_EDIT}</button>`}</span>`;
   const table = (kind) => {
     const L = all.filter((d) => d.kind === kind), order = { new: 0, written: 1, ok: 2 };
     const rows = L.filter(pass).sort((a, b) => (order[a.status] - order[b.status]) || (b.pkgs.length - a.pkgs.length) || a.name.localeCompare(b.name));
     const tr = rows.map((d) => `<tr class="row-${d.implied ? "implied" : d.status}"><td>${nameCell(d)}</td>
         <td class="n">${d.pkgs.length ? `<button type="button" class="ap-count" data-docs-pkgs="${esc(d.key)}" title="عرض الحزم المرتبطة بهذه الوثيقة"><span class="num">${d.pkgs.length}</span></button>` : '<span class="num muted">0</span>'}</td>
         <td>${phTxt(d) || `<span class="muted">${d.pkgs.length ? "غير مربوطة بمرحلة" : "غير مربوطة بحزم"}</span>`}</td><td>${statusCell(d)}</td>
-        <td class="act"><button class="row-btn${d.pkgs.length ? "" : " danger"}" type="button" data-doc-del="${esc(d.key)}"${d.pkgs.length ? ` disabled title="لا تُحذف وثيقة مرتبطة بحزم"` : ` title="حذف" aria-label="حذف"`}>${ICON_DEL}</button></td></tr>`).join("");
+        <td class="act">${v.confirmDel === d.key ? `<span class="dc-confirm"><span>${d.pkgs.length ? `تُحذف وتصبح «لا يوجد» في <b class="num">${d.pkgs.length}</b> حزمة` : "حذف الوثيقة؟"}</span><button class="btn small danger" type="button" data-doc-del-yes="${esc(d.key)}">حذف</button><button class="btn small" type="button" data-doc-del-no>إلغاء</button></span>`
+          : `<button class="row-btn${d.frozen ? "" : " danger"}" type="button" data-doc-del="${esc(d.key)}"${d.frozen ? ` disabled title="مستخدمة في مرحلة مقبولة؛ لا تُحذف"` : ` title="حذف" aria-label="حذف"`}>${ICON_DEL}</button>`}</td></tr>`).join("");
     return `<section class="section"><div class="section-head"><h2>وثائق ${DOC_KIND[kind]}</h2><span class="sub"><span class="num">${L.length}</span> وثيقة</span></div>
       ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr><th>الوثيقة</th><th class="n">الحزم</th><th>مراحل التسليم</th><th>الحالة</th><th class="act"></th></tr></thead><tbody>${tr}</tbody></table></div>`
         : `<p class="muted" style="margin:0">لا توجد وثائق مطابقة.</p>`}</section>`;
@@ -4141,7 +4153,9 @@ document.addEventListener("click", async (ev) => {
   if (ds.rename) { Object.assign(state.docsView, { renaming: ds.rename, draft: null }); return render(); }
   if ("renameCancel" in ds) { Object.assign(state.docsView, { renaming: null, draft: null }); return render(); }
   if (ds.renameSave) { const inp = document.querySelector("[data-rename-input]"); t.disabled = true; if (await renameDoc(ds.renameSave, inp?.value || "")) Object.assign(state.docsView, { renaming: null, draft: null }); t.disabled = false; return render(); }
-  if (ds.docDel) { t.disabled = true; await deleteDoc(ds.docDel); return render(); }
+  if (ds.docDel) { state.docsView.confirmDel = ds.docDel; return render(); }
+  if ("docDelNo" in ds) { state.docsView.confirmDel = null; return render(); }
+  if (ds.docDelYes) { t.disabled = true; await deleteDoc(ds.docDelYes); state.docsView.confirmDel = null; return render(); }
   if ("docAddOpen" in ds) { Object.assign(state.docsView, { adding: true, addName: "", focusAdd: true }); return render(); }
   if ("docAddCancel" in ds) { Object.assign(state.docsView, { adding: false, addName: "" }); return render(); }
   if ("docAdd" in ds) { const v = state.docsView; v.addKind = document.getElementById("dcKind")?.value || v.addKind; t.disabled = true;
