@@ -270,6 +270,35 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .doc-filter small { color: var(--muted); font-weight: 500; }
 .doc-filter button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: var(--surface); color: var(--ink-2); cursor: pointer; font-size: 1rem; line-height: 1; flex: none; }
 .doc-filter button:hover { background: var(--st-late-bg); color: var(--st-late-fg); }
+.dc-k { display: flex; gap: 14px; font-size: .82rem; flex-wrap: wrap; }
+.ap-kpis .r, .ap-kpi .r { color: var(--st-late-fg); } .ap-kpis .a { color: var(--st-ret-fg); } .ap-kpis .g { color: var(--st-acc-fg); }
+.dc-add { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; background: var(--surface); border: 1.5px dashed var(--accent); border-radius: var(--r); }
+.dc-add .t { font-weight: 700; color: var(--accent); }
+.dc-add select, .dc-add input, .dc-rename input, .dc-inline input { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.dc-add input { min-width: min(100%, 320px); flex: 1; }
+.dc-pen { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 2px; display: inline-flex; border-radius: 6px; }
+.dc-pen:hover { color: var(--accent); background: var(--accent-soft); }
+.dc-pen svg { width: 14px; height: 14px; }
+.ap-table tr.row-new td { background: var(--st-late-bg) !important; }
+.ap-table tr.row-new .ap-name { color: var(--st-late-fg); }
+.ap-table tr.row-written td { background: var(--st-ret-bg) !important; }
+.dc-seg { display: inline-flex; padding: 2px; border-radius: 10px; background: var(--surface-3); gap: 2px; }
+.dc-seg button { border: 0; background: none; padding: 4px 10px; border-radius: 8px; font: inherit; font-size: .78rem; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+.dc-seg button:hover { background: var(--surface); }
+.dc-seg button.on.new { background: var(--st-late); color: #fff; }
+.dc-seg button.on.written { background: var(--st-ret); color: #fff; }
+.dc-seg button.on.ok { background: var(--st-acc); color: #fff; }
+.dc-implied { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; background: var(--st-acc-bg); color: var(--st-acc-fg); font-size: .8rem; font-weight: 600; }
+.dc-rename { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.dc-rename input { min-width: min(100%, 260px); border-color: var(--accent); }
+.row-btn.danger { color: var(--st-late-fg); }
+.dc-doc { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; min-width: 170px; max-width: 240px; overflow-wrap: anywhere; line-height: 1.35; }
+.dc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dc-dot.r { background: var(--st-late); } .dc-dot.a { background: var(--st-ret); } .dc-dot.g { background: var(--st-acc); }
+.dc-inline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--surface-2); }
+.dc-inline[hidden] { display: none; }
+.dc-inline input { min-width: min(100%, 220px); flex: 1; }
+.ap-chip.off.mid { background: var(--st-ret-bg); color: var(--st-ret-fg); outline-color: color-mix(in srgb, var(--st-ret) 60%, transparent); }
 .ap-why { display: block; margin-top: 2px; font-size: .74rem; color: var(--muted); }
 .cell-edit { display: inline-flex; align-items: center; max-width: 100%; padding: 2px 6px; margin: -2px -6px; border: 0; border-radius: 6px; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; box-shadow: inset 0 -1px 0 transparent; transition: background .12s, box-shadow .12s; }
 .cell-edit:hover, .cell-edit:focus-visible { background: var(--accent-soft); box-shadow: inset 0 -1.5px 0 var(--accent); outline: none; }
@@ -961,7 +990,7 @@ const DEFAULT_SETTINGS = {
 const TABS = [
   ["dashboard", "لوحة المتابعة"], ["items", "البنود"], ["deliverables", "المخرجات"], ["log", "سجل المراجعات"],
   ["issues", "المشكلات والقرارات"], ["crs", "طلبات التغيير"], ["report", "التقرير الدوري"], ["reports", "التقارير"],
-  ["dev", "لوحة التطوير"], ["devpkgs", "الحزم التطويرية"], ["devphases", "مراحل التسليم"], ["devdocs", "اعتماد الوثائق"], ["settings", "الإعدادات"],
+  ["dev", "لوحة التطوير"], ["devpkgs", "الحزم التطويرية"], ["devphases", "مراحل التسليم"], ["devdocs", "وثائق BRD / UAT"], ["settings", "الإعدادات"],
 ];
 const TAB_KEYS = TABS.map((t) => t[0]);
 // the sidebar groups pages into modules; settings serve the whole project
@@ -997,7 +1026,7 @@ const SAR = `<svg class="sar" viewBox="40 0 1145 1270" role="img" aria-label="ر
 const state = {
   db: null, downloads: null,
   ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false, packages: false, devconfig: false },
-  packages: [], devConfig: null, dev: null, cellEdit: null, devDocs: [], docsView: { q: "", show: "all" },
+  packages: [], devConfig: null, dev: null, cellEdit: null, devDocs: [], docsView: { q: "", show: "all", adding: false, addKind: "uat", addName: "", renaming: null, draft: null },
   pfilters: { q: "", doc: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
@@ -1263,6 +1292,8 @@ function render() {
   state.lastTab = state.tab;
   view.querySelectorAll(".table-wrap.tall").forEach((w, i) => { if (keep[i]) { w.scrollTop = keep[i][0]; w.scrollLeft = keep[i][1]; } });
   applyFocusRow();
+  if (state.docsView.renaming) view.querySelector("[data-rename-input]")?.focus();
+  else if (state.docsView.adding && state.docsView.focusAdd) { state.docsView.focusAdd = false; view.querySelector("#dcName")?.focus(); }
   if (state.cellEdit) { const ed = view.querySelector("[data-cell-input]"); if (ed) { ed.focus(); if (ed.tagName === "INPUT") ed.select(); else try { ed.showPicker?.(); } catch (_) {} } }
   chartTip.hidden = true;
   if (state.drawer) renderDrawer();
@@ -2496,24 +2527,77 @@ function computeDev() {
       k.docs[kind] = key;
     }
   }
-  for (const d of docs.values()) { d.manual = approvals.get(d.key) || null; d.ok = !!d.implied || !!d.manual; }
+  // documents added in the register but not used by any package yet
+  for (const a of state.devDocs || []) {
+    const key = docKey(a.kind, a.name);
+    if (!docs.has(key) && DOC_KIND[a.kind] && docName(a.name)) docs.set(key, { key, kind: a.kind, name: docName(a.name), pkgs: [], phases: new Map(), implied: "" });
+  }
+  for (const d of docs.values()) {
+    d.manual = approvals.get(d.key) || null;
+    // a register entry without a status comes from the first version, where an entry meant «approved»
+    d.status = d.implied ? "ok" : d.manual ? (DOC_STATUS[d.manual.status] ? d.manual.status : "ok") : "new";
+    d.ok = d.status === "ok";
+    d.lockedPkgs = d.pkgs.some((id) => pk.get(id)?.locked);
+  }
   state.dev = { phases, tot, pk, review, docs };
 }
 const docName = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
 const docKey = (kind, name) => `${kind}|${docName(name)}`;
 const DOC_KIND = { brd: "BRD", uat: "UAT" };
+const DOC_STATUS = { new: "لم تُكتب", written: "تمت الكتابة", ok: "معتمدة" };
+const DOC_DOT = { new: "r", written: "a", ok: "g" };
+const docsOfKind = (kind) => [...state.dev.docs.values()].filter((d) => d.kind === kind).sort((a, b) => a.name.localeCompare(b.name));
 // documents of the saved phase packages that still wait for approval
 function phaseDocsPending(P) {
   const out = new Map();
   for (const p of P.pkgs) { const k = state.dev.pk.get(p.id); for (const kind of ["brd", "uat"]) { const d = k?.docs?.[kind] && state.dev.docs.get(k.docs[kind]); if (d && !d.ok) out.set(d.key, d); } }
   return [...out.values()];
 }
-async function setDocApproval(key, on) {
-  if (!requireDb()) return false;
-  const [kind, ...rest] = key.split("|"), name = rest.join("|");
+// the register keeps one entry per document with its status; documents only used by packages start as «لم تُكتب»
+const splitKey = (key) => { const [kind, ...rest] = key.split("|"); return [kind, rest.join("|")]; };
+const saveRegister = (list, msg) => run(null, () => state.db.doc("dev/docs").set({ list }), msg);
+async function setDocStatus(key, status) {
+  if (!requireDb() || !DOC_STATUS[status]) return false;
+  const [kind, name] = splitKey(key), d = state.dev.docs.get(key);
+  if (d?.implied) return false;
   const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
-  if (on) list.push({ kind, name });
-  return run(null, () => state.db.doc("dev/docs").set({ list }), on ? `اعتُمدت ${DOC_KIND[kind]} «${name}»` : `أُلغي اعتماد «${name}»`);
+  list.push({ kind, name, status });
+  return saveRegister(list, `${DOC_KIND[kind]} «${name}»: ${DOC_STATUS[status]}`);
+}
+const setDocApproval = (key, on) => setDocStatus(key, on ? "ok" : "new");
+function docNameProblem(kind, name, exceptKey) {
+  if (!name) return "اكتب اسم الوثيقة.";
+  if (noDoc(name)) return "هذا الاسم يعني «لا يوجد»؛ اكتب اسم الوثيقة الفعلي.";
+  const key = docKey(kind, name);
+  if (key !== exceptKey && state.dev.docs.has(key)) return `توجد وثيقة ${DOC_KIND[kind]} بهذا الاسم.`;
+  return "";
+}
+async function addDoc(kind, raw) {
+  if (!requireDb()) return false;
+  const name = docName(raw), err = docNameProblem(kind, name);
+  if (err) { toast(err, true); return false; }
+  return saveRegister([...(state.devDocs || []), { kind, name, status: "new" }], `أُضيفت ${DOC_KIND[kind]} «${name}» بحالة «لم تُكتب»`);
+}
+// renaming rewrites the name on every package that uses the document
+async function renameDoc(key, raw) {
+  const d = state.dev.docs.get(key); if (!d || !requireDb()) return false;
+  const name = docName(raw);
+  if (name === d.name) return true;
+  if (d.lockedPkgs) { toast("الوثيقة مستخدمة في حزم مقفلة؛ لا يتغير اسمها.", true); return false; }
+  const err = docNameProblem(d.kind, name, key);
+  if (err) { toast(err, true); return false; }
+  const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
+  list.push({ kind: d.kind, name, status: d.status });
+  const pkgs = state.packages.filter((p) => d.pkgs.includes(p.id));
+  return run(null, async () => {
+    await state.db.doc("dev/docs").set({ list });
+    for (const p of pkgs) { const { id, ...rest } = p; await state.db.collection("packages").doc(id).set({ ...rest, [d.kind]: name }); }
+  }, `تغيّر الاسم إلى «${name}» في ${pkgs.length} حزمة`);
+}
+async function deleteDoc(key) {
+  const d = state.dev.docs.get(key); if (!d || !requireDb()) return false;
+  if (d.pkgs.length) { toast("لا تُحذف وثيقة مرتبطة بحزم.", true); return false; }
+  return saveRegister((state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key), `حُذفت «${d.name}»`);
 }
 
 /* ---- pages */
@@ -2611,13 +2695,16 @@ const CELL_FIELDS = {
   quarter: { label: "الربع المستهدف", opts: () => DEV_QUARTERS },
   beneficiary: { label: "الفئة المستفيدة", opts: () => DEV_BENEF.map((x) => [x, x]) },
   weight: { label: "الوزن", opts: () => DEV_WEIGHTS.map((w) => [String(w), String(w)]) },
+  brd: { label: "BRD", doc: true },
+  uat: { label: "UAT", doc: true },
   phase: { label: "مرحلة التسليم", opts: (p) => [["", "غير مربوطة بمرحلة"], [DEV_CORE, "أساسية (5.أ)"], ...(DEV_PHASES[p.iface] || []).map((ph) => [ph, phaseLabel(ph)])] },
 };
 function cellEdit(p, field, inner, locked) {
   if (locked) return inner;
   const F = CELL_FIELDS[field], ce = state.cellEdit;
   if (ce && ce.id === p.id && ce.field === field) {
-    if (F.text) return `<input class="cell-input" data-cell-input="${field}" data-pid="${esc(p.id)}" value="${esc(ce.draft ?? p[field] ?? "")}" aria-label="${F.label}">`;
+    if (F.text || ce.adding) return `<input class="cell-input" data-cell-input="${field}" data-pid="${esc(p.id)}" value="${esc(ce.draft ?? (ce.adding ? "" : p[field] ?? ""))}" placeholder="${ce.adding ? `اسم وثيقة ${F.label} الجديدة` : ""}" aria-label="${F.label}">`;
+    if (F.doc) return `<select class="cell-input" data-cell-input="${field}" data-pid="${esc(p.id)}" aria-label="${F.label}">${docOptions(field, p[field])}</select>`;
     const cur = field === "weight" ? (Number.isFinite(p.weight) ? String(p.weight) : "") : String(p[field] ?? "");
     const opts = F.opts(p), known = opts.some(([v]) => String(v) === cur);
     return `<select class="cell-input" data-cell-input="${field}" data-pid="${esc(p.id)}" aria-label="${F.label}">${known ? "" : `<option value="${esc(cur)}" selected>${esc(cur || "—")}</option>`}${opts.map(([v, l]) => `<option value="${esc(v)}"${String(v) === cur ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
@@ -2640,6 +2727,7 @@ async function saveCell(id, field, raw) {
   if (!prev || k?.locked || !CELL_FIELDS[field]) return render();
   let v = typeof raw === "string" ? raw.trim() : raw;
   if (field === "weight") v = v === "" ? null : Number(v);
+  if (CELL_FIELDS[field].doc) { if (v === "__new__") return render(); v = docName(v); if (v && noDoc(v)) { toast("هذا الاسم يعني «لا يوجد»؛ اختر «لا يوجد» من القائمة.", true); return render(); } }
   if (String(v ?? "") === String(prev[field] ?? "")) return render();
   const { id: _omit, ...rest } = prev, body = { ...rest, [field]: v };
   const err = cellProblem(prev, body, field);
@@ -2648,6 +2736,10 @@ async function saveCell(id, field, raw) {
   await run(null, () => state.db.collection("packages").doc(id).set(clean(body)), `عُدّل «${CELL_FIELDS[field].label}» للحزمة #${prev.no}`);
 }
 const cancelCell = () => { state.cellEdit = null; render(); };
+function docCell(p, kind) {
+  const key = state.dev.pk.get(p.id)?.docs?.[kind], d = key && state.dev.docs.get(key);
+  return d ? `<span class="dc-doc" title="${DOC_STATUS[d.status]}"><span class="dc-dot ${DOC_DOT[d.status]}"></span><bdi>${esc(d.name)}</bdi></span>` : '<span class="muted">لا يوجد</span>';
+}
 function viewDevPkgs() {
   const f = state.pfilters, D = state.dev, list = filteredPackages();
   const sumW = list.reduce((a, p) => a + (D.pk.get(p.id).core ? 0 : D.pk.get(p.id).w), 0);
@@ -2667,6 +2759,8 @@ function viewDevPkgs() {
       <td>${cellEdit(p, "stage", p.stage ? pill(p.stage, DEV_STAGE_CLASS[p.stage]) : '<span class="muted">—</span>', k.locked)}</td>
       <td>${cellEdit(p, "quarter", esc(DEV_QUARTER[p.quarter] || "—"), k.locked)}</td>
       <td>${cellEdit(p, "beneficiary", p.beneficiary ? esc(p.beneficiary) : '<span class="muted">—</span>', k.locked)}</td>
+      <td>${cellEdit(p, "brd", docCell(p, "brd"), k.locked)}</td>
+      <td>${cellEdit(p, "uat", docCell(p, "uat"), k.locked)}</td>
       <td class="n">${cellEdit(p, "weight", k.core ? '<span class="muted" title="لا تدخل في الحساب">—</span>' : devWHtml(p.weight), k.locked)}</td>
       <td>${cellEdit(p, "phase", k.core ? `<span class="flag soft">أساسية 5.أ</span>` : p.phase ? esc(phaseLabel(p.phase)) : '<span class="muted">—</span>', k.locked)}</td>
       <td>${k.bill ? (BILL_ORDER.includes(k.bill) ? pill(k.bill) : `<span class="muted">${esc(k.bill)}</span>`) : '<span class="muted">—</span>'}</td>
@@ -2694,7 +2788,7 @@ function viewDevPkgs() {
       ${any ? `<button class="btn small" type="button" data-clear-pfilters>مسح الفلاتر</button>` : ""}
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.packages.length}</span> حزمة · الوزن <span class="num">${devW(sumW)}</span> · اضغط على أي خانة في حزمة مفتوحة لتعديلها</span>
     </div>
-    ${list.length ? `<div class="table-wrap tall"><table><thead><tr><th class="n">#</th><th>الحزمة والمجموعة</th><th>الواجهة</th><th>مرحلة الطلب</th><th>الربع المستهدف</th><th>الفئة المستفيدة</th><th class="n">الوزن</th><th>مرحلة التسليم</th><th>حالة الفوترة</th><th>تنبيهات</th>${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
+    ${list.length ? `<div class="table-wrap tall"><table><thead><tr><th class="n">#</th><th>الحزمة والمجموعة</th><th>الواجهة</th><th>مرحلة الطلب</th><th>الربع المستهدف</th><th>الفئة المستفيدة</th><th>BRD</th><th>UAT</th><th class="n">الوزن</th><th>مرحلة التسليم</th><th>حالة الفوترة</th><th>تنبيهات</th>${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
       : emptyBlock(state.packages.length ? "لا توجد حزم مطابقة" : "لا توجد حزم بعد", state.packages.length ? "غيّر البحث أو عوامل التصفية." : "أضف حزمة جديدة أو استورد شيت الحزم من Excel.")}
   </section>`;
 }
@@ -2771,25 +2865,32 @@ function viewDevPhases() {
 /* ---- BRD / UAT approval */
 function viewDevDocs() {
   const all = [...state.dev.docs.values()], v = state.docsView, q = v.q.trim().toLowerCase();
-  const pass = (d) => (v.show === "all" || (v.show === "off" ? !d.ok : d.ok)) && (!q || d.name.toLowerCase().includes(q));
+  const pass = (d) => (v.show === "all" || d.status === v.show) && (!q || d.name.toLowerCase().includes(q));
   const phTxt = (d) => [...d.phases.values()].sort((a, b) => a.iface.localeCompare(b.iface) || DEV_PHASES[a.iface].indexOf(a.ph) - DEV_PHASES[b.iface].indexOf(b.ph)).map((P) => `${P.iface === "app" ? "التطبيق" : "البوابة"} ${phaseNum(P.ph)}`).join("، ");
-  const kpi = (kind) => { const L = all.filter((d) => d.kind === kind), ok = L.filter((d) => d.ok).length;
-    return `<div class="ap-kpi"><span class="k">وثائق ${DOC_KIND[kind]}</span><strong class="num">${L.length}</strong><span class="s"><b class="ok num">${ok}</b> معتمدة · <b class="red num">${L.length - ok}</b> غير معتمدة</span></div>`; };
+  const kpi = (kind) => { const L = all.filter((d) => d.kind === kind), c = (st) => L.filter((d) => d.status === st).length;
+    return `<div class="ap-kpi"><span class="k">وثائق ${DOC_KIND[kind]}</span><strong class="num">${L.length}</strong><span class="dc-k"><span class="r"><b class="num">${c("new")}</b> لم تُكتب</span><span class="a"><b class="num">${c("written")}</b> تمت الكتابة</span><span class="g"><b class="num">${c("ok")}</b> معتمدة</span></span></div>`; };
+  const statusCell = (d) => d.implied ? `<span class="dc-implied">${PH_LOCK}معتمدة ضمنًا</span><span class="ap-why">${esc(d.implied)} مقفلة</span>`
+    : `<div class="dc-seg" role="group" aria-label="حالة الوثيقة">${Object.entries(DOC_STATUS).map(([k, l]) => `<button type="button" class="${k}${d.status === k ? " on" : ""}" data-doc-status="${k}" data-key="${esc(d.key)}" aria-pressed="${d.status === k}">${l}</button>`).join("")}</div>`;
+  const nameCell = (d) => v.renaming === d.key
+    ? `<span class="dc-rename"><input data-rename-input="${esc(d.key)}" value="${esc(v.draft ?? d.name)}" aria-label="الاسم الجديد"><button class="btn primary small" type="button" data-rename-save="${esc(d.key)}">حفظ</button><button class="btn small" type="button" data-rename-cancel>إلغاء</button></span><span class="ap-why">يتغير الاسم في كل الحزم المرتبطة (<span class="num">${d.pkgs.length}</span> حزمة)</span>`
+    : `<span class="ap-name">${d.status === "new" ? AP_WARN : ""}<bdi>${esc(d.name)}</bdi>${d.lockedPkgs ? "" : `<button type="button" class="dc-pen" data-rename="${esc(d.key)}" title="تعديل الاسم" aria-label="تعديل الاسم">${ICON_EDIT}</button>`}</span>`;
   const table = (kind) => {
-    const L = all.filter((d) => d.kind === kind), rows = L.filter(pass).sort((a, b) => (a.ok - b.ok) || (b.pkgs.length - a.pkgs.length) || a.name.localeCompare(b.name));
-    const ok = L.filter((d) => d.ok).length;
-    const tr = rows.map((d) => {
-      const box = d.implied ? `<label class="ap-box on locked"><input type="checkbox" checked disabled><span>معتمدة ضمنًا</span></label><span class="ap-why">${esc(d.implied)} مقفلة</span>`
-        : `<label class="ap-box${d.ok ? " on" : ""}"><input type="checkbox" name="docApprove" value="${esc(d.key)}"${d.ok ? " checked" : ""}><span>${d.ok ? "معتمدة" : "غير معتمدة"}</span></label>`;
-      return `<tr class="${d.ok ? "" : "ap-off"}"><td><span class="ap-name">${d.ok ? "" : AP_WARN}<bdi>${esc(d.name)}</bdi></span></td><td class="n"><button type="button" class="ap-count" data-docs-pkgs="${esc(d.key)}" title="عرض الحزم المرتبطة بهذه الوثيقة"><span class="num">${d.pkgs.length}</span></button></td>
-        <td>${phTxt(d) || '<span class="muted">غير مربوطة بمرحلة</span>'}</td><td>${box}</td></tr>`;
-    }).join("");
-    return `<section class="section"><div class="section-head"><h2>وثائق ${DOC_KIND[kind]}</h2><span class="sub"><span class="num">${L.length}</span> وثيقة · <span class="ok num">${ok}</span> معتمدة · <span class="red num">${L.length - ok}</span> غير معتمدة</span></div>
-      ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr><th>الوثيقة</th><th class="n">الحزم</th><th>مراحل التسليم</th><th>الاعتماد</th></tr></thead><tbody>${tr}</tbody></table></div>`
+    const L = all.filter((d) => d.kind === kind), order = { new: 0, written: 1, ok: 2 };
+    const rows = L.filter(pass).sort((a, b) => (order[a.status] - order[b.status]) || (b.pkgs.length - a.pkgs.length) || a.name.localeCompare(b.name));
+    const tr = rows.map((d) => `<tr class="row-${d.implied ? "implied" : d.status}"><td>${nameCell(d)}</td>
+        <td class="n">${d.pkgs.length ? `<button type="button" class="ap-count" data-docs-pkgs="${esc(d.key)}" title="عرض الحزم المرتبطة بهذه الوثيقة"><span class="num">${d.pkgs.length}</span></button>` : '<span class="num muted">0</span>'}</td>
+        <td>${phTxt(d) || `<span class="muted">${d.pkgs.length ? "غير مربوطة بمرحلة" : "غير مربوطة بحزم"}</span>`}</td><td>${statusCell(d)}</td>
+        <td class="act"><button class="row-btn${d.pkgs.length ? "" : " danger"}" type="button" data-doc-del="${esc(d.key)}"${d.pkgs.length ? ` disabled title="لا تُحذف وثيقة مرتبطة بحزم"` : ` title="حذف" aria-label="حذف"`}>${ICON_DEL}</button></td></tr>`).join("");
+    return `<section class="section"><div class="section-head"><h2>وثائق ${DOC_KIND[kind]}</h2><span class="sub"><span class="num">${L.length}</span> وثيقة</span></div>
+      ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr><th>الوثيقة</th><th class="n">الحزم</th><th>مراحل التسليم</th><th>الحالة</th><th class="act"></th></tr></thead><tbody>${tr}</tbody></table></div>`
         : `<p class="muted" style="margin:0">لا توجد وثائق مطابقة.</p>`}</section>`;
   };
-  const seg = [["all", "الكل"], ["off", "غير المعتمدة"], ["on", "المعتمدة"]].map(([k, l]) => `<button type="button" data-docs-show="${k}" aria-pressed="${v.show === k}">${l}</button>`).join("");
-  return `<div class="ap-kpis">${kpi("brd")}${kpi("uat")}<div class="ap-kpi note"><span class="k">الاعتماد الضمني</span><span class="s">الوثائق المستخدمة في مرحلة سُلِّمت للعميل (مسلَّمة أو مُعادة بملاحظات أو مقبولة) تُعدّ معتمدة تلقائيًا ولا تحتاج إلى إجراء. اعتماد الوثيقة يسري على كل الحزم التي تستخدمها.</span></div></div>
+  const seg = [["all", "الكل"], ["new", "لم تُكتب"], ["written", "تمت الكتابة"], ["ok", "المعتمدة"]].map(([k, l]) => `<button type="button" data-docs-show="${k}" aria-pressed="${v.show === k}">${l}</button>`).join("");
+  const add = v.adding ? `<div class="dc-add"><span class="t">+ وثيقة جديدة</span><select id="dcKind" aria-label="النوع">${Object.entries(DOC_KIND).map(([k, l]) => `<option value="${k}"${v.addKind === k ? " selected" : ""}>${l}</option>`).join("")}</select>
+      <input id="dcName" placeholder="اسم الوثيقة" value="${esc(v.addName || "")}" aria-label="اسم الوثيقة"><button class="btn primary" type="button" data-doc-add>إضافة</button><button class="btn" type="button" data-doc-add-cancel>إلغاء</button></div>`
+    : `<div><button class="btn primary" type="button" data-doc-add-open>+ وثيقة جديدة</button></div>`;
+  return `<div class="ap-kpis">${kpi("brd")}${kpi("uat")}<div class="ap-kpi note"><span class="k">الحالة</span><span class="s"><b class="r">لم تُكتب</b> ← <b class="a">تمت الكتابة</b> ← <b class="g">معتمدة</b>. لا تُنشأ وثيقة تسليم المرحلة ولا يُسجَّل تسليمها إلا إذا كانت كل وثائق حزمها «معتمدة». وثائق المراحل التي سُلِّمت للعميل معتمدة ضمنًا، وتغيير اسم الوثيقة يسري على كل الحزم التي تستخدمها.</span></div></div>
+    ${add}
     <div class="filters"><input id="dQ" type="search" placeholder="ابحث باسم الوثيقة" value="${esc(v.q)}" aria-label="بحث"><div class="seg" role="group" aria-label="عرض">${seg}</div></div>
     ${table("brd")}${table("uat")}`;
 }
@@ -2828,8 +2929,8 @@ function drawerPkg() {
       <div class="field"><label for="pkCat">تصنيف الخدمة</label>${sel("pkCat", "category", DEV_CATEGORIES.map((x) => [x, x]), v.category)}</div>
       <div class="field"><label for="pkBenef">الفئة المستفيدة</label>${sel("pkBenef", "beneficiary", DEV_BENEF.map((x) => [x, x]), v.beneficiary)}</div>
       <div class="field"><label for="pkSystem">النظام المستهدف للإغلاق</label><input id="pkSystem" name="system" list="pkSystems" required value="${esc(v.system ?? "")}"${dis}><datalist id="pkSystems">${systems.map((g) => `<option value="${esc(g)}">`).join("")}</datalist></div>
-      <div class="field"><label for="pkBrd">BRD No</label><input id="pkBrd" name="brd" value="${esc(v.brd ?? "")}" placeholder="يظهر تنبيه إن تُرك فارغًا"${dis}></div>
-      <div class="field"><label for="pkUat">UAT No</label><input id="pkUat" name="uat" value="${esc(v.uat ?? "")}" placeholder="يظهر تنبيه إن تُرك فارغًا"${dis}></div>
+      ${docPickerField("brd", v.brd, dis)}
+      ${docPickerField("uat", v.uat, dis)}
       <div class="field wide"><label for="pkDep">الاعتمادية <span class="muted">(اختياري)</span></label><textarea id="pkDep" name="dependency" placeholder="ما تعتمد عليه الحزمة أو ما يعيقها"${dis}>${esc(v.dependency ?? "")}</textarea></div>
       <div class="field wide"><label for="pkPhase">مرحلة التسليم (اختياري)</label><select id="pkPhase" name="phase"${dis}><option value="">غير مربوطة بمرحلة</option>${phaseOptsFor(v.iface).map(([o, l]) => `<option value="${esc(o)}"${(v.phase || "") === o ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>
         <span class="hint">تُربط بمرحلة تسليم الحزمُ المطلقة فقط، ولا تتجاوز المرحلة ٢٥٫٥ وزنًا (٥١ لمرحلة 1 و2). الأفضل الربط من صفحة «مراحل التسليم».</span></div>
@@ -2856,7 +2957,7 @@ async function savePkg(form, btn) {
   const f = formData(form);
   const body = { no: Number(f.no), name: (f.name || "").trim(), iface: f.iface, stage: f.stage, quarter: f.quarter, priority: Number(f.priority), weight: f.weight === "" ? null : Number(f.weight),
     presence: f.presence, group: (f.group || "").trim(), type: f.type, category: f.category, beneficiary: f.beneficiary, system: (f.system || "").trim(),
-    dependency: (f.dependency || "").trim(), brd: (f.brd || "").trim(), uat: (f.uat || "").trim(), phase: f.phase || "" };
+    dependency: (f.dependency || "").trim(), brd: f.brd === "__new__" ? "" : (f.brd || "").trim(), uat: f.uat === "__new__" ? "" : (f.uat || "").trim(), phase: f.phase || "" };
   const missing = PKG_REQUIRED.filter(([k]) => body[k] === "" || body[k] === null || (typeof body[k] === "number" && !Number.isFinite(body[k])) || body[k] === 0 && k !== "weight").map(([, l]) => l);
   if (missing.length) { toast("أكمل الحقول الإلزامية: " + missing.join("، "), true); form.querySelector(":invalid, [required]:placeholder-shown")?.focus(); return; }
   if (!(body.no > 0)) { toast("رقم الحزمة غير صحيح.", true); return; }
@@ -2872,6 +2973,7 @@ async function savePkg(form, btn) {
 
 /* ---- phase drawer: pick launched packages for a delivery phase */
 // BRD / UAT of a package on one line, «لا يوجد» flagged the same way as the review alerts
+const PH_LOCK = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 const AP_CHECK = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const AP_WARN = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 8v5M12 16.5v.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 function pkgDocsLine(p) {
@@ -2881,8 +2983,19 @@ function pkgDocsLine(p) {
     if (!d) return `<span class="ap-chip none"><b>${L}</b> <span class="miss">لا يوجد</span></span>`;
     if (d.ok) return `<span class="ap-chip" title="${esc(d.implied ? "معتمدة ضمنًا: " + d.implied : "معتمدة")}"><b>${L}</b> <bdi>${esc(d.name)}</bdi>${AP_CHECK}</span>`;
     const at = `${p.id}|${kind}`, open = dr?.approveAt === at;
-    return `<span class="ap-wrap"><button type="button" class="ap-chip off" data-ask-approve="${esc(d.key)}" data-at="${esc(at)}" title="غير معتمدة — اضغط للاعتماد"><b>${L}</b> <bdi>${esc(d.name)}</bdi></button>${open ? `<span class="ap-pop" role="dialog" aria-label="اعتماد الوثيقة"><b>اعتماد وثيقة ${L}؟</b><bdi class="ap-pop-n">${esc(d.name)}</bdi><span>تُعتمد في كل الحزم التي تستخدمها (<span class="num">${d.pkgs.length}</span> حزمة).</span><span class="ap-pop-a"><button class="btn primary small" type="button" data-approve-doc="${esc(d.key)}">اعتماد</button><button class="btn small" type="button" data-cancel-approve>إلغاء</button></span></span>` : ""}</span>`;
+    return `<span class="ap-wrap"><button type="button" class="ap-chip off${d.status === "written" ? " mid" : ""}" data-ask-approve="${esc(d.key)}" data-at="${esc(at)}" title="${DOC_STATUS[d.status]} — اضغط للاعتماد"><b>${L}</b> <bdi>${esc(d.name)}</bdi></button>${open ? `<span class="ap-pop" role="dialog" aria-label="اعتماد الوثيقة"><b>اعتماد وثيقة ${L}؟</b><bdi class="ap-pop-n">${esc(d.name)}</bdi><span>تُعتمد في كل الحزم التي تستخدمها (<span class="num">${d.pkgs.length}</span> حزمة).</span><span class="ap-pop-a"><button class="btn primary small" type="button" data-approve-doc="${esc(d.key)}">اعتماد</button><button class="btn small" type="button" data-cancel-approve>إلغاء</button></span></span>` : ""}</span>`;
   }).join("")}</span>`;
+}
+const docOptions = (kind, cur) => {
+  const name = noDoc(cur) ? "" : docName(cur);
+  const opts = docsOfKind(kind).map((d) => [d.name, `${d.name} — ${DOC_STATUS[d.status]}`]);
+  if (name && !opts.some(([n]) => n === name)) opts.unshift([name, `${name} — لم تُكتب`]);
+  return [["", "لا يوجد"], ...opts, ["__new__", "+ وثيقة جديدة…"]].map(([v, l]) => `<option value="${esc(v)}"${v === name ? " selected" : ""}>${esc(l)}</option>`).join("");
+};
+function docPickerField(kind, cur, dis) {
+  const id = kind === "brd" ? "pkBrd" : "pkUat";
+  return `<div class="field"><label for="${id}">${DOC_KIND[kind]} No</label><select id="${id}" name="${kind}" data-doc-pick="${kind}"${dis}>${docOptions(kind, cur)}</select>
+    <div class="dc-inline" data-doc-new="${kind}" hidden><input placeholder="اسم وثيقة ${DOC_KIND[kind]} الجديدة" aria-label="اسم الوثيقة الجديدة"><button class="btn primary small" type="button" data-doc-new-add="${kind}">إضافة واختيار</button><button class="btn small" type="button" data-doc-new-cancel="${kind}">إلغاء</button><span class="ap-why">تُحفظ مع الحزمة وتُضاف إلى سجل الوثائق بحالة «لم تُكتب».</span></div></div>`;
 }
 function drawerPhase() {
   const d = state.drawer, P = state.dev.phases.get(d.id);
@@ -2970,6 +3083,7 @@ function importPlan(rows) {
 }
 function drawerImport() {
   const pl = state.drawer.plan;
+  const newDocs = [...new Set([...pl.add, ...pl.update].flatMap((p) => ["brd", "uat"].filter((k) => !noDoc(p[k]) && !state.dev.docs.has(docKey(k, p[k]))).map((k) => `${DOC_KIND[k]}: ${docName(p[k])}`)))];
   return { title: "استيراد الحزم من Excel", html: `
     <div class="kv">
       <div><span class="k">حزم جديدة</span><span class="v">${int(pl.add.length)}</span></div>
@@ -2978,6 +3092,7 @@ function drawerImport() {
       <div><span class="k">ستُحذف (Delete)</span><span class="v">${int(pl.del.length)}</span></div>
       <div><span class="k">مقفلة لن تتغير</span><span class="v">${int(pl.locked.length)}</span></div>
     </div>
+    ${newDocs.length ? `<div class="notice">${int(newDocs.length)} وثيقة جديدة في الشيت ستُضاف إلى سجل الوثائق بحالة «لم تُكتب»: ${newDocs.slice(0, 8).map((x) => `<bdi>${esc(x)}</bdi>`).join("، ")}${newDocs.length > 8 ? "…" : ""}</div>` : ""}
     <p class="muted" style="margin:0">يُطابق الاستيراد الحزم بعمود «#». الحزم الموجودة في النظام وغير الموجودة في الشيت تبقى كما هي، والحزم ضمن مراحل مقفلة لا تتغير.</p>
     ${pl.update.length ? `<div class="block"><h4>أمثلة على التحديث</h4><ul class="dev-plan">${pl.update.slice(0, 8).map((p) => `<li>#${p.no} ${esc(short(p.name, 60))}</li>`).join("")}</ul></div>` : ""}
     <div class="actions"><button class="btn primary" type="button" data-apply-import${pl.add.length + pl.update.length + pl.del.length ? "" : " disabled"}>تطبيق الاستيراد</button><button class="btn" type="button" data-close>إلغاء</button></div>` };
@@ -4022,6 +4137,27 @@ document.addEventListener("click", async (ev) => {
   if (ds.goPhase) { const id = ds.goPhase; closeDrawer(); setTab("devphases"); return openDrawer({ kind: "phase", id }); }
   if ("savePhase" in ds) return savePhase(t);
   if ("genDoc" in ds) return generatePhaseDoc(t);
+  if (ds.docStatus && ds.key) { t.disabled = true; await setDocStatus(ds.key, ds.docStatus); return render(); }
+  if (ds.rename) { Object.assign(state.docsView, { renaming: ds.rename, draft: null }); return render(); }
+  if ("renameCancel" in ds) { Object.assign(state.docsView, { renaming: null, draft: null }); return render(); }
+  if (ds.renameSave) { const inp = document.querySelector("[data-rename-input]"); t.disabled = true; if (await renameDoc(ds.renameSave, inp?.value || "")) Object.assign(state.docsView, { renaming: null, draft: null }); t.disabled = false; return render(); }
+  if (ds.docDel) { t.disabled = true; await deleteDoc(ds.docDel); return render(); }
+  if ("docAddOpen" in ds) { Object.assign(state.docsView, { adding: true, addName: "", focusAdd: true }); return render(); }
+  if ("docAddCancel" in ds) { Object.assign(state.docsView, { adding: false, addName: "" }); return render(); }
+  if ("docAdd" in ds) { const v = state.docsView; v.addKind = document.getElementById("dcKind")?.value || v.addKind; t.disabled = true;
+    if (await addDoc(v.addKind, document.getElementById("dcName")?.value || "")) Object.assign(v, { adding: false, addName: "" }); t.disabled = false; return render(); }
+  if (ds.docNewAdd) { // package form: add a new document name to the picker and select it (saved with the package)
+    const kind = ds.docNewAdd, box = document.querySelector(`[data-doc-new="${kind}"]`), sel = document.querySelector(`select[data-doc-pick="${kind}"]`);
+    const name = docName(box?.querySelector("input")?.value), known = state.dev.docs.has(docKey(kind, name));
+    const err = known ? "" : docNameProblem(kind, name);
+    if (err) { toast(err, true); return; }
+    if (!known && sel && ![...sel.options].some((o) => o.value === name)) sel.insertBefore(new Option(`${name} — لم تُكتب`, name), sel.querySelector('option[value="__new__"]'));
+    if (sel) sel.value = name;
+    if (box) box.hidden = true;
+    return;
+  }
+  if (ds.docNewCancel) { const kind = ds.docNewCancel, sel = document.querySelector(`select[data-doc-pick="${kind}"]`), box = document.querySelector(`[data-doc-new="${kind}"]`);
+    if (sel) sel.value = [...sel.options].find((o) => o.defaultSelected)?.value ?? ""; if (box) box.hidden = true; return; }
   if (ds.cell && ds.pid) { state.cellEdit = { id: ds.pid, field: ds.cell }; return render(); }
   if (ds.askApprove) { state.drawer.approveAt = ds.at; return renderDrawer(); }
   if ("cancelApprove" in ds) { state.drawer.approveAt = null; return renderDrawer(); }
@@ -4152,10 +4288,13 @@ const SEARCH = { dQ: (v) => (state.docsView.q = v), pQ: (v) => (state.pfilters.q
 document.addEventListener("focusout", (ev) => {
   const ed = ev.target.closest?.("[data-cell-input]"), ce = state.cellEdit;
   if (!ed || !ce || ce.id !== ed.dataset.pid || ce.field !== ed.dataset.cellInput) return;
-  if (ed.tagName === "INPUT") saveCell(ce.id, ce.field, ed.value); else setTimeout(() => { if (state.cellEdit === ce) cancelCell(); }, 150);
+  if (ce.adding && ed.tagName === "SELECT") return; // the list just gave way to the new-name box
+  if (ed.tagName === "INPUT") { if (ce.adding && !ed.value.trim()) cancelCell(); else saveCell(ce.id, ce.field, ed.value); } else setTimeout(() => { if (state.cellEdit === ce) cancelCell(); }, 150);
 });
 document.addEventListener("input", (ev) => {
   if (ev.target.matches?.("input[data-cell-input]") && state.cellEdit) state.cellEdit.draft = ev.target.value;
+  if (ev.target.matches?.("[data-rename-input]")) state.docsView.draft = ev.target.value;
+  if (ev.target.id === "dcName") state.docsView.addName = ev.target.value;
   const id = ev.target.id;
   if (!SEARCH[id]) return;
   clearTimeout(inputTimer);
@@ -4174,8 +4313,12 @@ document.addEventListener("change", (ev) => {
     state.openMsel = `${scope}.${key}`;
     return render();
   }
-  if (el.matches("select[data-cell-input]")) { saveCell(el.dataset.pid, el.dataset.cellInput, el.value); return; }
-  if (el.name === "docApprove") { const key = el.value; el.disabled = true; setDocApproval(key, el.checked).finally(() => { el.disabled = false; }); return; }
+  if (el.matches("select[data-cell-input]")) {
+    if (el.value === "__new__" && CELL_FIELDS[el.dataset.cellInput]?.doc) { state.cellEdit = { id: el.dataset.pid, field: el.dataset.cellInput, adding: true }; return render(); }
+    saveCell(el.dataset.pid, el.dataset.cellInput, el.value); return;
+  }
+  if (el.matches("select[data-doc-pick]")) { const box = document.querySelector(`[data-doc-new="${el.dataset.docPick}"]`); if (box) { box.hidden = el.value !== "__new__"; if (!box.hidden) box.querySelector("input")?.focus(); } return; }
+  if (id === "dcKind") { state.docsView.addKind = el.value; return; }
   if (el.name === "phasePick" && state.drawer?.kind === "phase") {
     state.drawer.picked = [...document.querySelectorAll('input[name="phasePick"]:checked')].map((x) => x.value);
     return renderDrawer();
@@ -4209,10 +4352,18 @@ document.addEventListener("change", (ev) => {
   }
 });
 document.addEventListener("keydown", (ev) => {
+  const ren = ev.target.closest?.("[data-rename-input]");
+  if (ren) {
+    if (ev.key === "Escape") { ev.preventDefault(); Object.assign(state.docsView, { renaming: null, draft: null }); return render(); }
+    if (ev.key === "Enter") { ev.preventDefault(); document.querySelector(`[data-rename-save]`)?.click(); }
+    return;
+  }
+  if (ev.target.id === "dcName" && ev.key === "Enter") { ev.preventDefault(); document.querySelector("[data-doc-add]")?.click(); return; }
+  if (ev.target.closest?.("[data-doc-new]") && ev.key === "Enter") { ev.preventDefault(); ev.target.closest("[data-doc-new]").querySelector("[data-doc-new-add]")?.click(); return; }
   const ed = ev.target.closest?.("[data-cell-input]");
   if (ed) {
     if (ev.key === "Escape") { ev.preventDefault(); return cancelCell(); }
-    if (ev.key === "Enter" && ed.tagName === "INPUT") { ev.preventDefault(); return saveCell(ed.dataset.pid, ed.dataset.cellInput, ed.value); }
+    if (ev.key === "Enter" && ed.tagName === "INPUT") { ev.preventDefault(); if (state.cellEdit?.adding && !ed.value.trim()) return cancelCell(); return saveCell(ed.dataset.pid, ed.dataset.cellInput, ed.value); }
     return;
   }
   if (ev.key === "Escape" && state.drawer) closeDrawer();
