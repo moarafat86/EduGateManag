@@ -265,6 +265,10 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .ap-box.on { color: var(--st-acc-fg); }
 .ap-box.locked { cursor: default; }
 .ap-why { display: block; margin-top: 2px; font-size: .74rem; color: var(--muted); }
+.cell-edit { display: inline-flex; align-items: center; max-width: 100%; padding: 2px 6px; margin: -2px -6px; border: 0; border-radius: 6px; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; box-shadow: inset 0 -1px 0 transparent; transition: background .12s, box-shadow .12s; }
+.cell-edit:hover, .cell-edit:focus-visible { background: var(--accent-soft); box-shadow: inset 0 -1.5px 0 var(--accent); outline: none; }
+.cell-input { font: inherit; font-size: .86rem; padding: 4px 8px; border: 1.5px solid var(--accent); border-radius: 8px; background: var(--surface); color: var(--ink); max-width: 100%; min-width: 120px; box-shadow: 0 0 0 3px var(--accent-soft); }
+input.cell-input { width: 100%; min-width: 220px; }
 .dev-docs { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px; font-size: .74rem; color: var(--ink-2); font-weight: 400; overflow-wrap: anywhere; }
 .dev-docs { align-items: center; }
 .dev-docs .miss { color: var(--st-ret-fg); font-weight: 600; }
@@ -987,7 +991,7 @@ const SAR = `<svg class="sar" viewBox="40 0 1145 1270" role="img" aria-label="ر
 const state = {
   db: null, downloads: null,
   ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false, packages: false, devconfig: false },
-  packages: [], devConfig: null, dev: null, devDocs: [], docsView: { q: "", show: "all" },
+  packages: [], devConfig: null, dev: null, cellEdit: null, devDocs: [], docsView: { q: "", show: "all" },
   pfilters: { q: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
@@ -1253,6 +1257,7 @@ function render() {
   state.lastTab = state.tab;
   view.querySelectorAll(".table-wrap.tall").forEach((w, i) => { if (keep[i]) { w.scrollTop = keep[i][0]; w.scrollLeft = keep[i][1]; } });
   applyFocusRow();
+  if (state.cellEdit) { const ed = view.querySelector("[data-cell-input]"); if (ed) { ed.focus(); if (ed.tagName === "INPUT") ed.select(); else try { ed.showPicker?.(); } catch (_) {} } }
   chartTip.hidden = true;
   if (state.drawer) renderDrawer();
 }
@@ -2590,6 +2595,52 @@ function filteredPackages() {
     return true;
   }).sort((a, b) => (a.no || 0) - (b.no || 0));
 }
+/* ---- inline editing in the packages table: open packages only, locked ones stay read-only */
+const CELL_FIELDS = {
+  name: { label: "اسم الحزمة", text: true },
+  group: { label: "المجموعة", text: true },
+  iface: { label: "الواجهة", opts: () => DEV_IFACES },
+  stage: { label: "مرحلة الطلب", opts: () => DEV_STAGES.map((x) => [x, x]) },
+  quarter: { label: "الربع المستهدف", opts: () => DEV_QUARTERS },
+  beneficiary: { label: "الفئة المستفيدة", opts: () => DEV_BENEF.map((x) => [x, x]) },
+  weight: { label: "الوزن", opts: () => DEV_WEIGHTS.map((w) => [String(w), String(w)]) },
+  phase: { label: "مرحلة التسليم", opts: (p) => [["", "غير مربوطة بمرحلة"], [DEV_CORE, "أساسية (5.أ)"], ...(DEV_PHASES[p.iface] || []).map((ph) => [ph, phaseLabel(ph)])] },
+};
+function cellEdit(p, field, inner, locked) {
+  if (locked) return inner;
+  const F = CELL_FIELDS[field], ce = state.cellEdit;
+  if (ce && ce.id === p.id && ce.field === field) {
+    if (F.text) return `<input class="cell-input" data-cell-input="${field}" data-pid="${esc(p.id)}" value="${esc(ce.draft ?? p[field] ?? "")}" aria-label="${F.label}">`;
+    const cur = field === "weight" ? (Number.isFinite(p.weight) ? String(p.weight) : "") : String(p[field] ?? "");
+    const opts = F.opts(p), known = opts.some(([v]) => String(v) === cur);
+    return `<select class="cell-input" data-cell-input="${field}" data-pid="${esc(p.id)}" aria-label="${F.label}">${known ? "" : `<option value="${esc(cur)}" selected>${esc(cur || "—")}</option>`}${opts.map(([v, l]) => `<option value="${esc(v)}"${String(v) === cur ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+  }
+  return `<button type="button" class="cell-edit" data-cell="${field}" data-pid="${esc(p.id)}" title="اضغط للتعديل: ${F.label}">${inner}</button>`;
+}
+// the same rules as the package form, for the one field being changed
+function cellProblem(prev, body, field) {
+  if (field === "name" && !body.name) return "اسم الحزمة لا يُترك فارغًا.";
+  const linked = prev.phase && prev.phase !== DEV_CORE;
+  if (field === "iface" && linked) return "الحزمة مربوطة بمرحلة تسليم؛ أزلها من المرحلة أولًا ثم غيّر الواجهة.";
+  if (field === "stage" && linked && body.stage !== DEV_LAUNCHED) return "الحزمة مربوطة بمرحلة تسليم، ولا يُربط بالمراحل إلا الحزم المطلقة.";
+  if (field === "phase" && body.iface === "biz" && body.phase && body.phase !== DEV_CORE) return "حزم منصة الأعمال لا تُربط بمراحل التسليم قبل تطبيق طلب التغيير.";
+  if (field === "phase" || field === "weight") return phaseProblem({ ...body, id: prev.id }, body.phase);
+  return "";
+}
+async function saveCell(id, field, raw) {
+  const prev = state.packages.find((x) => x.id === id), k = state.dev.pk.get(id);
+  state.cellEdit = null;
+  if (!prev || k?.locked || !CELL_FIELDS[field]) return render();
+  let v = typeof raw === "string" ? raw.trim() : raw;
+  if (field === "weight") v = v === "" ? null : Number(v);
+  if (String(v ?? "") === String(prev[field] ?? "")) return render();
+  const { id: _omit, ...rest } = prev, body = { ...rest, [field]: v };
+  const err = cellProblem(prev, body, field);
+  if (err) { toast(err, true); return render(); }
+  render();
+  await run(null, () => state.db.collection("packages").doc(id).set(clean(body)), `عُدّل «${CELL_FIELDS[field].label}» للحزمة #${prev.no}`);
+}
+const cancelCell = () => { state.cellEdit = null; render(); };
 function viewDevPkgs() {
   const f = state.pfilters, D = state.dev, list = filteredPackages();
   const sumW = list.reduce((a, p) => a + (D.pk.get(p.id).core ? 0 : D.pk.get(p.id).w), 0);
@@ -2603,13 +2654,13 @@ function viewDevPkgs() {
     const flags = [k.locked ? `<span class="flag soft" title="${esc(k.lockWhy)}">مقفلة</span>` : "", ...k.flags.map((x) => `<span class="flag">${esc(x)}</span>`)].join(" ");
     return `<tr class="clickable" tabindex="0" data-open-pkg="${esc(p.id)}">
       <td class="n"><span class="num">${p.no ?? ""}</span></td>
-      <td><div class="desc strong">${esc(p.name)}</div><div class="sub-line">${esc(p.group || "")}</div></td>
-      <td>${esc(DEV_IFACE[p.iface] || "—")}</td>
-      <td>${p.stage ? pill(p.stage, DEV_STAGE_CLASS[p.stage]) : '<span class="muted">—</span>'}</td>
-      <td>${esc(DEV_QUARTER[p.quarter] || "—")}</td>
-      <td>${p.beneficiary ? esc(p.beneficiary) : '<span class="muted">—</span>'}</td>
-      <td class="n">${k.core ? '<span class="muted" title="لا تدخل في الحساب">—</span>' : devWHtml(p.weight)}</td>
-      <td>${k.core ? `<span class="flag soft">أساسية 5.أ</span>` : p.phase ? esc(phaseLabel(p.phase)) : '<span class="muted">—</span>'}</td>
+      <td><div class="desc strong">${cellEdit(p, "name", esc(p.name), k.locked)}</div><div class="sub-line">${cellEdit(p, "group", esc(p.group || "") || '<span class="muted">—</span>', k.locked)}</div></td>
+      <td>${cellEdit(p, "iface", esc(DEV_IFACE[p.iface] || "—"), k.locked)}</td>
+      <td>${cellEdit(p, "stage", p.stage ? pill(p.stage, DEV_STAGE_CLASS[p.stage]) : '<span class="muted">—</span>', k.locked)}</td>
+      <td>${cellEdit(p, "quarter", esc(DEV_QUARTER[p.quarter] || "—"), k.locked)}</td>
+      <td>${cellEdit(p, "beneficiary", p.beneficiary ? esc(p.beneficiary) : '<span class="muted">—</span>', k.locked)}</td>
+      <td class="n">${cellEdit(p, "weight", k.core ? '<span class="muted" title="لا تدخل في الحساب">—</span>' : devWHtml(p.weight), k.locked)}</td>
+      <td>${cellEdit(p, "phase", k.core ? `<span class="flag soft">أساسية 5.أ</span>` : p.phase ? esc(phaseLabel(p.phase)) : '<span class="muted">—</span>', k.locked)}</td>
       <td>${k.bill ? (BILL_ORDER.includes(k.bill) ? pill(k.bill) : `<span class="muted">${esc(k.bill)}</span>`) : '<span class="muted">—</span>'}</td>
       <td>${flags}</td>
       ${k.locked ? `<td class="act"><div class="row-actions"><button class="row-btn" type="button" data-open-pkg="${esc(p.id)}" title="عرض" aria-label="عرض">${ICON_EDIT}</button></div></td>` : rowActions(`data-open-pkg="${esc(p.id)}"`, `data-rm-pkg="${esc(p.id)}"`)}</tr>`;
@@ -2632,7 +2683,7 @@ function viewDevPkgs() {
       ${ms("prio", "الأولوية", "جميع الأولويات", DEV_PRIORITIES.map((x) => [String(x), `الأولوية ${x}`]))}
       ${ms("flag", "التنبيهات", "جميع الحزم", flagOpts)}
       ${any ? `<button class="btn small" type="button" data-clear-pfilters>مسح الفلاتر</button>` : ""}
-      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.packages.length}</span> حزمة · الوزن <span class="num">${devW(sumW)}</span></span>
+      <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.packages.length}</span> حزمة · الوزن <span class="num">${devW(sumW)}</span> · اضغط على أي خانة في حزمة مفتوحة لتعديلها</span>
     </div>
     ${list.length ? `<div class="table-wrap tall"><table><thead><tr><th class="n">#</th><th>الحزمة والمجموعة</th><th>الواجهة</th><th>مرحلة الطلب</th><th>الربع المستهدف</th><th>الفئة المستفيدة</th><th class="n">الوزن</th><th>مرحلة التسليم</th><th>حالة الفوترة</th><th>تنبيهات</th>${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
       : emptyBlock(state.packages.length ? "لا توجد حزم مطابقة" : "لا توجد حزم بعد", state.packages.length ? "غيّر البحث أو عوامل التصفية." : "أضف حزمة جديدة أو استورد شيت الحزم من Excel.")}
@@ -3962,6 +4013,7 @@ document.addEventListener("click", async (ev) => {
   if (ds.goPhase) { const id = ds.goPhase; closeDrawer(); setTab("devphases"); return openDrawer({ kind: "phase", id }); }
   if ("savePhase" in ds) return savePhase(t);
   if ("genDoc" in ds) return generatePhaseDoc(t);
+  if (ds.cell && ds.pid) { state.cellEdit = { id: ds.pid, field: ds.cell }; return render(); }
   if (ds.askApprove) { state.drawer.approveAt = ds.at; return renderDrawer(); }
   if ("cancelApprove" in ds) { state.drawer.approveAt = null; return renderDrawer(); }
   if (ds.approveDoc) { t.disabled = true; if (await setDocApproval(ds.approveDoc, true)) { if (state.drawer) state.drawer.approveAt = null; } t.disabled = false; return state.drawer ? renderDrawer() : render(); }
@@ -4085,7 +4137,14 @@ document.addEventListener("mouseout", (ev) => {
 
 let inputTimer;
 const SEARCH = { dQ: (v) => (state.docsView.q = v), pQ: (v) => (state.pfilters.q = v), fQ: (v) => (state.filters.q = v), lQ: (v) => (state.logFilters.q = v), iQ: (v) => (state.issueFilters.q = v) };
+// leaving an in-place editor: text is saved, an unchanged list just closes
+document.addEventListener("focusout", (ev) => {
+  const ed = ev.target.closest?.("[data-cell-input]"), ce = state.cellEdit;
+  if (!ed || !ce || ce.id !== ed.dataset.pid || ce.field !== ed.dataset.cellInput) return;
+  if (ed.tagName === "INPUT") saveCell(ce.id, ce.field, ed.value); else setTimeout(() => { if (state.cellEdit === ce) cancelCell(); }, 150);
+});
 document.addEventListener("input", (ev) => {
+  if (ev.target.matches?.("input[data-cell-input]") && state.cellEdit) state.cellEdit.draft = ev.target.value;
   const id = ev.target.id;
   if (!SEARCH[id]) return;
   clearTimeout(inputTimer);
@@ -4104,6 +4163,7 @@ document.addEventListener("change", (ev) => {
     state.openMsel = `${scope}.${key}`;
     return render();
   }
+  if (el.matches("select[data-cell-input]")) { saveCell(el.dataset.pid, el.dataset.cellInput, el.value); return; }
   if (el.name === "docApprove") { const key = el.value; el.disabled = true; setDocApproval(key, el.checked).finally(() => { el.disabled = false; }); return; }
   if (el.name === "phasePick" && state.drawer?.kind === "phase") {
     state.drawer.picked = [...document.querySelectorAll('input[name="phasePick"]:checked')].map((x) => x.value);
@@ -4138,6 +4198,12 @@ document.addEventListener("change", (ev) => {
   }
 });
 document.addEventListener("keydown", (ev) => {
+  const ed = ev.target.closest?.("[data-cell-input]");
+  if (ed) {
+    if (ev.key === "Escape") { ev.preventDefault(); return cancelCell(); }
+    if (ev.key === "Enter" && ed.tagName === "INPUT") { ev.preventDefault(); return saveCell(ed.dataset.pid, ed.dataset.cellInput, ed.value); }
+    return;
+  }
   if (ev.key === "Escape" && state.drawer) closeDrawer();
   if (ev.key === "Enter" && ev.target.matches("tr.clickable")) ev.target.click();
 });
