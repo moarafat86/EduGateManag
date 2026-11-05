@@ -2524,7 +2524,8 @@ function computeDev() {
       let d = docs.get(key);
       if (!d) docs.set(key, d = { key, kind, name, pkgs: [], phases: new Map(), implied: "" });
       d.pkgs.push(p.id);
-      if (P) { d.phases.set(`${P.iface}:${P.ph}`, P); if (P.flow && !d.implied) d.implied = `${phaseLabel(P.ph)} — ${DEV_IFACE[P.iface]}`; }
+      // a delivered phase approves its documents implicitly, except the phases left open for document edits
+      if (P) { d.phases.set(`${P.iface}:${P.ph}`, P); if (P.flow && !d.implied && !DOC_EDIT_OPEN.has(`${P.iface}:${P.ph}`)) d.implied = `${phaseLabel(P.ph)} — ${DEV_IFACE[P.iface]}`; }
       k.docs[kind] = key;
     }
   }
@@ -2547,7 +2548,7 @@ function computeDev() {
 const docName = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
 const docKey = (kind, name) => `${kind}|${docName(name)}`;
 const DOC_KIND = { brd: "BRD", uat: "UAT" };
-// delivered phases whose documents may still be renamed or deleted (on request: portal phase 5)
+// delivered phases whose documents keep a manual status and may still be renamed or deleted (on request: portal phase 5)
 const DOC_EDIT_OPEN = new Set(["portal:5"]);
 const DOC_STATUS = { new: "لم تُكتب", written: "تمت الكتابة", ok: "معتمدة" };
 const DOC_DOT = { new: "r", written: "a", ok: "g" };
