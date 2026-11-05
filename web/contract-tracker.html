@@ -264,6 +264,12 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .ap-box input { width: 17px; height: 17px; accent-color: var(--st-acc); margin: 0; }
 .ap-box.on { color: var(--st-acc-fg); }
 .ap-box.locked { cursor: default; }
+.ap-count { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 2px 10px; border: 0; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; }
+.ap-count:hover, .ap-count:focus-visible { background: var(--accent); color: #fff; outline: none; }
+.doc-filter { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 12px; border-radius: 99px; background: var(--accent-soft); color: var(--ink); font-size: .84rem; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; }
+.doc-filter small { color: var(--muted); font-weight: 500; }
+.doc-filter button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: var(--surface); color: var(--ink-2); cursor: pointer; font-size: 1rem; line-height: 1; flex: none; }
+.doc-filter button:hover { background: var(--st-late-bg); color: var(--st-late-fg); }
 .ap-why { display: block; margin-top: 2px; font-size: .74rem; color: var(--muted); }
 .cell-edit { display: inline-flex; align-items: center; max-width: 100%; padding: 2px 6px; margin: -2px -6px; border: 0; border-radius: 6px; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; box-shadow: inset 0 -1px 0 transparent; transition: background .12s, box-shadow .12s; }
 .cell-edit:hover, .cell-edit:focus-visible { background: var(--accent-soft); box-shadow: inset 0 -1.5px 0 var(--accent); outline: none; }
@@ -992,7 +998,7 @@ const state = {
   db: null, downloads: null,
   ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false, packages: false, devconfig: false },
   packages: [], devConfig: null, dev: null, cellEdit: null, devDocs: [], docsView: { q: "", show: "all" },
-  pfilters: { q: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] },
+  pfilters: { q: "", doc: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
   filters: { q: "", item: [], exec: [], bill: [], issue: [] }, delView: "review", openMsel: null,
@@ -2582,6 +2588,7 @@ function filteredPackages() {
   const f = state.pfilters, q = f.q.trim(), D = state.dev;
   return state.packages.filter((p) => {
     const k = D.pk.get(p.id);
+    if (f.doc && k?.docs?.brd !== f.doc && k?.docs?.uat !== f.doc) return false;
     if (f.iface.length && !f.iface.includes(p.iface)) return false;
     if (f.stage.length && !f.stage.includes(p.stage)) return false;
     if (f.quarter.length && !f.quarter.includes(p.quarter || "none")) return false;
@@ -2648,7 +2655,8 @@ function viewDevPkgs() {
   const phaseOpts = [["pool", "مطلقة ولم تُربط بمرحلة"], ["none", "غير مطلقة"], [DEV_CORE, "أساسية (5.أ)"], ...[...new Set([...DEV_PHASES.portal, ...DEV_PHASES.app])].map((ph) => [ph, phaseLabel(ph)])];
   const flagOpts = [["review", "تحتاج إلى مراجعة"], ["بلا وزن", "بلا وزن"], ["ليست خدمة", "ليست خدمة"], ["لا يوجد BRD", "لا يوجد BRD"], ["لا يوجد UAT", "لا يوجد UAT"], ["locked", "مقفلة (مسلَّمة أو مقبولة)"]];
   const billOpts = [["لم تُسلَّم بعد", "لم تُسلَّم بعد"], ["لم يُسلَّم المخرج بعد", "لم يُسلَّم المخرج بعد"], ...BILL_ORDER.map((x) => [x, x]), ["—", "—"]];
-  const any = ["iface", "stage", "quarter", "phase", "benef", "cat", "prio", "bill", "flag"].some((k) => f[k].length);
+  const any = !!f.doc || ["iface", "stage", "quarter", "phase", "benef", "cat", "prio", "bill", "flag"].some((k) => f[k].length);
+  const docF = f.doc && D.docs.get(f.doc);
   const rows = list.map((p) => {
     const k = D.pk.get(p.id);
     const flags = [k.locked ? `<span class="flag soft" title="${esc(k.lockWhy)}">مقفلة</span>` : "", ...k.flags.map((x) => `<span class="flag">${esc(x)}</span>`)].join(" ");
@@ -2682,6 +2690,7 @@ function viewDevPkgs() {
       ${ms("cat", "تصنيف الخدمة", "جميع التصنيفات", DEV_CATEGORIES.map((x) => [x, x]))}
       ${ms("prio", "الأولوية", "جميع الأولويات", DEV_PRIORITIES.map((x) => [String(x), `الأولوية ${x}`]))}
       ${ms("flag", "التنبيهات", "جميع الحزم", flagOpts)}
+      ${f.doc ? `<span class="doc-filter">الوثيقة: <bdi>${esc(docF ? docF.name : f.doc.split("|").slice(1).join("|"))}</bdi> <small>(${DOC_KIND[f.doc.split("|")[0]] || ""})</small><button type="button" data-clear-docfilter aria-label="إزالة فلتر الوثيقة" title="إزالة فلتر الوثيقة">×</button></span>` : ""}
       ${any ? `<button class="btn small" type="button" data-clear-pfilters>مسح الفلاتر</button>` : ""}
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.packages.length}</span> حزمة · الوزن <span class="num">${devW(sumW)}</span> · اضغط على أي خانة في حزمة مفتوحة لتعديلها</span>
     </div>
@@ -2772,7 +2781,7 @@ function viewDevDocs() {
     const tr = rows.map((d) => {
       const box = d.implied ? `<label class="ap-box on locked"><input type="checkbox" checked disabled><span>معتمدة ضمنًا</span></label><span class="ap-why">${esc(d.implied)} مقفلة</span>`
         : `<label class="ap-box${d.ok ? " on" : ""}"><input type="checkbox" name="docApprove" value="${esc(d.key)}"${d.ok ? " checked" : ""}><span>${d.ok ? "معتمدة" : "غير معتمدة"}</span></label>`;
-      return `<tr class="${d.ok ? "" : "ap-off"}"><td><span class="ap-name">${d.ok ? "" : AP_WARN}<bdi>${esc(d.name)}</bdi></span></td><td class="n"><span class="num">${d.pkgs.length}</span></td>
+      return `<tr class="${d.ok ? "" : "ap-off"}"><td><span class="ap-name">${d.ok ? "" : AP_WARN}<bdi>${esc(d.name)}</bdi></span></td><td class="n"><button type="button" class="ap-count" data-docs-pkgs="${esc(d.key)}" title="عرض الحزم المرتبطة بهذه الوثيقة"><span class="num">${d.pkgs.length}</span></button></td>
         <td>${phTxt(d) || '<span class="muted">غير مربوطة بمرحلة</span>'}</td><td>${box}</td></tr>`;
     }).join("");
     return `<section class="section"><div class="section-head"><h2>وثائق ${DOC_KIND[kind]}</h2><span class="sub"><span class="num">${L.length}</span> وثيقة · <span class="ok num">${ok}</span> معتمدة · <span class="red num">${L.length - ok}</span> غير معتمدة</span></div>
@@ -4027,9 +4036,11 @@ document.addEventListener("click", async (ev) => {
   if ("pkgImport" in ds) return document.getElementById("pkgImportFile")?.click();
   if ("pkgExport" in ds) return exportPkgsExcel(t);
   if ("applyImport" in ds) return applyImport(t);
-  if ("clearPfilters" in ds) { Object.assign(state.pfilters, { iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return render(); }
+  if ("clearDocfilter" in ds) { state.pfilters.doc = ""; return render(); }
+  if (ds.docsPkgs) { Object.assign(state.pfilters, { q: "", doc: ds.docsPkgs, iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return setTab("devpkgs"); }
+  if ("clearPfilters" in ds) { Object.assign(state.pfilters, { doc: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] }); state.openMsel = null; return render(); }
   if (ds.pfilterStage || ds.pfilterQuarter || ds.pfilterFlag || ds.pfilterBenef || ds.pfilterPhase) {
-    Object.assign(state.pfilters, { q: "", iface: ds.pfilterIface ? [ds.pfilterIface] : [], stage: ds.pfilterStage ? [ds.pfilterStage] : [], quarter: ds.pfilterQuarter ? [ds.pfilterQuarter] : [], phase: ds.pfilterPhase ? [ds.pfilterPhase] : [], benef: ds.pfilterBenef ? ds.pfilterBenef.split("|") : [], cat: [], prio: [], bill: [], flag: ds.pfilterFlag ? [ds.pfilterFlag] : [] });
+    Object.assign(state.pfilters, { q: "", doc: "", iface: ds.pfilterIface ? [ds.pfilterIface] : [], stage: ds.pfilterStage ? [ds.pfilterStage] : [], quarter: ds.pfilterQuarter ? [ds.pfilterQuarter] : [], phase: ds.pfilterPhase ? [ds.pfilterPhase] : [], benef: ds.pfilterBenef ? ds.pfilterBenef.split("|") : [], cat: [], prio: [], bill: [], flag: ds.pfilterFlag ? [ds.pfilterFlag] : [] });
     return setTab("devpkgs");
   }
   if ("askApply" in ds) { state.drawer.confirmApply = true; return renderDrawer(); }
