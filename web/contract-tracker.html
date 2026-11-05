@@ -264,7 +264,7 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .ap-box input { width: 17px; height: 17px; accent-color: var(--st-acc); margin: 0; }
 .ap-box.on { color: var(--st-acc-fg); }
 .ap-box.locked { cursor: default; }
-.ap-date { font: inherit; font-size: .82rem; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.ap-why { display: block; margin-top: 2px; font-size: .74rem; color: var(--muted); }
 .dev-docs { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 3px; font-size: .74rem; color: var(--ink-2); font-weight: 400; overflow-wrap: anywhere; }
 .dev-docs { align-items: center; }
 .dev-docs .miss { color: var(--st-ret-fg); font-weight: 600; }
@@ -2497,11 +2497,11 @@ function phaseDocsPending(P) {
   for (const p of P.pkgs) { const k = state.dev.pk.get(p.id); for (const kind of ["brd", "uat"]) { const d = k?.docs?.[kind] && state.dev.docs.get(k.docs[kind]); if (d && !d.ok) out.set(d.key, d); } }
   return [...out.values()];
 }
-async function setDocApproval(key, on, date) {
+async function setDocApproval(key, on) {
   if (!requireDb()) return false;
   const [kind, ...rest] = key.split("|"), name = rest.join("|");
   const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
-  if (on) list.push({ kind, name, date: isIso(date) ? date : todayIso() });
+  if (on) list.push({ kind, name });
   return run(null, () => state.db.doc("dev/docs").set({ list }), on ? `اعتُمدت ${DOC_KIND[kind]} «${name}»` : `أُلغي اعتماد «${name}»`);
 }
 
@@ -2719,14 +2719,13 @@ function viewDevDocs() {
     const L = all.filter((d) => d.kind === kind), rows = L.filter(pass).sort((a, b) => (a.ok - b.ok) || (b.pkgs.length - a.pkgs.length) || a.name.localeCompare(b.name));
     const ok = L.filter((d) => d.ok).length;
     const tr = rows.map((d) => {
-      const box = d.implied ? `<label class="ap-box on locked" title="${esc(d.implied)}"><input type="checkbox" checked disabled><span>معتمدة ضمنًا</span></label>`
+      const box = d.implied ? `<label class="ap-box on locked"><input type="checkbox" checked disabled><span>معتمدة ضمنًا</span></label><span class="ap-why">${esc(d.implied)} مقفلة</span>`
         : `<label class="ap-box${d.ok ? " on" : ""}"><input type="checkbox" name="docApprove" value="${esc(d.key)}"${d.ok ? " checked" : ""}><span>${d.ok ? "معتمدة" : "غير معتمدة"}</span></label>`;
-      const date = d.implied ? `<span class="muted">${esc(d.implied)} · مقفلة</span>` : d.manual ? `<input class="ap-date" type="date" name="apDate" data-key="${esc(d.key)}" value="${esc(d.manual.date || "")}" aria-label="تاريخ الاعتماد">` : '<span class="muted">—</span>';
       return `<tr class="${d.ok ? "" : "ap-off"}"><td><span class="ap-name">${d.ok ? "" : AP_WARN}<bdi>${esc(d.name)}</bdi></span></td><td class="n"><span class="num">${d.pkgs.length}</span></td>
-        <td>${phTxt(d) || '<span class="muted">غير مربوطة بمرحلة</span>'}</td><td>${box}</td><td>${date}</td></tr>`;
+        <td>${phTxt(d) || '<span class="muted">غير مربوطة بمرحلة</span>'}</td><td>${box}</td></tr>`;
     }).join("");
     return `<section class="section"><div class="section-head"><h2>وثائق ${DOC_KIND[kind]}</h2><span class="sub"><span class="num">${L.length}</span> وثيقة · <span class="ok num">${ok}</span> معتمدة · <span class="red num">${L.length - ok}</span> غير معتمدة</span></div>
-      ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr><th>الوثيقة</th><th class="n">الحزم</th><th>مراحل التسليم</th><th>الاعتماد</th><th>تاريخ الاعتماد</th></tr></thead><tbody>${tr}</tbody></table></div>`
+      ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr><th>الوثيقة</th><th class="n">الحزم</th><th>مراحل التسليم</th><th>الاعتماد</th></tr></thead><tbody>${tr}</tbody></table></div>`
         : `<p class="muted" style="margin:0">لا توجد وثائق مطابقة.</p>`}</section>`;
   };
   const seg = [["all", "الكل"], ["off", "غير المعتمدة"], ["on", "المعتمدة"]].map(([k, l]) => `<button type="button" data-docs-show="${k}" aria-pressed="${v.show === k}">${l}</button>`).join("");
@@ -4106,7 +4105,6 @@ document.addEventListener("change", (ev) => {
     return render();
   }
   if (el.name === "docApprove") { const key = el.value; el.disabled = true; setDocApproval(key, el.checked).finally(() => { el.disabled = false; }); return; }
-  if (el.name === "apDate" && isIso(el.value)) { setDocApproval(el.dataset.key, true, el.value); return; }
   if (el.name === "phasePick" && state.drawer?.kind === "phase") {
     state.drawer.picked = [...document.querySelectorAll('input[name="phasePick"]:checked')].map((x) => x.value);
     return renderDrawer();
