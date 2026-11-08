@@ -292,6 +292,7 @@ div.dev-pick { grid-template-columns: 44px 1fr auto; }
 .dc-rename { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .dc-rename input { min-width: min(100%, 260px); border-color: var(--accent); }
 .row-btn.danger { color: var(--st-late-fg); }
+.dc-confirm.ok { color: var(--st-acc-fg); justify-content: flex-start; }
 .dc-confirm { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; font-size: .8rem; color: var(--st-late-fg); white-space: normal; max-width: 260px; }
 .dc-doc { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; min-width: 170px; max-width: 240px; overflow-wrap: anywhere; line-height: 1.35; }
 .dc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
@@ -2539,6 +2540,7 @@ function computeDev() {
     // a register entry without a status comes from the first version, where an entry meant «approved»
     d.status = d.implied ? "ok" : d.manual ? (DOC_STATUS[d.manual.status] ? d.manual.status : "ok") : "new";
     d.ok = d.status === "ok";
+    d.statusLocked = !!d.implied || (d.ok && !!d.manual?.locked);
     d.lockedPkgs = d.pkgs.some((id) => pk.get(id)?.locked);
     // frozen = used by a locked package outside the phases whose documents stay editable
     d.frozen = d.pkgs.some((id) => { const k = pk.get(id); return k?.locked && !(k.phase && DOC_EDIT_OPEN.has(`${k.phase.iface}:${k.phase.ph}`)); });
@@ -2565,9 +2567,10 @@ const saveRegister = (list, msg) => run(null, () => state.db.doc("dev/docs").set
 async function setDocStatus(key, status) {
   if (!requireDb() || !DOC_STATUS[status]) return false;
   const [kind, name] = splitKey(key), d = state.dev.docs.get(key);
-  if (d?.implied) return false;
+  if (d?.statusLocked) { toast("الوثيقة معتمدة؛ حالتها مقفلة.", true); return false; }
   const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
-  list.push({ kind, name, status });
+  // an approval chosen by hand is final: the status locks with it
+  list.push(status === "ok" ? { kind, name, status, locked: true } : { kind, name, status });
   return saveRegister(list, `${DOC_KIND[kind]} «${name}»: ${DOC_STATUS[status]}`);
 }
 const setDocApproval = (key, on) => setDocStatus(key, on ? "ok" : "new");
@@ -2593,7 +2596,7 @@ async function renameDoc(key, raw) {
   const err = docNameProblem(d.kind, name, key);
   if (err) { toast(err, true); return false; }
   const list = (state.devDocs || []).filter((a) => docKey(a.kind, a.name) !== key);
-  list.push({ kind: d.kind, name, status: d.status });
+  list.push(d.status === "ok" && d.statusLocked && !d.implied ? { kind: d.kind, name, status: "ok", locked: true } : { kind: d.kind, name, status: d.status });
   const pkgs = state.packages.filter((p) => d.pkgs.includes(p.id));
   return run(null, async () => {
     await state.db.doc("dev/docs").set({ list });
@@ -2881,7 +2884,8 @@ function viewDevDocs() {
   const phTxt = (d) => [...d.phases.values()].sort((a, b) => a.iface.localeCompare(b.iface) || DEV_PHASES[a.iface].indexOf(a.ph) - DEV_PHASES[b.iface].indexOf(b.ph)).map((P) => `${P.iface === "app" ? "التطبيق" : "البوابة"} ${phaseNum(P.ph)}`).join("، ");
   const kpi = (kind) => { const L = all.filter((d) => d.kind === kind), c = (st) => L.filter((d) => d.status === st).length;
     return `<div class="ap-kpi"><span class="k">وثائق ${DOC_KIND[kind]}</span><strong class="num">${L.length}</strong><span class="dc-k"><span class="r"><b class="num">${c("new")}</b> لم تُكتب</span><span class="a"><b class="num">${c("written")}</b> تمت الكتابة</span><span class="g"><b class="num">${c("ok")}</b> معتمدة</span></span></div>`; };
-  const statusCell = (d) => d.implied ? `<span class="dc-implied">${PH_LOCK}معتمدة ضمنًا</span><span class="ap-why">${esc(d.implied)} مقفلة</span>`
+  const statusCell = (d) => d.statusLocked ? `<span class="dc-implied">${PH_LOCK}معتمدة</span><span class="ap-why">${d.implied ? `${esc(d.implied)} مقفلة` : "الحالة مقفلة بعد الاعتماد"}</span>`
+    : v.confirmOk === d.key ? `<span class="dc-confirm ok"><span>اعتماد نهائي؟ تُقفل الحالة بعده</span><button class="btn small primary" type="button" data-doc-ok-yes="${esc(d.key)}">اعتماد</button><button class="btn small" type="button" data-doc-ok-no>إلغاء</button></span>`
     : `<div class="dc-seg" role="group" aria-label="حالة الوثيقة">${Object.entries(DOC_STATUS).map(([k, l]) => `<button type="button" class="${k}${d.status === k ? " on" : ""}" data-doc-status="${k}" data-key="${esc(d.key)}" aria-pressed="${d.status === k}">${l}</button>`).join("")}</div>`;
   const nameCell = (d) => v.renaming === d.key
     ? `<span class="dc-rename"><input data-rename-input="${esc(d.key)}" value="${esc(v.draft ?? d.name)}" aria-label="الاسم الجديد"><button class="btn primary small" type="button" data-rename-save="${esc(d.key)}">حفظ</button><button class="btn small" type="button" data-rename-cancel>إلغاء</button></span><span class="ap-why">يتغير الاسم في كل الحزم المرتبطة (<span class="num">${d.pkgs.length}</span> حزمة)</span>`
@@ -2902,7 +2906,7 @@ function viewDevDocs() {
   const add = v.adding ? `<div class="dc-add"><span class="t">+ وثيقة جديدة</span><select id="dcKind" aria-label="النوع">${Object.entries(DOC_KIND).map(([k, l]) => `<option value="${k}"${v.addKind === k ? " selected" : ""}>${l}</option>`).join("")}</select>
       <input id="dcName" placeholder="اسم الوثيقة" value="${esc(v.addName || "")}" aria-label="اسم الوثيقة"><button class="btn primary" type="button" data-doc-add>إضافة</button><button class="btn" type="button" data-doc-add-cancel>إلغاء</button></div>`
     : `<div><button class="btn primary" type="button" data-doc-add-open>+ وثيقة جديدة</button></div>`;
-  return `<div class="ap-kpis">${kpi("brd")}${kpi("uat")}<div class="ap-kpi note"><span class="k">الحالة</span><span class="s"><b class="r">لم تُكتب</b> ← <b class="a">تمت الكتابة</b> ← <b class="g">معتمدة</b>. لا تُنشأ وثيقة تسليم المرحلة ولا يُسجَّل تسليمها إلا إذا كانت كل وثائق حزمها «معتمدة». وثائق المراحل التي سُلِّمت للعميل معتمدة ضمنًا، وتغيير اسم الوثيقة يسري على كل الحزم التي تستخدمها.</span></div></div>
+  return `<div class="ap-kpis">${kpi("brd")}${kpi("uat")}<div class="ap-kpi note"><span class="k">الحالة</span><span class="s"><b class="r">لم تُكتب</b> ← <b class="a">تمت الكتابة</b> ← <b class="g">معتمدة</b>. لا تُنشأ وثيقة تسليم المرحلة ولا يُسجَّل تسليمها إلا إذا كانت كل وثائق حزمها «معتمدة». الوثيقة المعتمدة تُقفل حالتها، ووثائق المراحل التي سُلِّمت للعميل تُعدّ معتمدة تلقائيًا. تغيير اسم الوثيقة يسري على كل الحزم التي تستخدمها.</span></div></div>
     ${add}
     <div class="filters"><input id="dQ" type="search" placeholder="ابحث باسم الوثيقة" value="${esc(v.q)}" aria-label="بحث"><div class="seg" role="group" aria-label="عرض">${seg}</div></div>
     ${table("brd")}${table("uat")}`;
@@ -2994,9 +2998,9 @@ function pkgDocsLine(p) {
   return `<span class="dev-docs">${["brd", "uat"].map((kind) => {
     const L = DOC_KIND[kind], d = k?.docs?.[kind] && state.dev.docs.get(k.docs[kind]);
     if (!d) return `<span class="ap-chip none"><b>${L}</b> <span class="miss">لا يوجد</span></span>`;
-    if (d.ok) return `<span class="ap-chip" title="${esc(d.implied ? "معتمدة ضمنًا: " + d.implied : "معتمدة")}"><b>${L}</b> <bdi>${esc(d.name)}</bdi>${AP_CHECK}</span>`;
+    if (d.ok) return `<span class="ap-chip" title="${esc(d.implied ? "معتمدة: " + d.implied + " مقفلة" : "معتمدة")}"><b>${L}</b> <bdi>${esc(d.name)}</bdi>${AP_CHECK}</span>`;
     const at = `${p.id}|${kind}`, open = dr?.approveAt === at;
-    return `<span class="ap-wrap"><button type="button" class="ap-chip off${d.status === "written" ? " mid" : ""}" data-ask-approve="${esc(d.key)}" data-at="${esc(at)}" title="${DOC_STATUS[d.status]} — اضغط للاعتماد"><b>${L}</b> <bdi>${esc(d.name)}</bdi></button>${open ? `<span class="ap-pop" role="dialog" aria-label="اعتماد الوثيقة"><b>اعتماد وثيقة ${L}؟</b><bdi class="ap-pop-n">${esc(d.name)}</bdi><span>تُعتمد في كل الحزم التي تستخدمها (<span class="num">${d.pkgs.length}</span> حزمة).</span><span class="ap-pop-a"><button class="btn primary small" type="button" data-approve-doc="${esc(d.key)}">اعتماد</button><button class="btn small" type="button" data-cancel-approve>إلغاء</button></span></span>` : ""}</span>`;
+    return `<span class="ap-wrap"><button type="button" class="ap-chip off${d.status === "written" ? " mid" : ""}" data-ask-approve="${esc(d.key)}" data-at="${esc(at)}" title="${DOC_STATUS[d.status]} — اضغط للاعتماد"><b>${L}</b> <bdi>${esc(d.name)}</bdi></button>${open ? `<span class="ap-pop" role="dialog" aria-label="اعتماد الوثيقة"><b>اعتماد وثيقة ${L}؟</b><bdi class="ap-pop-n">${esc(d.name)}</bdi><span>تُعتمد في كل الحزم التي تستخدمها (<span class="num">${d.pkgs.length}</span> حزمة)، وتُقفل حالتها بعد الاعتماد.</span><span class="ap-pop-a"><button class="btn primary small" type="button" data-approve-doc="${esc(d.key)}">اعتماد</button><button class="btn small" type="button" data-cancel-approve>إلغاء</button></span></span>` : ""}</span>`;
   }).join("")}</span>`;
 }
 const docOptions = (kind, cur) => {
@@ -4150,7 +4154,12 @@ document.addEventListener("click", async (ev) => {
   if (ds.goPhase) { const id = ds.goPhase; closeDrawer(); setTab("devphases"); return openDrawer({ kind: "phase", id }); }
   if ("savePhase" in ds) return savePhase(t);
   if ("genDoc" in ds) return generatePhaseDoc(t);
-  if (ds.docStatus && ds.key) { t.disabled = true; await setDocStatus(ds.key, ds.docStatus); return render(); }
+  if (ds.docStatus && ds.key) {
+    if (ds.docStatus === "ok") { state.docsView.confirmOk = ds.key; return render(); }
+    t.disabled = true; await setDocStatus(ds.key, ds.docStatus); return render();
+  }
+  if ("docOkNo" in ds) { state.docsView.confirmOk = null; return render(); }
+  if (ds.docOkYes) { t.disabled = true; await setDocStatus(ds.docOkYes, "ok"); state.docsView.confirmOk = null; return render(); }
   if (ds.rename) { Object.assign(state.docsView, { renaming: ds.rename, draft: null }); return render(); }
   if ("renameCancel" in ds) { Object.assign(state.docsView, { renaming: null, draft: null }); return render(); }
   if (ds.renameSave) { const inp = document.querySelector("[data-rename-input]"); t.disabled = true; if (await renameDoc(ds.renameSave, inp?.value || "")) Object.assign(state.docsView, { renaming: null, draft: null }); t.disabled = false; return render(); }
