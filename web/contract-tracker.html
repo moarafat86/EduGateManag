@@ -1059,7 +1059,7 @@ const SAR = `<svg class="sar" viewBox="40 0 1145 1270" role="img" aria-label="ر
 const state = {
   db: null, downloads: null,
   ready: { settings: false, items: false, deliverables: false, events: false, issues: false, crs: false, packages: false, devconfig: false },
-  packages: [], devConfig: null, dev: null, cellEdit: null, devDocs: [], docsView: { q: "", show: "all", adding: false, addKind: "uat", addName: "", renaming: null, draft: null },
+  packages: [], devConfig: null, dev: null, cellEdit: null, devDocs: [], pkgSort: { key: null, dir: 1 }, docsSort: { brd: null, uat: null }, docsView: { q: "", show: "all", adding: false, addKind: "uat", addName: "", renaming: null, draft: null },
   pfilters: { q: "", doc: "", iface: [], stage: [], quarter: [], phase: [], benef: [], cat: [], prio: [], bill: [], flag: [] },
   settings: { ...DEFAULT_SETTINGS }, items: [], deliverables: [], events: [], issues: [], crs: [],
   tab: "dashboard",
@@ -1637,24 +1637,29 @@ function activeDelSort() {
   const { key, dir } = state.delSort || {};
   return key && DEL_SORT[key] && DEL_SORT_VIEW[state.delView === "billing" ? "billing" : "review"].includes(key) ? { key, dir } : null;
 }
-function sortDeliverables(list) {
-  const so = activeDelSort();
-  if (!so) return list.sort(byId);
-  const c = state.calc, get = DEL_SORT[so.key][1];
-  const keyed = list.map((d) => [d, get(d, c.del.get(d.id), c)]);
+// sorts list by get(row) in the direction of so ({ key, dir }); null/undefined values go last either way, ties use tie()
+function sortByKey(list, so, get, tie) {
+  if (!so) return list.sort(tie);
+  const keyed = list.map((r) => [r, get(r)]);
   keyed.sort(([a, x], [b, y]) => {
-    if (x === null || x === undefined) return y === null || y === undefined ? byId(a, b) : 1;
+    if (x === null || x === undefined) return y === null || y === undefined ? tie(a, b) : 1;
     if (y === null || y === undefined) return -1;
     const r = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "ar", { numeric: true });
-    return r ? r * so.dir : byId(a, b);
+    return r ? r * so.dir : tie(a, b);
   });
-  return keyed.map(([d]) => d);
+  return keyed.map(([r]) => r);
 }
-const sortTh = (key, label, cls = "") => {
-  const so = activeDelSort(), on = so?.key === key, plain = DEL_SORT[key][0];
-  const next = !on ? "ترتيب تصاعدي" : so.dir > 0 ? "ترتيب تنازلي" : "إلغاء الترتيب";
-  return `<th class="${cls}" aria-sort="${on ? (so.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" class="th-sort" data-sort="${key}" title="${next} حسب ${esc(plain)}">${label}${SORT_IC}</button></th>`;
+// a column heading that cycles ascending → descending → default order on each click
+const sortThFor = (scope, so, key, label, plain, cls = "") => {
+  const on = so?.key === key, next = !on ? "ترتيب تصاعدي" : so.dir > 0 ? "ترتيب تنازلي" : "إلغاء الترتيب";
+  return `<th class="${cls}" aria-sort="${on ? (so.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" class="th-sort" data-sort="${key}" data-sort-scope="${scope}" title="${next} حسب ${esc(plain)}">${label}${SORT_IC}</button></th>`;
 };
+const nextSort = (so, key) => so?.key !== key ? { key, dir: 1 } : so.dir > 0 ? { key, dir: -1 } : { key: null, dir: 1 };
+function sortDeliverables(list) {
+  const so = activeDelSort(), c = state.calc;
+  return sortByKey(list, so, so ? (d) => DEL_SORT[so.key][1](d, c.del.get(d.id), c) : null, byId);
+}
+const sortTh = (key, label, cls = "") => sortThFor("del", activeDelSort(), key, label, DEL_SORT[key][0], cls);
 function filteredDeliverables() {
   const c = state.calc, f = state.filters, q = f.q.trim();
   return sortDeliverables([...state.deliverables].filter((d) => {
@@ -2832,9 +2837,31 @@ function viewDev() {
     <div class="table-wrap"><table><thead><tr><th>الربع المستهدف</th><th class="n">البوابة الموحدة</th><th class="n">التطبيق الموحد</th><th class="n">منصة الأعمال</th></tr></thead><tbody>${qRows}</tbody></table></div></section>`;
 }
 
+// packages table sorting; empty values sort last, ties fall back to the package number
+const byPkgNo = (a, b) => (a.no || 0) - (b.no || 0);
+// the document name as the table shows it (the register's name), or null when the cell reads «لا يوجد»
+const pkgDocName = (k, kind) => { const key = k?.docs?.[kind], d = key && state.dev.docs.get(key); return d ? d.name : null; };
+const PKG_BILL_ORDER = ["لم تُسلَّم بعد", "لم يُسلَّم المخرج بعد", ...BILL_ORDER];
+const phaseRank = (iface, ph) => { const i = (DEV_PHASES[iface] || []).indexOf(ph); return i < 0 ? null : (iface === "app" ? 100 : 0) + i; };
+const PKG_SORT = {
+  no: ["رقم الحزمة", (p) => Number.isFinite(Number(p.no)) ? Number(p.no) : null],
+  name: ["اسم الحزمة", (p) => (p.name || "").trim() || null],
+  iface: ["الواجهة", (p) => { const i = DEV_IFACES.findIndex(([k]) => k === p.iface); return i < 0 ? null : i; }],
+  stage: ["مرحلة الطلب", (p) => { const i = DEV_STAGES.indexOf(p.stage); return i < 0 ? null : i; }],
+  quarter: ["الربع المستهدف", (p) => { const i = DEV_QUARTERS.findIndex(([k]) => k === p.quarter); return i < 0 ? null : i; }],
+  beneficiary: ["الفئة المستفيدة", (p) => (p.beneficiary || "").trim() || null],
+  brd: ["BRD", (p, k) => pkgDocName(k, "brd")],
+  uat: ["UAT", (p, k) => pkgDocName(k, "uat")],
+  weight: ["الوزن", (p, k) => k?.core || !Number.isFinite(p.weight) ? null : p.weight],
+  phase: ["مرحلة التسليم", (p, k) => k?.core ? -1 : p.phase ? phaseRank(p.iface, p.phase) : null],
+  bill: ["حالة الفوترة", (p, k) => { const i = PKG_BILL_ORDER.indexOf(k?.bill); return i < 0 ? null : i; }],
+  flags: ["التنبيهات", (p, k) => (k?.flags.length || 0) * 10 + (k?.locked ? 1 : 0) || null],
+};
+const activePkgSort = () => state.pkgSort?.key && PKG_SORT[state.pkgSort.key] ? state.pkgSort : null;
+const pkgTh = (key, label, cls = "") => sortThFor("pkg", activePkgSort(), key, label, PKG_SORT[key][0], cls);
 function filteredPackages() {
-  const f = state.pfilters, q = f.q.trim(), D = state.dev;
-  return state.packages.filter((p) => {
+  const f = state.pfilters, q = f.q.trim(), D = state.dev, so = activePkgSort();
+  return sortByKey(state.packages.filter((p) => {
     const k = D.pk.get(p.id);
     if (f.doc && k?.docs?.brd !== f.doc && k?.docs?.uat !== f.doc) return false;
     if (f.iface.length && !f.iface.includes(p.iface)) return false;
@@ -2848,7 +2875,7 @@ function filteredPackages() {
     if (f.flag.length && !f.flag.some((x) => x === "review" ? k.flags.length > 0 : x === "locked" ? k.locked : k.flags.includes(x))) return false;
     if (q && !`${p.no} ${p.name} ${p.group || ""} ${p.dependency || ""} ${p.brd || ""} ${p.uat || ""}`.includes(q)) return false;
     return true;
-  }).sort((a, b) => (a.no || 0) - (b.no || 0));
+  }), so, so ? (p) => PKG_SORT[so.key][1](p, D.pk.get(p.id)) : null, byPkgNo);
 }
 /* ---- inline editing in the packages table: open packages only, locked ones stay read-only */
 const CELL_FIELDS = {
@@ -2952,7 +2979,7 @@ function viewDevPkgs() {
       ${any ? `<button class="btn small" type="button" data-clear-pfilters>مسح الفلاتر</button>` : ""}
       <span class="count"><span class="num">${list.length}</span> من <span class="num">${state.packages.length}</span> حزمة · الوزن <span class="num">${devW(sumW)}</span> · اضغط على أي خانة في حزمة مفتوحة لتعديلها</span>
     </div>
-    ${list.length ? `<div class="table-wrap tall"><table><thead><tr><th class="n">#</th><th>الحزمة والمجموعة</th><th>الواجهة</th><th>مرحلة الطلب</th><th>الربع المستهدف</th><th>الفئة المستفيدة</th><th>BRD</th><th>UAT</th><th class="n">الوزن</th><th>مرحلة التسليم</th><th>حالة الفوترة</th><th>تنبيهات</th>${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
+    ${list.length ? `<div class="table-wrap tall"><table><thead><tr>${pkgTh("no", "#", "n")}${pkgTh("name", "الحزمة والمجموعة")}${pkgTh("iface", "الواجهة")}${pkgTh("stage", "مرحلة الطلب")}${pkgTh("quarter", "الربع المستهدف")}${pkgTh("beneficiary", "الفئة المستفيدة")}${pkgTh("brd", "BRD")}${pkgTh("uat", "UAT")}${pkgTh("weight", "الوزن", "n")}${pkgTh("phase", "مرحلة التسليم")}${pkgTh("bill", "حالة الفوترة")}${pkgTh("flags", "تنبيهات")}${ACT_TH}</tr></thead><tbody>${rows}</tbody></table></div>`
       : emptyBlock(state.packages.length ? "لا توجد حزم مطابقة" : "لا توجد حزم بعد", state.packages.length ? "غيّر البحث أو عوامل التصفية." : "أضف حزمة جديدة أو استورد شيت الحزم من Excel.")}
   </section>`;
 }
@@ -3027,6 +3054,17 @@ function viewDevPhases() {
 }
 
 /* ---- BRD / UAT approval */
+// documents tables sorting (each table keeps its own); the default is status, then most packages, then name
+const DOC_ST_ORDER = { new: 0, written: 1, ok: 2 };
+const docPhaseRank = (d) => { const r = [...d.phases.values()].map((P) => phaseRank(P.iface, P.ph)).filter((x) => x !== null); return r.length ? Math.min(...r) : null; };
+const DOC_SORT = {
+  name: ["الوثيقة", (d) => d.name || null],
+  pkgs: ["الحزم", (d) => d.pkgs.length],
+  phases: ["مراحل التسليم", docPhaseRank],
+  status: ["الحالة", (d) => DOC_ST_ORDER[d.status] ?? null],
+};
+const docDefaultOrder = (a, b) => (DOC_ST_ORDER[a.status] - DOC_ST_ORDER[b.status]) || (b.pkgs.length - a.pkgs.length) || a.name.localeCompare(b.name);
+const activeDocSort = (kind) => { const so = state.docsSort?.[kind]; return so?.key && DOC_SORT[so.key] ? so : null; };
 function viewDevDocs() {
   const all = [...state.dev.docs.values()], v = state.docsView, q = v.q.trim().toLowerCase();
   const pass = (d) => (v.show === "all" || d.status === v.show) && (!q || d.name.toLowerCase().includes(q));
@@ -3040,15 +3078,17 @@ function viewDevDocs() {
     ? `<span class="dc-rename"><input data-rename-input="${esc(d.key)}" value="${esc(v.draft ?? d.name)}" aria-label="الاسم الجديد"><button class="btn primary small" type="button" data-rename-save="${esc(d.key)}">حفظ</button><button class="btn small" type="button" data-rename-cancel>إلغاء</button></span><span class="ap-why">يتغير الاسم في كل الحزم المرتبطة (<span class="num">${d.pkgs.length}</span> حزمة)</span>`
     : `<span class="ap-name">${d.status === "new" ? AP_WARN : ""}<bdi>${esc(d.name)}</bdi>${d.frozen ? "" : `<button type="button" class="dc-pen" data-rename="${esc(d.key)}" title="تعديل الاسم" aria-label="تعديل الاسم">${ICON_EDIT}</button>`}</span>`;
   const table = (kind) => {
-    const L = all.filter((d) => d.kind === kind), order = { new: 0, written: 1, ok: 2 };
-    const rows = L.filter(pass).sort((a, b) => (order[a.status] - order[b.status]) || (b.pkgs.length - a.pkgs.length) || a.name.localeCompare(b.name));
+    const L = all.filter((d) => d.kind === kind);
+    const so = activeDocSort(kind), th = (key, label, cls = "") => sortThFor(`docs-${kind}`, so, key, label, DOC_SORT[key][0], cls);
+    const rows = sortByKey(L.filter(pass), so, so ? DOC_SORT[so.key][1] : null, (a, b) => a.name.localeCompare(b.name, "ar", { numeric: true }));
+    if (!so) rows.sort(docDefaultOrder);
     const tr = rows.map((d) => `<tr class="row-${d.implied ? "implied" : d.status}"><td>${nameCell(d)}</td>
         <td class="n">${d.pkgs.length ? `<button type="button" class="ap-count" data-docs-pkgs="${esc(d.key)}" title="عرض الحزم المرتبطة بهذه الوثيقة"><span class="num">${d.pkgs.length}</span></button>` : '<span class="num muted">0</span>'}</td>
         <td>${phTxt(d) || `<span class="muted">${d.pkgs.length ? "غير مربوطة بمرحلة" : "غير مربوطة بحزم"}</span>`}</td><td>${statusCell(d)}</td>
         <td class="act">${v.confirmDel === d.key ? `<span class="dc-confirm"><span>${d.pkgs.length ? `تُحذف وتصبح «لا يوجد» في <b class="num">${d.pkgs.length}</b> حزمة` : "حذف الوثيقة؟"}</span><button class="btn small danger" type="button" data-doc-del-yes="${esc(d.key)}">حذف</button><button class="btn small" type="button" data-doc-del-no>إلغاء</button></span>`
           : `<button class="row-btn${d.frozen ? "" : " danger"}" type="button" data-doc-del="${esc(d.key)}"${d.frozen ? ` disabled title="مستخدمة في مرحلة مقبولة؛ لا تُحذف"` : ` title="حذف" aria-label="حذف"`}>${ICON_DEL}</button>`}</td></tr>`).join("");
     return `<section class="section"><div class="section-head"><h2>وثائق ${DOC_KIND[kind]}</h2><span class="sub"><span class="num">${L.length}</span> وثيقة</span></div>
-      ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr><th>الوثيقة</th><th class="n">الحزم</th><th>مراحل التسليم</th><th>الحالة</th><th class="act"></th></tr></thead><tbody>${tr}</tbody></table></div>`
+      ${rows.length ? `<div class="table-wrap"><table class="ap-table"><thead><tr>${th("name", "الوثيقة")}${th("pkgs", "الحزم", "n")}${th("phases", "مراحل التسليم")}${th("status", "الحالة")}<th class="act"></th></tr></thead><tbody>${tr}</tbody></table></div>`
         : `<p class="muted" style="margin:0">لا توجد وثائق مطابقة.</p>`}</section>`;
   };
   const seg = [["all", "الكل"], ["new", "لم تُكتب"], ["written", "تمت الكتابة"], ["ok", "المعتمدة"]].map(([k, l]) => `<button type="button" data-docs-show="${k}" aria-pressed="${v.show === k}">${l}</button>`).join("");
@@ -4272,8 +4312,10 @@ document.addEventListener("click", async (ev) => {
   if ("clearFilters" in ds) { Object.assign(state.filters, { item: [], exec: [], bill: [], issue: [] }); state.openMsel = null; return render(); }
   if (ds.delview) { state.delView = ds.delview; return render(); }
   if (ds.sort) {
-    const so = activeDelSort();
-    state.delSort = so?.key !== ds.sort ? { key: ds.sort, dir: 1 } : so.dir > 0 ? { key: ds.sort, dir: -1 } : { key: null, dir: 1 };
+    const sc = ds.sortScope || "del";
+    if (sc === "del") state.delSort = nextSort(activeDelSort(), ds.sort);
+    else if (sc === "pkg") state.pkgSort = nextSort(activePkgSort(), ds.sort);
+    else if (sc.startsWith("docs-")) { const kind = sc.slice(5); state.docsSort = { ...state.docsSort, [kind]: nextSort(activeDocSort(kind), ds.sort) }; }
     return render();
   }
   if (ds.rmItem) return openDrawer({ kind: "item", id: ds.rmItem, confirm: true });
